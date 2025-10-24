@@ -7,6 +7,7 @@ Supports both existing chats and new connections via name or LinkedIn URL
 import os
 import requests
 import re
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -239,12 +240,290 @@ class UnifiedMessenger:
             print(f"❌ Error: {e}")
             return False, str(e)
 
+    def search_company(self, company_name):
+        """
+        Search for a company on LinkedIn and return its company ID.
+        """
+        print(f"🔍 Searching for company: {company_name}")
+        
+        try:
+            data = {
+                "api": "classic",
+                "category": "companies",
+                "keywords": company_name
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/linkedin/search",
+                headers={**self.headers, 'content-type': 'application/json'},
+                params={'account_id': self.account_id},
+                json=data
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                items = result.get('items', [])
+                
+                if items:
+                    company = items[0]  # Take the first result
+                    company_id = company.get('id')
+                    company_name_found = company.get('name')
+                    
+                    print(f"✅ Found company: {company_name_found} (ID: {company_id})")
+                    return company_id, company
+                else:
+                    print(f"❌ No company found with name: {company_name}")
+                    return None, None
+            else:
+                print(f"❌ Failed to search company: {response.text}")
+                return None, None
+                
+        except Exception as e:
+            print(f"❌ Error searching company: {e}")
+            return None, None
+
+    def search_jobs(self, company_ids, job_titles, job_type, location_id="102571732"):
+        """
+        Search for jobs using LinkedIn API - sends separate request for each company.
+        """
+        print(f"🔍 Searching for {job_type} jobs...")
+        print(f"🏢 Companies: {company_ids}")
+        print(f"💼 Job titles: {job_titles}")
+        
+        all_jobs = []
+        
+        for company_id in company_ids:
+            try:
+                print(f"🔍 Searching jobs at company ID: {company_id}")
+                
+                data = {
+                    "api": "classic",
+                    "category": "jobs",
+                    "job_type": [job_type],
+                    "company": [company_id],  # Single company per request
+                    "keywords": " ".join(job_titles),
+                    "sort_by": "date",
+                    "locations": [location_id]
+                }
+                
+                response = requests.post(
+                    f"{self.base_url}/linkedin/search",
+                    headers={**self.headers, 'content-type': 'application/json'},
+                    params={'account_id': self.account_id},
+                    json=data
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    items = result.get('items', [])
+                    all_jobs.extend(items)
+                    print(f"✅ Found {len(items)} jobs for company {company_id}")
+                else:
+                    print(f"❌ Failed to search jobs for company {company_id}: {response.text}")
+                    
+            except Exception as e:
+                print(f"❌ Error searching jobs for company {company_id}: {e}")
+                continue
+        
+        print(f"✅ Total found {len(all_jobs)} job listings across all companies")
+        return all_jobs
+
+    def search_recruiters(self, company_ids, keywords="recruiter"):
+        """
+        Search for recruiters using LinkedIn API - sends separate request for each company.
+        """
+        print(f"🔍 Searching for recruiters...")
+        print(f"🏢 Companies: {company_ids}")
+        print(f"🔑 Keywords: {keywords}")
+        
+        all_recruiters = []
+        
+        for company_id in company_ids:
+            try:
+                print(f"🔍 Searching recruiters at company ID: {company_id}")
+                
+                data = {
+                    "api": "classic",
+                    "category": "people",
+                    "profile_language": ["en"],
+                    "company": [company_id],  # Single company per request
+                    "keywords": keywords
+                }
+                
+                response = requests.post(
+                    f"{self.base_url}/linkedin/search",
+                    headers={**self.headers, 'content-type': 'application/json'},
+                    params={'account_id': self.account_id},
+                    json=data
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    items = result.get('items', [])
+                    all_recruiters.extend(items)
+                    print(f"✅ Found {len(items)} recruiters for company {company_id}")
+                else:
+                    print(f"❌ Failed to search recruiters for company {company_id}: {response.text}")
+                    
+            except Exception as e:
+                print(f"❌ Error searching recruiters for company {company_id}: {e}")
+                continue
+        
+        print(f"✅ Total found {len(all_recruiters)} recruiters across all companies")
+        return all_recruiters
+
+    def display_jobs(self, jobs):
+        """
+        Display job listings in a formatted way, grouped by company.
+        """
+        if not jobs:
+            print("❌ No jobs found")
+            return
+        
+        # Group jobs by company
+        jobs_by_company = {}
+        for job in jobs:
+            company_name = job.get('company', {}).get('name', 'Unknown Company')
+            if company_name not in jobs_by_company:
+                jobs_by_company[company_name] = []
+            jobs_by_company[company_name].append(job)
+        
+        print("\n" + "="*80)
+        print("📋 JOB LISTINGS")
+        print("="*80)
+        print(f"📊 Total jobs found: {len(jobs)} across {len(jobs_by_company)} companies")
+        print("="*80)
+        
+        job_counter = 1
+        for company_name, company_jobs in jobs_by_company.items():
+            print(f"\n🏢 {company_name} ({len(company_jobs)} jobs)")
+            print("-" * 60)
+            
+            for job in company_jobs:
+                print(f"\n{job_counter}. {job.get('title', 'N/A')}")
+                print(f"   📍 Location: {job.get('location', 'N/A')}")
+                print(f"   💰 Salary: {', '.join(job.get('benefits', ['N/A']))}")
+                print(f"   📅 Posted: {job.get('posted_at', 'N/A')}")
+                print(f"   🔗 URL: {job.get('url', 'N/A')}")
+                print(f"   ⚡ Easy Apply: {'Yes' if job.get('easy_apply') else 'No'}")
+                job_counter += 1
+
+    def display_recruiters(self, recruiters):
+        """
+        Display recruiter information in a formatted way, grouped by company.
+        """
+        if not recruiters:
+            print("❌ No recruiters found")
+            return
+        
+        # Group recruiters by company
+        recruiters_by_company = {}
+        for recruiter in recruiters:
+            # Extract company name from keywords_match or use a default
+            company_info = recruiter.get('keywords_match', 'Unknown Company')
+            if 'Current:' in company_info:
+                company_name = company_info.split('Current:')[1].split(' at ')[-1].strip()
+            else:
+                company_name = 'Unknown Company'
+            
+            if company_name not in recruiters_by_company:
+                recruiters_by_company[company_name] = []
+            recruiters_by_company[company_name].append(recruiter)
+        
+        print("\n" + "="*80)
+        print("👥 RECRUITERS")
+        print("="*80)
+        print(f"📊 Total recruiters found: {len(recruiters)} across {len(recruiters_by_company)} companies")
+        print("="*80)
+        
+        recruiter_counter = 1
+        for company_name, company_recruiters in recruiters_by_company.items():
+            print(f"\n🏢 {company_name} ({len(company_recruiters)} recruiters)")
+            print("-" * 60)
+            
+            for recruiter in company_recruiters:
+                print(f"\n{recruiter_counter}. {recruiter.get('name', 'N/A')}")
+                print(f"   📍 Location: {recruiter.get('location', 'N/A')}")
+                print(f"   💼 Headline: {recruiter.get('headline', 'N/A')}")
+                print(f"   🔗 Profile: {recruiter.get('profile_url', 'N/A')}")
+                print(f"   👥 Followers: {recruiter.get('followers_count', 'N/A')}")
+                print(f"   ✅ Verified: {'Yes' if recruiter.get('verified') else 'No'}")
+                recruiter_counter += 1
+
     def is_linkedin_url(self, text):
         """
         Check if the input text is a LinkedIn URL.
         """
         linkedin_pattern = r'https?://(?:www\.)?linkedin\.com/in/[^/\s]+/?'
         return bool(re.match(linkedin_pattern, text.strip()))
+
+    def job_search_workflow(self):
+        """
+        Interactive workflow for job and recruiter search.
+        """
+        print("\n🔍 LinkedIn Job & Recruiter Search")
+        print("=" * 50)
+        
+        # Get company names
+        print("\n📝 Enter company names (comma-separated):")
+        company_input = input("Companies: ").strip()
+        if not company_input:
+            print("❌ No companies provided. Exiting.")
+            return
+            
+        company_names = [name.strip() for name in company_input.split(',')]
+        print(f"🏢 Searching for companies: {', '.join(company_names)}")
+        
+        # Search for company IDs
+        company_ids = []
+        for company_name in company_names:
+            company_id, company_info = self.search_company(company_name)
+            if company_id:
+                company_ids.append(company_id)
+            else:
+                print(f"⚠️  Skipping {company_name} - not found")
+        
+        if not company_ids:
+            print("❌ No valid companies found. Exiting.")
+            return
+            
+        # Get job titles
+        print("\n💼 Enter job titles (comma-separated):")
+        job_input = input("Job titles: ").strip()
+        if not job_input:
+            print("❌ No job titles provided. Exiting.")
+            return
+            
+        job_titles = [title.strip() for title in job_input.split(',')]
+        print(f"💼 Searching for roles: {', '.join(job_titles)}")
+        
+        # Get job type
+        print("\n📋 Select job type:")
+        print("1. Full-time")
+        print("2. Internship")
+        job_type_choice = input("Enter choice (1/2): ").strip()
+        
+        if job_type_choice == "1":
+            job_type = "full_time"
+        elif job_type_choice == "2":
+            job_type = "internship"
+        else:
+            print("❌ Invalid choice. Defaulting to full_time.")
+            job_type = "full_time"
+        
+        print(f"📋 Job type: {job_type}")
+        
+        # Search for jobs
+        print("\n" + "="*50)
+        jobs = self.search_jobs(company_ids, job_titles, job_type)
+        self.display_jobs(jobs)
+        
+        # Search for recruiters
+        print("\n" + "="*50)
+        recruiters = self.search_recruiters(company_ids)
+        self.display_recruiters(recruiters)
+        
+        print("\n✅ Search completed!")
 
     def main(self):
         """
@@ -256,9 +535,17 @@ class UnifiedMessenger:
         print("1. Enter a person's name (searches existing chats)")
         print("2. Enter a LinkedIn profile URL (creates new chat)")
         print("3. Send connection invitation")
+        print("4. Search jobs and recruiters")
         print()
         
-        # Get user input
+        # Get user choice
+        choice = input("Enter your choice (1-4): ").strip()
+        
+        if choice == "4":
+            self.job_search_workflow()
+            return
+        
+        # Get user input for messaging options
         user_input = input("Enter name or LinkedIn URL: ").strip()
         
         if not user_input:
