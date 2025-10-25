@@ -9,6 +9,7 @@ import requests
 import re
 import json
 from dotenv import load_dotenv
+from resume_message_generator import ResumeMessageGenerator
 
 load_dotenv()
 
@@ -25,6 +26,13 @@ class UnifiedMessenger:
         
         if not self.api_key:
             raise ValueError("UNIPILE_API_KEY not found in environment variables")
+        
+        # Initialize resume message generator
+        try:
+            self.resume_generator = ResumeMessageGenerator()
+        except ValueError as e:
+            print(f"⚠️  Resume generator not available: {e}")
+            self.resume_generator = None
 
     def extract_linkedin_identifier(self, linkedin_url):
         """
@@ -523,7 +531,97 @@ class UnifiedMessenger:
         recruiters = self.search_recruiters(company_ids)
         self.display_recruiters(recruiters)
         
-        print("\n✅ Search completed!")
+        # Ask if user wants to send connection invitations to all recruiters
+        if recruiters:
+            print("\n" + "="*50)
+            print("📨 Connection Invitation Options")
+            print("="*50)
+            send_choice = input("Send connection invitations to all recruiters? (y/n): ").strip().lower()
+            
+            if send_choice == 'y':
+                self.send_connection_invitations_to_recruiters(recruiters, job_titles, job_type)
+            else:
+                print("✅ Search completed without sending invitations.")
+        else:
+            print("\n✅ Search completed - no recruiters found.")
+
+    def send_connection_invitations_to_recruiters(self, recruiters, job_titles, job_type):
+        """
+        Send connection invitations to all recruiters with personalized messages.
+        """
+        print(f"\n📨 Sending connection invitations to {len(recruiters)} recruiters...")
+        print("=" * 60)
+        
+        # Generate personalized message using resume content
+        if self.resume_generator:
+            try:
+                # Load resume content
+                resume_file = "Resume-Tulsi,Shreyas.pdf"
+                if os.path.exists(resume_file):
+                    resume_content = self.resume_generator.load_resume(resume_file)
+                    
+                    # Create context for the message
+                    job_context = f"opportunities in {', '.join(job_titles)} roles ({job_type})"
+                    
+                    # Generate personalized message
+                    personalized_message = self.resume_generator.generate_message(
+                        resume_content, job_context
+                    )
+                    
+                    print(f"📝 Generated personalized message:")
+                    print(f"💬 {personalized_message}")
+                    print("-" * 60)
+                    
+                else:
+                    print("⚠️  Resume file not found, using default message.")
+                    personalized_message = "Hi! I'm interested in connecting to learn about opportunities at your company. I'd love to discuss potential roles that align with my background."
+                    
+            except Exception as e:
+                print(f"⚠️  Error generating personalized message: {e}")
+                personalized_message = "Hi! I'm interested in connecting to learn about opportunities at your company. I'd love to discuss potential roles that align with my background."
+        else:
+            print("⚠️  Resume generator not available, using default message.")
+            personalized_message = "Hi! I'm interested in connecting to learn about opportunities at your company. I'd love to discuss potential roles that align with my background."
+        
+        # Send invitations to each recruiter
+        successful_invitations = 0
+        failed_invitations = 0
+        
+        for i, recruiter in enumerate(recruiters, 1):
+            print(f"\n📤 Sending invitation {i}/{len(recruiters)}")
+            print(f"👤 Recruiter: {recruiter.get('name', 'Unknown')}")
+            print(f"🏢 Company: {recruiter.get('company', 'Unknown')}")
+            
+            # Get LinkedIn URL and convert to provider ID
+            linkedin_url = recruiter.get('profile_url')
+            if linkedin_url:
+                provider_id, user_info = self.get_provider_id_from_linkedin_url(linkedin_url)
+                
+                if provider_id:
+                    # Send connection invitation
+                    success, result = self.send_invitation(provider_id, personalized_message)
+                    
+                    if success:
+                        successful_invitations += 1
+                        print(f"✅ Invitation sent successfully!")
+                    else:
+                        failed_invitations += 1
+                        print(f"❌ Failed to send invitation: {result}")
+                else:
+                    failed_invitations += 1
+                    print(f"❌ Could not convert LinkedIn URL to Provider ID")
+            else:
+                failed_invitations += 1
+                print(f"❌ No LinkedIn URL available for this recruiter")
+        
+        # Summary
+        print("\n" + "=" * 60)
+        print("📊 INVITATION SUMMARY")
+        print("=" * 60)
+        print(f"✅ Successful invitations: {successful_invitations}")
+        print(f"❌ Failed invitations: {failed_invitations}")
+        print(f"📈 Success rate: {(successful_invitations/len(recruiters)*100):.1f}%")
+        print("=" * 60)
 
     def main(self):
         """
