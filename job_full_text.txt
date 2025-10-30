@@ -1,0 +1,24 @@
+NVIDIA is searching for an outstanding AI researcher to join the learning and perception research team. We are passionate about research that pushes boundaries but also has impact in the real world. Specific areas we are excited by include -- but are not limited to -- perception, agentic reasoning, multi-modal learning, as well as embodied AI. You will work within an amazing and collaborative research team that consistently publishes at the top venues in computer vision and machine learning. Our existing expertise includes computer vision, deep learning, generative models, and so forth. Your contributions have the chance to create real impact on our products.
+What You'll Be Doing
+Research, design and implement novel embodied and agentic AI methods.
+Publish original research.
+Collaborate with other team members and teams on mission-driven research.
+Mentor interns.
+Speak at conferences and events.
+Work with product groups to transfer technology.
+Collaborate with external researchers.
+What We Need To See
+Graduating with a Ph.D. in Computer Science/Engineering, Electrical Engineering, etc., or have equivalent research experience.
+Excellent knowledge of theory and practice of computer vision, LLMs, and agents.
+Excellent programming skills in some rapid prototyping environment such as Python; C++ and parallel programming (e.g., CUDA) is a plus.
+Knowledge of common machine learning frameworks, such as PyTorch.
+Outstanding research track record.
+Excellent communications skills.
+NVIDIA is widely considered to be one of the technology world's most desirable employers. We have some of the most forward-thinking and productive people in the world working for us. If you're creative and autonomous, we want to hear from you!
+With competitive salaries and a generous benefits package, NVIDIA is widely considered to be one of the technology world’s most desirable employers. We have some of the most forward-thinking and hardworking people in the world working for us and, due to unprecedented growth, our best-in-class research teams are rapidly growing.
+Your base salary will be determined based on your location, experience, and the pay of employees in similar positions. The base salary range is 160,000 USD - 258,750 USD.
+You will also be eligible for equity and benefits .
+Applications for this job will be accepted at least until October 26, 2025.NVIDIA is committed to fostering a diverse work environment and proud to be an equal opportunity employer. As we highly value diversity in our current and future employees, we do not discriminate (including in our hiring and promotion practices) on the basis of race, religion, color, national origin, gender, gender expression, sexual orientation, age, marital status, veteran status, disability status or any other characteristic protected by law.
+JR2006603
+Show more
+Show less
