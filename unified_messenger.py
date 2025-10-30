@@ -19,8 +19,8 @@ class UnifiedMessenger:
         load_dotenv(override=True)
         self.api_key = os.getenv('UNIPILE_API_KEY')
         self.apollo_api_key = os.getenv('APOLLO_API_KEY')
-        self.base_url = "https://api12.unipile.com:14248/api/v1"
-        self.account_id = "Vdr3ouslQIy3ssVBa_dTMQ"
+        self.base_url = "https://api12.unipile.com:14267/api/v1"
+        self.account_id = "23mPl6ZwTiC3Qv-bHez0Pg"
         
         self.headers = {
             'X-API-KEY': self.api_key,
