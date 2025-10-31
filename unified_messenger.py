@@ -8,8 +8,12 @@ import os
 import requests
 import re
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from resume_message_generator import ResumeMessageGenerator
+from job_filter import JobFilter
 
 load_dotenv()
 
@@ -19,8 +23,8 @@ class UnifiedMessenger:
         load_dotenv(override=True)
         self.api_key = os.getenv('UNIPILE_API_KEY')
         self.apollo_api_key = os.getenv('APOLLO_API_KEY')
-        self.base_url = "https://api12.unipile.com:14267/api/v1"
-        self.account_id = "23mPl6ZwTiC3Qv-bHez0Pg"
+        self.base_url = os.getenv('BASE_URL')
+        self.account_id = os.getenv('UNIPILE_ACCOUNT_ID')
         
         self.headers = {
             'X-API-KEY': self.api_key,
@@ -36,6 +40,22 @@ class UnifiedMessenger:
         else:
             print("❌ Apollo API key not found in environment variables")
         
+        # Initialize SMTP for email sending
+        self.smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')  # Gmail default
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))  # TLS port
+        self.smtp_username = os.getenv('SMTP_USERNAME')
+        self.smtp_password = os.getenv('SMTP_PASSWORD')
+        self.from_email = os.getenv('FROM_EMAIL', 'raman.lavina@gmail.com')
+        
+        if self.smtp_username and self.smtp_password:
+            print(f"✅ SMTP configured successfully")
+            print(f"📧 From email: {self.from_email}")
+            print(f"📮 SMTP server: {self.smtp_server}:{self.smtp_port}")
+        else:
+            print("⚠️  SMTP credentials not found in environment variables")
+            print("⚠️  Email sending will be disabled")
+            print("💡 Please set SMTP_USERNAME and SMTP_PASSWORD in .env file")
+        
         # Initialize resume message generator
         try:
             self.resume_generator = ResumeMessageGenerator()
@@ -47,6 +67,14 @@ class UnifiedMessenger:
         except Exception as e:
             print(f"⚠️  Resume generator initialization failed: {e}")
             self.resume_generator = None
+        
+        # Initialize job filter
+        try:
+            self.job_filter = JobFilter()
+            print("✅ Job filter initialized successfully")
+        except Exception as e:
+            print(f"⚠️  Job filter initialization failed: {e}")
+            self.job_filter = None
 
     def extract_linkedin_identifier(self, linkedin_url):
         """
@@ -350,7 +378,7 @@ class UnifiedMessenger:
         print(f"✅ Total found {len(all_jobs)} job listings across all companies")
         return all_jobs
 
-    def search_recruiters(self, company_ids, keywords="recruiter"):
+    def search_recruiters(self, company_ids, keywords="recruiter", company_id_to_name=None):
         """
         Search for recruiters using LinkedIn API - sends separate request for each company.
         """
@@ -382,6 +410,14 @@ class UnifiedMessenger:
                 if response.status_code == 200:
                     result = response.json()
                     items = result.get('items', [])
+                    # Enrich with deterministic company metadata using the company_id being queried
+                    company_name_from_map = None
+                    if company_id_to_name and company_id in company_id_to_name:
+                        company_name_from_map = company_id_to_name.get(company_id)
+                    for rec in items:
+                        rec.setdefault('company_id', company_id)
+                        if company_name_from_map and not rec.get('company'):
+                            rec['company'] = company_name_from_map
                     all_recruiters.extend(items)
                     print(f"✅ Found {len(items)} recruiters for company {company_id}")
                 else:
@@ -393,6 +429,123 @@ class UnifiedMessenger:
         
         print(f"✅ Total found {len(all_recruiters)} recruiters across all companies")
         return all_recruiters
+
+    def _get_company_name_from_job(self, job):
+        """
+        Safely extract company name from a job object returned by LinkedIn search.
+        """
+        if not job:
+            return None
+        company = job.get('company') if isinstance(job, dict) else None
+        if isinstance(company, dict):
+            return company.get('name')
+        if isinstance(company, str):
+            return company
+        return None
+
+    def _recruiter_company_name(self, recruiter):
+        """
+        Try to resolve company name for recruiter from enriched fields or keywords_match.
+        """
+        if not recruiter:
+            return None
+        company = recruiter.get('company')
+        if company:
+            return company if isinstance(company, str) else company.get('name') if isinstance(company, dict) else None
+        km = recruiter.get('keywords_match') or ''
+        if 'Current:' in km and ' at ' in km:
+            try:
+                return km.split('Current:')[1].split(' at ')[-1].strip()
+            except Exception:
+                return None
+        return None
+
+    def _score_recruiter_for_job(self, job, recruiter):
+        """
+        Compute a heuristic score indicating how suitable this recruiter is for the given job.
+        Uses recruiter's headline/title and company alignment with the job's company/title.
+        """
+        score = 0
+        job_title = (job.get('title') or '').lower()
+        job_company = (self._get_company_name_from_job(job) or '').lower()
+
+        headline = (recruiter.get('headline') or '').lower()
+        rec_company = (self._recruiter_company_name(recruiter) or '').lower()
+        keywords_match = (recruiter.get('keywords_match') or '').lower()
+
+        if any(k in headline for k in ['recruiter', 'talent', 'ta', 'sourcer', 'acquisition', 'people', 'hr']):
+            score += 2
+
+        if any(k in job_title for k in ['software', 'engineer', 'developer', 'data', 'ml', 'ai', 'product', 'design']):
+            if any(k in headline for k in ['technical recruiter', 'engineering', 'tech', 'data', 'ml', 'ai', 'product', 'design']):
+                score += 2
+
+        if job_company:
+            if rec_company and job_company == rec_company:
+                score += 5
+            elif job_company and job_company in keywords_match:
+                score += 3
+
+        for kw in ['software', 'engineer', 'data', 'science', 'ml', 'ai', 'backend', 'frontend', 'full stack', 'product', 'designer']:
+            if kw in job_title and kw in headline:
+                score += 1
+
+        if any(k in job_title for k in ['senior', 'lead', 'staff', 'principal']):
+            if any(k in headline for k in ['senior', 'lead', 'staff', 'principal']):
+                score += 1
+
+        return score
+
+    def map_jobs_to_recruiters(self, jobs, recruiters, max_pairs=5):
+        """
+        Map up to max_pairs jobs to the best distinct recruiters (no repeats).
+        Returns (selected_recruiters_list, mapping_list).
+        """
+        if not jobs or not recruiters:
+            return [], []
+
+        jobs_considered = jobs[:max_pairs]
+        used_indices = set()
+        selected = []
+        mapping = []
+
+        for job in jobs_considered:
+            scored = [(idx, self._score_recruiter_for_job(job, rec)) for idx, rec in enumerate(recruiters)]
+            scored.sort(key=lambda x: (x[1], recruiters[x[0]].get('followers_count', 0) or 0), reverse=True)
+
+            chosen_idx = None
+            for idx, sc in scored:
+                if idx in used_indices:
+                    continue
+                if sc <= 0:
+                    continue
+                chosen_idx = idx
+                break
+
+            if chosen_idx is None:
+                remaining = [(idx, recruiters[idx].get('followers_count', 0) or 0) for idx in range(len(recruiters)) if idx not in used_indices]
+                if remaining:
+                    remaining.sort(key=lambda x: x[1], reverse=True)
+                    chosen_idx = remaining[0][0]
+
+            if chosen_idx is None:
+                continue
+
+            used_indices.add(chosen_idx)
+            chosen = recruiters[chosen_idx]
+            selected.append(chosen)
+            mapping.append({
+                'job_title': job.get('title'),
+                'job_company': self._get_company_name_from_job(job),
+                'recruiter_name': chosen.get('name'),
+                'recruiter_company': self._recruiter_company_name(chosen) or chosen.get('company'),
+                'recruiter_profile_url': chosen.get('profile_url')
+            })
+
+            if len(selected) >= max_pairs:
+                break
+
+        return selected, mapping
 
     def display_jobs(self, jobs):
         """
@@ -496,12 +649,15 @@ class UnifiedMessenger:
         company_names = [name.strip() for name in company_input.split(',')]
         print(f"🏢 Searching for companies: {', '.join(company_names)}")
         
-        # Search for company IDs
+        # Search for company IDs (and names)
         company_ids = []
+        company_id_to_name = {}
         for company_name in company_names:
             company_id, company_info = self.search_company(company_name)
             if company_id:
                 company_ids.append(company_id)
+                if company_info and isinstance(company_info, dict):
+                    company_id_to_name[company_id] = company_info.get('name')
             else:
                 print(f"⚠️  Skipping {company_name} - not found")
         
@@ -538,12 +694,71 @@ class UnifiedMessenger:
         # Search for jobs
         print("\n" + "="*50)
         jobs = self.search_jobs(company_ids, job_titles, job_type)
-        self.display_jobs(jobs)
+        
+        # Ask user if they want intelligent filtering
+        if jobs and self.job_filter:
+            print(f"\n🤖 INTELLIGENT JOB FILTERING")
+            print("="*50)
+            print(f"Found {len(jobs)} jobs. Options:")
+            print("1. Show all jobs (current behavior)")
+            print("2. Use AI to filter and rank top 5 most relevant jobs")
+            
+            filter_choice = input("Choose option (1/2): ").strip()
+            
+            if filter_choice == "2":
+                print("\n🎯 Starting intelligent job filtering...")
+                ranking, top_urls = self.job_filter.filter_jobs(jobs)
+                
+                print(f"🔍 Debug - Ranking result: {ranking is not None}")
+                print(f"🔍 Debug - Top URLs: {top_urls}")
+                
+                if ranking and top_urls:
+                    print("\n" + "="*60)
+                    print("🏆 TOP 5 MOST RELEVANT JOBS")
+                    print("="*60)
+                    print(ranking)
+                    
+                    # Filter jobs to show only top 5
+                    top_jobs = [job for job in jobs if job.get('url') in top_urls]
+                    if top_jobs:
+                        print("\n📋 DETAILED VIEW OF TOP JOBS:")
+                        print("="*50)
+                        self.display_jobs(top_jobs)
+                    
+                    jobs = top_jobs  # Use filtered jobs for recruiter search
+                else:
+                    print("❌ Intelligent filtering failed, showing all jobs")
+                    self.display_jobs(jobs)
+            else:
+                self.display_jobs(jobs)
+        else:
+            self.display_jobs(jobs)
         
         # Search for recruiters
         print("\n" + "="*50)
-        recruiters = self.search_recruiters(company_ids)
+        recruiters = self.search_recruiters(company_ids, company_id_to_name=company_id_to_name)
         self.display_recruiters(recruiters)
+        
+        # Map filtered jobs to best recruiters (no repeats) and constrain outreach to them
+        if recruiters and jobs:
+            print("\n" + "="*50)
+            print("🔗 MAPPING TOP JOBS TO BEST RECRUITERS (no repeats)")
+            print("="*50)
+            top_jobs = jobs[:5]
+            best_recruiters, mapping = self.map_jobs_to_recruiters(top_jobs, recruiters, max_pairs=5)
+            for i, m in enumerate(mapping, 1):
+                jt = m.get('job_title') or 'Unknown'
+                jc = m.get('job_company') or 'Unknown Company'
+                rn = m.get('recruiter_name') or 'Unknown Recruiter'
+                rc = m.get('recruiter_company') or 'Unknown Company'
+                print(f"{i}. 🧩 '{jt}' at {jc} -> {rn} ({rc})")
+
+            print("\n" + "="*80)
+            print("👥 FILTERED RECRUITERS (used for all outreach from now on)")
+            print("="*80)
+            self.display_recruiters(best_recruiters)
+            if best_recruiters:
+                recruiters = best_recruiters
         
         # Enhanced outreach options with email extraction
         if recruiters:
@@ -552,14 +767,17 @@ class UnifiedMessenger:
             print("="*50)
             print("1. Basic LinkedIn invitations only")
             print("2. Enhanced dual outreach (LinkedIn + Email extraction)")
-            print("3. Skip outreach")
+            print("3. Email-only outreach")
+            print("4. Skip outreach")
             
-            outreach_choice = input("Choose outreach method (1-3): ").strip()
+            outreach_choice = input("Choose outreach method (1-4): ").strip()
             
             if outreach_choice == "1":
                 self.send_connection_invitations_to_recruiters(recruiters, job_titles, job_type)
             elif outreach_choice == "2":
                 self.enhanced_dual_outreach(recruiters, job_titles, job_type)
+            elif outreach_choice == "3":
+                self.email_only_outreach(recruiters, job_titles, job_type)
             else:
                 print("✅ Search completed without sending invitations.")
         else:
@@ -580,12 +798,14 @@ class UnifiedMessenger:
                 if os.path.exists(resume_file):
                     resume_content = self.resume_generator.load_resume(resume_file)
                     
-                    # Create context for the message
-                    job_context = f"opportunities in {', '.join(job_titles)} roles ({job_type})"
+                    # Use generic details for bulk messaging
+                    recruiter_name = "Hiring Manager"
+                    job_context = f"{', '.join(job_titles)} ({job_type})"
+                    company_name = "your company"
                     
                     # Generate personalized message
                     personalized_message = self.resume_generator.generate_message(
-                        resume_content, job_context
+                        resume_content, recruiter_name, job_context, company_name
                     )
                     
                     print(f"📝 Generated personalized message:")
@@ -686,6 +906,7 @@ class UnifiedMessenger:
         """
         Extract emails for a list of recruiters using Apollo API.
         """
+        DEFAULT_EMAIL = "raman.lavina@gmail.com"  # Default email for testing when Apollo doesn't find one
         print(f"\n🔍 Extracting emails for {len(recruiters)} recruiters...")
         recruiters_with_emails = []
         
@@ -696,109 +917,381 @@ class UnifiedMessenger:
             if linkedin_url:
                 email, person_data = self.extract_email_from_linkedin(linkedin_url)
                 recruiter_copy = recruiter.copy()
-                recruiter_copy['extracted_email'] = email if email and email != 'Not found' else 'Not found'
+                # Use default email if Apollo doesn't find one
+                if email and email != 'Not found':
+                    recruiter_copy['extracted_email'] = email
+                else:
+                    recruiter_copy['extracted_email'] = DEFAULT_EMAIL
+                    print(f"⚠️  No email found from Apollo, using default: {DEFAULT_EMAIL}")
                 recruiter_copy['apollo_data'] = person_data
                 recruiters_with_emails.append(recruiter_copy)
                 
                 if email and email != 'Not found':
                     print(f"✅ Email found: {email}")
                 else:
-                    print(f"❌ No email found")
+                    print(f"⚠️  Using default email: {DEFAULT_EMAIL}")
             else:
                 recruiter_copy = recruiter.copy()
-                recruiter_copy['extracted_email'] = 'No LinkedIn URL'
+                # Use default email when no LinkedIn URL is available
+                recruiter_copy['extracted_email'] = DEFAULT_EMAIL
                 recruiter_copy['apollo_data'] = None
                 recruiters_with_emails.append(recruiter_copy)
-                print("❌ No LinkedIn URL available")
+                print(f"⚠️  No LinkedIn URL available, using default email: {DEFAULT_EMAIL}")
         
         return recruiters_with_emails
     
     def generate_email_content(self, job_titles, job_type, recruiter, resume_content):
         """
         Generate professional email content for recruiter outreach.
+        Uses resume_parser for efficient content extraction when available.
         """
         recruiter_name = recruiter.get('name', 'Hiring Manager')
-        company_name = 'your company'
-        
-        # Try to get company from recruiter data
-        if recruiter.get('apollo_data') and recruiter['apollo_data'].get('organization'):
-            company_name = recruiter['apollo_data']['organization'].get('name', 'your company')
+        # Prefer enriched recruiter.company; fall back to Apollo org name; else default
+        company_name = recruiter.get('company') or (
+            recruiter.get('apollo_data', {}).get('organization', {}).get('name') if isinstance(recruiter.get('apollo_data'), dict) else None
+        ) or 'your company'
+        # Debug: show resolved company name
+        print(f"🔎 Resolved company name: {company_name}")
         
         job_titles_str = ', '.join(job_titles)
         
-        # Create email generation prompt
+        # Use resume parser to extract key bullets if available
+        if self.resume_generator and self.resume_generator.resume_parser:
+            try:
+                resume_bullets = self.resume_generator.resume_parser.extract_key_bullets(resume_content)
+                # Use condensed bullets instead of truncated content
+                resume_highlights = resume_bullets
+            except Exception as e:
+                print(f"⚠️  Resume parser failed, using truncated content: {e}")
+                resume_highlights = resume_content[:1200] if resume_content else 'No resume content available'
+        else:
+            resume_highlights = resume_content[:1200] if resume_content else 'No resume content available'
+        
+        # Create email generation prompt with strict structure and explicit output contract
         email_prompt = f"""
-        Generate a professional email for job application outreach following this structure:
-        
-        Subject: Interest in {job_titles_str} Opportunities at {company_name}
-        
-        Email Body:
-        Dear {recruiter_name},
-        
-        [Opening paragraph expressing interest in {job_titles_str} roles]
-        [Middle paragraph highlighting 2-3 most relevant qualifications from resume]
-        [Closing paragraph with call to action]
-        
-        Best regards,
-        [Your Name]
-        
-        Job Details:
-        - Roles: {job_titles_str}
-        - Type: {job_type}
-        - Company: {company_name}
-        - Recruiter: {recruiter_name}
-        
-        Resume Content:
-        {resume_content[:1500] if resume_content else 'No resume content available'}
-        
-        Requirements:
-        1. Professional and concise tone
-        2. Specific mention of the roles and company
-        3. Highlight most relevant experience/skills from resume
-        4. Include clear call to action
-        5. Keep email body under 200 words
-        6. Use proper email formatting
-        
-        Return the email in this format:
-        SUBJECT: [subject line]
-        
-        BODY:
-        [email body]
-        """
+You are formatting an outreach email. Follow these RULES STRICTLY and return ONLY the content between <<<BEGIN>>> and <<<END>>>.
+
+RULES:
+- ASCII only. No smart quotes or fancy bullet characters.
+- Use EXACTLY this structure and wording for the first and last lines.
+- Use '-' hyphen bullets only, 2-3 bullets, each <= 12 words.
+
+TEMPLATE (copy exactly, replacing bracketed guidance):
+<<<BEGIN>>>
+SUBJECT: Interest in {job_titles_str} Opportunities at {company_name}
+
+BODY:
+Dear {recruiter_name},
+
+I hope you're doing well. I'm reaching out to express my interest in {job_titles_str} roles at {company_name}. [Add 1-2 sentences about why you're interested in the company and role]
+
+- [Bullet 1: most relevant skills/experience]
+- [Bullet 2: another relevant skills/experience]
+- [Optional Bullet 3: if uniquely strong]
+
+I'd love to chat about how I could bring my skills and passion for technology to {company_name}. Would you be open to a quick conversation?
+
+Best regards,
+Shreyas Tulsi
+<<<END>>>
+
+RESUME HIGHLIGHTS (use to craft concise bullets):
+{resume_highlights}
+"""
         
         try:
             if self.resume_generator:
                 result = self.resume_generator.llm.invoke(email_prompt)
-                if isinstance(result, dict):
-                    email_content = result.get('text', str(result)).strip()
+                # Handle ChatOpenAI response format properly
+                if hasattr(result, 'content'):
+                    email_content = result.content.strip()
+                elif isinstance(result, dict):
+                    email_content = result.get('text', result.get('content', str(result))).strip()
                 else:
                     email_content = str(result).strip()
+                
+                # Extract between explicit markers if present
+                if '<<<BEGIN>>>' in email_content and '<<<END>>>' in email_content:
+                    email_content = email_content.split('<<<BEGIN>>>', 1)[1].split('<<<END>>>', 1)[0].strip()
                 
                 # Parse subject and body
                 if 'SUBJECT:' in email_content and 'BODY:' in email_content:
                     parts = email_content.split('BODY:', 1)
                     subject = parts[0].replace('SUBJECT:', '').strip()
                     body = parts[1].strip()
+                elif 'SUBJECT:' in email_content:
+                    # If only SUBJECT is present, split on it
+                    parts = email_content.split('SUBJECT:', 1)
+                    if len(parts) == 2:
+                        # Subject is the first line after SUBJECT:
+                        remaining = parts[1].strip()
+                        lines = remaining.split('\n', 1)
+                        subject = lines[0].strip()
+                        body = lines[1].strip() if len(lines) > 1 else ""
+                    else:
+                        subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
+                        body = email_content
                 else:
                     subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
                     body = email_content
                 
+                # Additional cleanup and normalization
+                body_lines = body.split('\n')
+                body_lines = [line for line in body_lines if not line.strip().startswith('SUBJECT:')]
+                body = '\n'.join(body_lines)
+                
+                # Normalize bullets to '-' and enforce 2-3 bullets, short length
+                lines = [ln.rstrip() for ln in body.split('\n')]
+                normalized = []
+                bullet_lines = []
+                for ln in lines:
+                    # replace common bullet chars with '-'
+                    clean_ln = ln.replace('•', '-').replace('–', '-').replace('—', '-')
+                    # collapse multiple spaces in bullet line
+                    if clean_ln.strip().startswith('-'):
+                        bullet_lines.append(clean_ln)
+                    normalized.append(clean_ln)
+                
+                # Limit bullets to 3, keep at least 2 if available
+                if bullet_lines:
+                    # shorten each bullet to <= 12 words
+                    def shorten_bullet(text):
+                        words = text.split()
+                        # ensure leading '-' remains
+                        if words and words[0].startswith('-'):
+                            head = words[0]
+                            rest = words[1:13]
+                            return ' '.join([head] + rest)
+                        return ' '.join(words[:12])
+                    bullet_lines = [shorten_bullet(b) for b in bullet_lines]
+                    bullet_lines = bullet_lines[:3]
+                    if len(bullet_lines) == 1:
+                        # if only one bullet, keep it; template allows optional 3rd
+                        pass
+                
+                # Rebuild body preserving greeting, paragraphs, and replacing bullet block
+                # Find indices of first and last bullet in normalized
+                first_idx = next((i for i, ln in enumerate(normalized) if ln.strip().startswith('-')), None)
+                last_idx = None
+                if first_idx is not None:
+                    for i in range(len(normalized)-1, -1, -1):
+                        if normalized[i].strip().startswith('-'):
+                            last_idx = i
+                            break
+                if first_idx is not None and last_idx is not None:
+                    rebuilt = normalized[:first_idx] + bullet_lines + normalized[last_idx+1:]
+                else:
+                    rebuilt = normalized
+                
+                # Trim body to <= 150 words (soft limit)
+                def word_count(s):
+                    return len([w for w in re.split(r"\s+", s.strip()) if w])
+                body = '\n'.join(rebuilt).strip()
+                if word_count(body) > 150:
+                    # Keep header lines until bullets, bullets (max 3), closing lines
+                    parts = body.split('\n')
+                    # Preserve greeting block until first blank line after greeting
+                    # Simple truncation to 150 words
+                    tokens = []
+                    for ln in parts:
+                        for w in ln.split():
+                            if len(tokens) >= 150:
+                                break
+                            tokens.append(w)
+                        if len(tokens) >= 150:
+                            break
+                        tokens.append('\n')
+                    body = ' '.join(tokens).replace(' \n ', '\n').replace(' \n', '\n').strip()
+                
+                # Validate email completeness - check for proper closing
+                if not (('Best regards' in body or 'Sincerely' in body) and 'Shreyas' in body):
+                    print(f"⚠️  Generated email incomplete, adding proper closing")
+                    # Remove any trailing incomplete text
+                    body = body.strip()
+                    # Add proper closing if missing
+                    if not body.endswith('Shreyas Tulsi'):
+                        if not ('Best regards' in body or 'Sincerely' in body):
+                            body += "\n\nBest regards,\nShreyas Tulsi"
+                        else:
+                            body += "\nShreyas Tulsi"
+                
                 return subject, body
             else:
                 subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
-                body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\n[Your Name]"
+                body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\nShreyas Tulsi"
                 return subject, body
                 
         except Exception as e:
             print(f"⚠️  Error generating email: {e}")
             subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
-            body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\n[Your Name]"
+            body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\nShreyas Tulsi"
             return subject, body
     
+    def send_email(self, to_email, subject, body):
+        """
+        Send email using SMTP (smtplib).
+        Returns (success: bool, result: dict or error message)
+        """
+        if not self.smtp_username or not self.smtp_password:
+            return False, "SMTP not configured. Please set SMTP_USERNAME and SMTP_PASSWORD in .env file"
+        
+        try:
+            # Create message
+            msg = MIMEMultipart()
+            msg['From'] = self.from_email
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            
+            # Add body to email
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Connect to SMTP server and send
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()  # Enable encryption
+                server.login(self.smtp_username, self.smtp_password)
+                text = msg.as_string()
+                server.sendmail(self.from_email, to_email, text)
+            
+            return True, {"message": "Email sent successfully"}
+            
+        except smtplib.SMTPAuthenticationError as e:
+            return False, f"SMTP authentication failed: {str(e)}. Please check your username and password (use App Password for Gmail)."
+        except smtplib.SMTPException as e:
+            return False, f"SMTP error: {str(e)}"
+        except Exception as e:
+            return False, f"Error sending email: {str(e)}"
+    
+    def email_only_outreach(self, recruiters, job_titles, job_type):
+        """
+        Email-only outreach with email extraction and personalized email generation.
+        """
+        DEFAULT_EMAIL = "raman.lavina@gmail.com"  # Default email for testing
+        print(f"\n📧 Starting email-only outreach for {len(recruiters)} recruiters...")
+        
+        # Extract emails for all recruiters
+        recruiters_with_emails = self.extract_emails_for_recruiters(recruiters)
+        
+        # Load resume content
+        resume_content = None
+        if self.resume_generator:
+            try:
+                resume_file = "Resume-Tulsi,Shreyas.pdf"
+                if os.path.exists(resume_file):
+                    resume_content = self.resume_generator.load_resume(resume_file)
+            except Exception as e:
+                print(f"⚠️  Could not load resume: {e}")
+        
+        # Show preview of email campaign
+        print(f"\n📧 EMAIL OUTREACH CAMPAIGN PREVIEW")
+        print("=" * 60)
+        print(f"🎯 Target Roles: {', '.join(job_titles)} ({job_type})")
+        print(f"👥 Total Recipients: {len(recruiters_with_emails)}")
+        
+        # Show contact methods breakdown
+        email_count = sum(1 for r in recruiters_with_emails if r.get('extracted_email'))
+        real_email_count = sum(1 for r in recruiters_with_emails if r.get('extracted_email') and r['extracted_email'] != DEFAULT_EMAIL)
+        
+        print(f"📧 Recruiters with emails: {email_count} ({real_email_count} real, {email_count - real_email_count} default)")
+        
+        if email_count == 0:
+            print("❌ No email addresses found for any recruiters. Cannot proceed with email-only outreach.")
+            return
+        
+        # Show email preview for first recruiter with email
+        email_recruiter = next((r for r in recruiters_with_emails if r.get('extracted_email')), None)
+        if email_recruiter and resume_content:
+            subject, body = self.generate_email_content(job_titles, job_type, email_recruiter, resume_content)
+            print(f"\n📧 EMAIL TEMPLATE (Sample):")
+            print("-" * 40)
+            print(f"📝 Subject: {subject}")
+            print(f"\n💬 Body Preview:")
+            # print(body[:200] + "..." if len(body) > 200 else body)
+            print(body)
+        
+        # Show detailed recipient list
+        print(f"\n👥 RECIPIENTS & EMAIL STATUS:")
+        print("-" * 40)
+        for i, recruiter in enumerate(recruiters_with_emails, 1):
+            name = recruiter.get('name', 'Unknown')
+            email = recruiter.get('extracted_email', DEFAULT_EMAIL)
+            
+            print(f"{i}. {name}")
+            print(f"   📧 Email: {email}")
+            if email == DEFAULT_EMAIL:
+                print(f"   ⚠️  Status: Using default email (for testing)")
+            else:
+                print(f"   ✅ Status: Email from Apollo")
+        
+        # Confirmation
+        print("\n" + "=" * 60)
+        print("❓ CONFIRMATION REQUIRED")
+        print("=" * 60)
+        confirm = input("Proceed with email-only outreach campaign? (y/n): ").strip().lower()
+        
+        if confirm != 'y':
+            print("❌ Campaign cancelled by user.")
+            return
+        
+        # Execute campaign
+        print(f"\n🚀 Executing email-only outreach campaign...")
+        print("=" * 60)
+        
+        successful_emails = 0
+        failed_emails = 0
+        
+        for i, recruiter in enumerate(recruiters_with_emails, 1):
+            print(f"\n📤 Processing recruiter {i}/{len(recruiters_with_emails)}")
+            recruiter_name = recruiter.get('name', 'Unknown')
+            print(f"👤 Recruiter: {recruiter_name}")
+            
+            # Generate and send email
+            email = recruiter.get('extracted_email')
+            if email and resume_content:
+                try:
+                    subject, body = self.generate_email_content(job_titles, job_type, recruiter, resume_content)
+                    
+                    email_type = "⚠️  (DEFAULT)" if email == DEFAULT_EMAIL else "✅"
+                    print(f"📧 Sending email {email_type} to: {email}")
+                    print(f"   📝 Subject: {subject}")
+                    
+                    # Actually send the email
+                    success, result = self.send_email(email, subject, body)
+                    
+                    if success:
+                        print(f"   ✅ Email sent successfully!")
+                        successful_emails += 1
+                    else:
+                        print(f"   ❌ Failed to send email: {result}")
+                        failed_emails += 1
+                        # Still show the email content for reference
+                        print(f"   💬 Email content (not sent):")
+                        print(f"   {body[:200]}..." if len(body) > 200 else f"   {body}")
+                    print("-" * 60)
+                except Exception as e:
+                    failed_emails += 1
+                    print(f"❌ Email generation/sending failed: {e}")
+            else:
+                failed_emails += 1
+                if not email:
+                    print(f"❌ No email address available")
+                else:
+                    print(f"❌ Resume not available for email generation")
+        
+        # Campaign summary
+        print("\n" + "=" * 60)
+        print("📊 EMAIL OUTREACH CAMPAIGN SUMMARY")
+        print("=" * 60)
+        print(f"🎯 Target Roles: {', '.join(job_titles)} ({job_type})")
+        print(f"📧 Emails Sent - Success: {successful_emails}, Failed: {failed_emails}")
+        if len(recruiters_with_emails) > 0:
+            print(f"📈 Success Rate: {(successful_emails/len(recruiters_with_emails)*100):.1f}%")
+        print("=" * 60)
+
     def enhanced_dual_outreach(self, recruiters, job_titles, job_type):
         """
         Enhanced outreach with email extraction and dual channel messaging.
         """
+        DEFAULT_EMAIL = "raman.lavina@gmail.com"  # Default email for testing
         print(f"\n🚀 Starting enhanced dual outreach for {len(recruiters)} recruiters...")
         
         # Extract emails for all recruiters
@@ -816,13 +1309,17 @@ class UnifiedMessenger:
         
         # Generate LinkedIn message template
         if resume_content and self.resume_generator:
-            job_context = f"opportunities in {', '.join(job_titles)} roles ({job_type})"
             try:
-                linkedin_message = self.resume_generator.generate_message(resume_content, job_context)
+                recruiter_name = "Hiring Manager"
+                job_context = f"{', '.join(job_titles)} ({job_type})"
+                company_name = "your company"
+                linkedin_message = self.resume_generator.generate_message(
+                    resume_content, recruiter_name, job_context, company_name
+                )
             except:
-                linkedin_message = f"Hi! I'm interested in {', '.join(job_titles)} opportunities at your company. I'd love to connect and discuss potential roles."
+                linkedin_message = f"Dear Hiring Manager, I'm interested in {', '.join(job_titles)} opportunities at your company. I'd love to connect and discuss potential roles."
         else:
-            linkedin_message = f"Hi! I'm interested in {', '.join(job_titles)} opportunities at your company. I'd love to connect and discuss potential roles."
+            linkedin_message = f"Dear Hiring Manager, I'm interested in {', '.join(job_titles)} opportunities at your company. I'd love to connect and discuss potential roles."
         
         # Show preview of outreach campaign
         print(f"\n📨 DUAL OUTREACH CAMPAIGN PREVIEW")
@@ -831,10 +1328,11 @@ class UnifiedMessenger:
         print(f"👥 Total Recipients: {len(recruiters_with_emails)}")
         
         # Show contact methods breakdown
-        email_count = sum(1 for r in recruiters_with_emails if r.get('extracted_email') and r['extracted_email'] != 'Not found')
+        email_count = sum(1 for r in recruiters_with_emails if r.get('extracted_email'))
+        real_email_count = sum(1 for r in recruiters_with_emails if r.get('extracted_email') and r['extracted_email'] != DEFAULT_EMAIL)
         linkedin_count = sum(1 for r in recruiters_with_emails if r.get('profile_url'))
         
-        print(f"📧 Recruiters with emails: {email_count}")
+        print(f"📧 Recruiters with emails: {email_count} ({real_email_count} real, {email_count - real_email_count} default)")
         print(f"🔗 Recruiters with LinkedIn: {linkedin_count}")
         
         # Show LinkedIn message template
@@ -844,7 +1342,7 @@ class UnifiedMessenger:
         print(f"📊 Length: {len(linkedin_message)} characters")
         
         # Show email preview for first recruiter with email
-        email_recruiter = next((r for r in recruiters_with_emails if r.get('extracted_email') and r['extracted_email'] != 'Not found'), None)
+        email_recruiter = next((r for r in recruiters_with_emails if r.get('extracted_email')), None)
         if email_recruiter and resume_content:
             subject, body = self.generate_email_content(job_titles, job_type, email_recruiter, resume_content)
             print(f"\n📧 EMAIL TEMPLATE (Sample):")
@@ -858,14 +1356,15 @@ class UnifiedMessenger:
         print("-" * 40)
         for i, recruiter in enumerate(recruiters_with_emails, 1):
             name = recruiter.get('name', 'Unknown')
-            email = recruiter.get('extracted_email', 'Not found')
+            email = recruiter.get('extracted_email', DEFAULT_EMAIL)
             linkedin_available = 'Yes' if recruiter.get('profile_url') else 'No'
             
             print(f"{i}. {name}")
-            print(f"   📧 Email: {email}")
+            email_status = f"{email} ⚠️  (DEFAULT)" if email == DEFAULT_EMAIL else f"{email} ✅"
+            print(f"   📧 Email: {email_status}")
             print(f"   🔗 LinkedIn: {linkedin_available}")
             methods = []
-            if email != 'Not found': methods.append('Email')
+            if email: methods.append('Email')
             if linkedin_available == 'Yes': methods.append('LinkedIn')
             print(f"   📝 Methods: {' + '.join(methods) if methods else 'No contact method'}")
         
@@ -912,22 +1411,31 @@ class UnifiedMessenger:
                 failed_linkedin += 1
                 print(f"❌ No LinkedIn URL available")
             
-            # Generate and display email content (not actually sent)
+            # Generate and send email
             email = recruiter.get('extracted_email')
-            if email and email != 'Not found' and resume_content:
+            if email and resume_content:
                 try:
                     subject, body = self.generate_email_content(job_titles, job_type, recruiter, resume_content)
                     
-                    print(f"📧 EMAIL CONTENT (Would be sent to: {email}):")
+                    email_type = "⚠️  (DEFAULT)" if email == DEFAULT_EMAIL else "✅"
+                    print(f"📧 Sending email {email_type} to: {email}")
                     print(f"   📝 Subject: {subject}")
-                    print(f"   💬 Body: {body[:100]}...")
-                    successful_emails += 1
+                    
+                    # Actually send the email
+                    success, result = self.send_email(email, subject, body)
+                    
+                    if success:
+                        print(f"   ✅ Email sent successfully!")
+                        successful_emails += 1
+                    else:
+                        print(f"   ❌ Failed to send email: {result}")
+                        failed_emails += 1
                 except Exception as e:
                     failed_emails += 1
-                    print(f"❌ Email generation failed: {e}")
+                    print(f"❌ Email generation/sending failed: {e}")
             else:
                 failed_emails += 1
-                if not email or email == 'Not found':
+                if not email:
                     print(f"❌ No email address available")
                 else:
                     print(f"❌ Resume not available for email generation")
@@ -938,7 +1446,7 @@ class UnifiedMessenger:
         print("=" * 60)
         print(f"🎯 Target Roles: {', '.join(job_titles)} ({job_type})")
         print(f"🔗 LinkedIn Messages - Success: {successful_linkedin}, Failed: {failed_linkedin}")
-        print(f"📧 Email Content Generated - Success: {successful_emails}, Failed: {failed_emails}")
+        print(f"📧 Emails Sent - Success: {successful_emails}, Failed: {failed_emails}")
         total_attempts = len(recruiters_with_emails) * 2
         total_success = successful_linkedin + successful_emails
         print(f"📈 Overall Success Rate: {(total_success/total_attempts*100):.1f}%")
@@ -954,7 +1462,9 @@ class UnifiedMessenger:
         print("1. Enter a person's name (searches existing chats)")
         print("2. Enter a LinkedIn profile URL (creates new chat)")
         print("3. Send connection invitation")
-        print("4. Search jobs and recruiters")
+        print("4. Search jobs and recruiters (with AI filtering + Email outreach)")
+        print("   🤖 NEW: AI-powered job relevance ranking!")
+        print("   📧 NEW: Email extraction & sending capabilities!")
         print()
         
         # Get user choice

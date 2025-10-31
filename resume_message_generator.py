@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 Resume Message Generator - Creates personalized messages from resume content
-Uses LangChain to process PDF resumes and generate 300-character messages
+Uses LangChain to process PDF resumes and generate LinkedIn connection messages
+Now integrated with ResumeParser for efficient resume content reuse
 """
 
 import os
 import sys
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
@@ -21,28 +22,44 @@ class ResumeMessageGenerator:
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
         
-        # Initialize OpenAI LLM
-        self.llm = OpenAI(api_key=self.openai_api_key, temperature=0.7)
+        # Initialize ChatOpenAI LLM with GPT-4
+        self.llm = ChatOpenAI(api_key=self.openai_api_key, model_name="gpt-4", temperature=0.7)
         
-        # Create prompt template for message generation
+        # Initialize resume parser for efficient content extraction
+        try:
+            from resume_parser import ResumeParser
+            self.resume_parser = ResumeParser()
+            print("✅ Resume parser integrated successfully")
+        except Exception as e:
+            print(f"⚠️  Resume parser not available: {e}")
+            self.resume_parser = None
+        
+        # Create prompt template for personalized LinkedIn connection messages
         self.prompt_template = PromptTemplate(
-            input_variables=["resume_content", "recruiter_context"],
+            input_variables=["resume_content", "recruiter_name", "job_title", "company_name"],
             template="""
-            Based on the following resume content, create a personalized 300-character message for a recruiter.
+            Create a professional LinkedIn connection message.
             
-            Resume Content:
-            {resume_content}
+            RESUME: {resume_content}
+            RECRUITER: {recruiter_name}
+            JOB TITLE: {job_title}
+            COMPANY: {company_name}
             
-            Context: {recruiter_context}
+            STRUCTURE (must follow exactly):
+            1. "Dear [recruiter_name], I'm interested in the [job_title] position at [company_name]."
+            2. Add 1-2 sentences about relevant background from resume (education, experience, skills)
+            3. End with professional closing like "I'd love to discuss how my background aligns with your team's needs."
             
-            Requirements:
-            - Maximum 300 characters
-            - Professional and engaging tone
-            - Highlight key skills and experience
-            - Show enthusiasm for opportunities
-            - Include a call to action
+            REQUIREMENTS:
+            - MUST be 280-295 characters (aim for 285-290)
+            - Use professional words: interested, experience, background, skills, discuss, opportunity, align
+            - Include specific details from resume (college, internships, technical skills)
+            - Complete sentences only - no cut-offs
+            - Professional, engaging tone
             
-            Message:
+            EXAMPLE LENGTH: "Dear Sarah Johnson, I'm interested in the Software Engineering Intern position at Google. I'm a junior at Stanford studying Computer Science with internship experience at Meta and strong Python/Java skills. I'd love to discuss how my background aligns with your team's needs."
+            
+            Generate the message (280-295 characters):
             """
         )
         
@@ -73,27 +90,85 @@ class ResumeMessageGenerator:
             print(f"❌ Error loading resume: {e}")
             raise
     
-    def generate_message(self, resume_content, recruiter_context="general recruitment opportunity"):
+    def generate_message(self, resume_content, recruiter_name, job_title, company_name):
         """
-        Generate a personalized message based on resume content.
+        Generate a personalized LinkedIn connection message.
+        Uses resume_parser for efficient content extraction when available.
         """
         print(f"🤖 Generating personalized message...")
-        print(f"📝 Context: {recruiter_context}")
+        print(f"👤 Recruiter: {recruiter_name}")
+        print(f"💼 Job: {job_title} at {company_name}")
         print("-" * 50)
         
         try:
+            # Use resume parser to extract key bullets if available
+            if self.resume_parser:
+                try:
+                    resume_bullets = self.resume_parser.extract_key_bullets(resume_content)
+                    # Use condensed bullets instead of full resume content
+                    short_resume = resume_bullets
+                except Exception as e:
+                    print(f"⚠️  Resume parser failed, using truncated content: {e}")
+                    short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+            else:
+                # Truncate resume to avoid token limits
+                short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+            
             # Generate message using the LLM chain
             result = self.chain.invoke({
-                "resume_content": resume_content,
-                "recruiter_context": recruiter_context
+                "resume_content": short_resume,
+                "recruiter_name": recruiter_name,
+                "job_title": job_title,
+                "company_name": company_name
             })
             
-            # Extract text from the result (invoke returns a dict with 'text' key)
-            message = result.get('text', str(result)).strip()
+            # Extract text from the result - handle ChatOpenAI format
+            if hasattr(result, 'content'):
+                message = result.content.strip()
+            elif isinstance(result, dict):
+                message = result.get('text', result.get('content', str(result))).strip()
+            else:
+                message = str(result).strip()
             
-            # Truncate if over 300 characters
-            if len(message) > 300:
-                message = message[:297] + "..."
+            # Ensure message is within 280-295 character range
+            if len(message) < 280:
+                # Message too short - regenerate with explicit length requirement
+                print(f"⚠️  Message too short ({len(message)} chars), regenerating...")
+                extended_prompt = f"""
+                The previous message was too short. Create a LinkedIn message that is EXACTLY 280-295 characters.
+                
+                RESUME: {short_resume[:500]}
+                RECRUITER: {recruiter_name}
+                JOB: {job_title} at {company_name}
+                
+                Must include:
+                - "Dear {recruiter_name}, I'm interested in the {job_title} position at {company_name}."
+                - Specific background details (college, year, major, internships, skills)
+                - Professional closing
+                - EXACTLY 280-295 characters total
+                
+                Generate longer message:
+                """
+                
+                result = self.llm.invoke(extended_prompt)
+                if hasattr(result, 'content'):
+                    message = result.content.strip()
+                elif isinstance(result, dict):
+                    message = result.get('text', result.get('content', str(result))).strip()
+                else:
+                    message = str(result).strip()
+            
+            if len(message) > 295:
+                # Find last complete sentence within limit
+                sentences = message.split('. ')
+                truncated = ""
+                for sentence in sentences:
+                    test_msg = truncated + sentence + ('. ' if not sentence.endswith('.') else '')
+                    if len(test_msg.strip()) <= 295:
+                        truncated = test_msg
+                    else:
+                        break
+                message = truncated.strip()
             
             print(f"✅ Generated message ({len(message)} characters):")
             print(f"💬 {message}")
@@ -104,11 +179,11 @@ class ResumeMessageGenerator:
             print(f"❌ Error generating message: {e}")
             raise
     
-    def process_resume_file(self, pdf_path, recruiter_context="general recruitment opportunity"):
+    def process_resume_file(self, pdf_path, recruiter_name, job_title, company_name):
         """
-        Complete workflow: load resume and generate message.
+        Complete workflow: load resume and generate personalized message.
         """
-        print("🚀 Resume Message Generator")
+        print("🚀 LinkedIn Message Generator")
         print("=" * 40)
         
         try:
@@ -116,14 +191,14 @@ class ResumeMessageGenerator:
             resume_content = self.load_resume(pdf_path)
             
             # Generate message
-            message = self.generate_message(resume_content, recruiter_context)
+            message = self.generate_message(resume_content, recruiter_name, job_title, company_name)
             
             print("\n" + "=" * 50)
-            print("📋 FINAL MESSAGE:")
+            print("📋 FINAL LINKEDIN MESSAGE:")
             print("=" * 50)
             print(message)
             print("=" * 50)
-            print(f"📊 Character count: {len(message)}/300")
+            print(f"📊 Character count: {len(message)}/295 (LinkedIn limit)")
             
             return message
             
@@ -148,13 +223,13 @@ def main():
             print("💡 Make sure the PDF file is in the same directory as this script.")
             return
         
-        # Optional: Get custom recruiter context
-        recruiter_context = input("Enter recruiter context (or press Enter for default): ").strip()
-        if not recruiter_context:
-            recruiter_context = "general recruitment opportunity"
+        # Get recruiter details
+        recruiter_name = input("Enter recruiter name: ").strip() or "Hiring Manager"
+        job_title = input("Enter job title: ").strip() or "Software Engineer"
+        company_name = input("Enter company name: ").strip() or "the company"
         
         # Process the resume
-        message = generator.process_resume_file(resume_file, recruiter_context)
+        message = generator.process_resume_file(resume_file, recruiter_name, job_title, company_name)
         
         if message:
             print("\n✅ Message generated successfully!")
