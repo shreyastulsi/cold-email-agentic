@@ -1,0 +1,842 @@
+{
+  "https://www.linkedin.com/jobs/view/4333171078": {
+    "title": "Senior Software Engineer - Systems and Infrastructure",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4333171078",
+    "responsibilities": [
+      "Scale LinkedIn’s infrastructure to handle massive growth in membership, traffic, and data.",
+      "Build and support large scale systems for data insights and products.",
+      "Deliver systems and algorithms that generate and serve feeds of professionally relevant activities and content."
+    ],
+    "requirements": [
+      "BA/BS Degree in Computer Science or related technical discipline, or related practical experience.",
+      "2+ years of industry experience in software design, development, and algorithm related solutions.",
+      "2+ years experience programming in object-oriented languages."
+    ],
+    "technologies": [
+      "Experience with technologies such as Hadoop, Spark, Kubernetes, Feather, GraphQL, GRPC.",
+      "Knowledge of Apache Kafka, Pinot, Samza or Venice.",
+      "Familiarity with open-source project management and governance."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4305503250": {
+    "title": "Principal Staff Software Engineer - Data Privacy & Governance Infrastructure",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4305503250",
+    "responsibilities": [
+      "Lead the Data Privacy and Data Governance Engineering team.",
+      "Design and implement privacy-related systems and initiatives.",
+      "Collaborate with cross-functional teams to integrate privacy considerations into LinkedIn's architecture."
+    ],
+    "requirements": [
+      "Extensive software engineering experience and proven track record of building large-scale systems.",
+      "Deep understanding of privacy principles and regulatory frameworks (e.g., GDPR, CCPA).",
+      "Experience in technical leadership and influencing cross-functional stakeholders."
+    ],
+    "technologies": [
+      "Experience with data governance, security, and encryption technologies.",
+      "Familiarity with policy enforcement systems or privacy-centric architectures.",
+      "Expertise in developing technology strategies at a company-wide scale."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304478926": {
+    "title": "Engineer, Data Center",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304478926",
+    "responsibilities": [
+      "Perform hardware break-fix repairs and coordinate with hardware OEM vendors.",
+      "Monitor and engage with the Jira ticket queue daily.",
+      "Assist with hardware installations and upgrades outside of quarterly organic growth projects."
+    ],
+    "requirements": [
+      "1+ years of experience in a Data Center Engineering Role.",
+      "1+ years of Linux troubleshooting experience.",
+      "1+ years of server hardware troubleshooting experience."
+    ],
+    "technologies": [
+      "Hardware Deployment & Installation.",
+      "Ticketing Systems (Jira, ServiceNow).",
+      "Linux/Unix Server and Network Troubleshooting."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304491777": {
+    "title": "Engineer, Data Center (Richardson, TX)",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304491777",
+    "responsibilities": [
+      "Perform hardware break-fix repairs and coordinate with hardware OEM vendors.",
+      "Monitor and engage with the Jira ticket queue daily.",
+      "Support deployment engineers with resolving autobuild failures."
+    ],
+    "requirements": [
+      "1+ years of experience in a Data Center Engineering Role.",
+      "1+ years of Linux troubleshooting experience.",
+      "1+ years of server hardware troubleshooting experience."
+    ],
+    "technologies": [
+      "Hardware Deployment & Installation.",
+      "Project Management Ticketing Systems (Jira, ServiceNow).",
+      "Linux/Unix Server and Network Troubleshooting."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304421169": {
+    "title": "Staff Software Engineer, Reliability",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304421169",
+    "responsibilities": [
+      "Develop tools to improve deployment and monitoring in a large-scale Linux environment.",
+      "Serve as a primary point for the overall health, performance, and capacity of Internet-facing services.",
+      "Provide technical leadership and improve engineering productivity."
+    ],
+    "requirements": [
+      "BS (or higher) in Computer Science or related technical field.",
+      "4+ years of industry experience in software design, development, and algorithm related solutions.",
+      "4+ years programming experience in object-oriented programming languages."
+    ],
+    "technologies": [
+      "Proficient in Python, Java, Javascript, C/C++, C#, Objective-C, or Ruby.",
+      "Experience with relational databases and distributed transaction management.",
+      "Familiarity with Linux operating systems and troubleshooting production systems at scale."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304418247": {
+    "title": "Distinguished Software Engineer - Search",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304418247",
+    "responsibilities": [
+      "Shape the future of LinkedIn Search by combining AI, LLMs, and systems innovation.",
+      "Build scalable, high-availability infrastructure for billions of queries.",
+      "Partner with product, design, and AI teams to align technical investments."
+    ],
+    "requirements": [
+      "PhD in a relevant field or equivalent research experience.",
+      "10+ years of relevant work experience.",
+      "Experience leading technical projects with multiple stakeholders."
+    ],
+    "technologies": [
+      "AI and LLMs for search experiences.",
+      "High-availability infrastructure for large scale queries.",
+      "Technical leadership in machine learning."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304425083": {
+    "title": "Senior AI Engineer - DPX",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304425083",
+    "responsibilities": [
+      "Develop and implement machine learning models and algorithms.",
+      "Collaborate with machine learning engineers to deliver impact on LinkedIn newsfeed.",
+      "Write production quality code and influence the next generation of LinkedIn's system."
+    ],
+    "requirements": [
+      "BA/BS Degree in Computer Science, Machine Learning or related technical discipline.",
+      "2+ years experience in software design, development, and algorithm related solutions.",
+      "4+ years of relevant machine learning experience."
+    ],
+    "technologies": [
+      "Experience with programming languages such as Java, Python.",
+      "Experience with Hadoop, Pig, or other MapReduce paradigms.",
+      "Knowledge of internals Lucene/SOLR or other information retrieval systems."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304413316": {
+    "title": "Site Operations Engineer",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304413316",
+    "responsibilities": [
+      "Maintain availability and performance of LinkedIn application stack and infrastructure.",
+      "Perform application and website troubleshooting to quickly resolve issues.",
+      "Develop tools to improve deployment and monitoring in a large-scale UNIX environment."
+    ],
+    "requirements": [
+      "BA/BS Degree in Computer Science or related technical discipline.",
+      "1+ years of experience with UNIX/Linux systems administration and/or DevOps.",
+      "Experience with network concepts, IPv4/6, TCP/IP stack and common Internet protocols."
+    ],
+    "technologies": [
+      "UNIX/Linux systems administration",
+      "Shell scripting or any OOP language (Python, Perl, Ruby, Java/Scala, or C/C++).",
+      "Networking concepts: TCP/IP, IPv4/6, HTTP, HTTPS, TLS, DNS, FTP."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304003121": {
+    "title": "Sr. Software Engineer - CI Platforms, DPX",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304003121",
+    "responsibilities": [
+      "Build CI infrastructure and tools for LinkedIn developers.",
+      "Develop multi-tier scalable, high-volume performing, user-centric applications.",
+      "Design, develop, test, and deploy high reliability and scalability infrastructure."
+    ],
+    "requirements": [
+      "BA/BS Degree in Computer Science or related technical discipline.",
+      "2+ years of industry experience in software design and large-scale software engineering.",
+      "Experience programming in object-oriented and/or functional programming languages."
+    ],
+    "technologies": [
+      "Experience with Java/Python/C/C++/Scala.",
+      "Experience with developing Developer tools and infrastructure.",
+      "Experience with Microservices or Monorepos."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4304409325": {
+    "title": "Senior AI Engineer",
+    "company": "LinkedIn",
+    "url": "https://www.linkedin.com/jobs/view/4304409325",
+    "responsibilities": [
+      "Work with BIG data for statistical modeling, data mining, recommendation solutions",
+      "Write production quality code and influence LinkedIn's system generation",
+      "Collaborate with machine learning engineers to impact LinkedIn newsfeed"
+    ],
+    "requirements": [
+      "BA/BS Degree in Computer Science, Machine Learning or related discipline",
+      "2+ years experience in software design, development, and algorithm related solutions",
+      "2+ years experience with machine learning, data mining, and information retrieval"
+    ],
+    "technologies": [
+      "Proficiency in programming languages such as Java, Python",
+      "Experience with Hadoop, Pig, or other MapReduce paradigms",
+      "Knowledge of internals Lucene/SOLR or other information retrieval systems"
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4333410050": {
+    "title": "Senior Software Engineer, AI/ML GenAI, YouTube",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4333410050",
+    "responsibilities": [
+      "Write and test product or system development code.",
+      "Collaborate with peers and stakeholders through design and code reviews.",
+      "Design and implement GenAI solutions, leverage ML infrastructure."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "5 years of experience with programming in Python and C++.",
+      "3 years of experience with ML infrastructure."
+    ],
+    "technologies": [
+      "Python and C++ programming.",
+      "GenAI techniques (e.g., LLMs, Multi-Modal, Large Vision Models).",
+      "ML infrastructure (model deployment, model evaluation, optimization)."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310341180": {
+    "title": "Software Engineer, Infrastructure, Play Platform",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310341180",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Participate in or lead design reviews with peers and stakeholders.",
+      "Review code developed by others and provide feedback."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of experience with software development in Python, C++ or Java.",
+      "1 year of experience with ML infrastructure."
+    ],
+    "technologies": [
+      "Large-scale infrastructure and distributed systems.",
+      "Data structures and algorithms.",
+      "ML infrastructure, including model deployment, evaluation, and data processing."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310338289": {
+    "title": "Senior Software Engineer, AI Search",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310338289",
+    "responsibilities": [
+      "Write and test product or system development code.",
+      "Participate in or lead design reviews with peers and stakeholders.",
+      "Review code developed by other developers and provide feedback."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "5 years of experience with software development in C++.",
+      "3 years of experience testing, maintaining, or launching software products."
+    ],
+    "technologies": [
+      "Experience with data analytics, machine learning, anti-abuse techniques.",
+      "Experience developing accessible technologies.",
+      "Knowledge in distributed computing, large-scale system design, networking and data storage."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310336982": {
+    "title": "Software Engineer, Embedded Systems, Firmware, Pixel Audio",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310336982",
+    "responsibilities": [
+      "Participate in or lead design reviews with peers and stakeholders.",
+      "Review and provide feedback on code developed by other engineers.",
+      "Triage product or system issues and debug/track/resolve them."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of experience with software development in C or C++.",
+      "2 years of experience with embedded operating systems."
+    ],
+    "technologies": [
+      "C or C++ programming languages.",
+      "Embedded operating systems.",
+      "Performance, systems data analysis, visualization tools, or debugging."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310331983": {
+    "title": "Software Engineer III, Generative AI, Ads Planning",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310331983",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Triage product or system issues and debug/track/resolve them.",
+      "Implement Generative AI solutions and contribute to data preparation and optimization."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of software development experience in C++ and Python.",
+      "1 year of experience with ML infrastructure and GenAI techniques."
+    ],
+    "technologies": [
+      "C++ and Python for software development.",
+      "Machine Learning infrastructure.",
+      "Generative AI techniques and related concepts."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4311202646": {
+    "title": "Software Engineer III, Google Cloud Business Platforms",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4311202646",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Participate in or lead design reviews.",
+      "Review code developed by others and provide feedback."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of experience with software development.",
+      "Proficiency in code and system health, diagnosis, resolution, and software test engineering."
+    ],
+    "technologies": [
+      "Experience with data structures or algorithms.",
+      "Experience with performance, large scale systems data analysis, visualization tools, or debugging.",
+      "Experience developing accessible technologies."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310958242": {
+    "title": "Software Engineer Tech Lead, Machine learning, YouTube Notifications",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310958242",
+    "responsibilities": [
+      "Drive notification-initiated visits and timeliness for a positive user experience.",
+      "Improve timing, frequency, and content of notifications through ML applications.",
+      "Develop and optimize ML models, analyze user and system behaviors."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "8 years of experience in software development, 5 years in testing and launching software products.",
+      "3 years of experience with software design and architecture."
+    ],
+    "technologies": [
+      "Machine Learning (ML) design and ML infrastructure.",
+      "Data Processing and Analysis, Recommender Systems, Personalization, A/B Testing.",
+      "Familiarity with Google/YouTube ML infrastructure."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310340237": {
+    "title": "Software Engineer, Computational Photo/Videography",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310340237",
+    "responsibilities": [
+      "Develop CV/ML algorithms for imaging/video pipelines.",
+      "Develop robust tools for benchmarking and characterizing image and video quality.",
+      "Prototype and evaluate research papers in computational photography, computer vision, graphics, and machine learning/gen ai."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "5 years of experience in computational photography/computer vision.",
+      "2 years of experience with software development in one or more programming languages."
+    ],
+    "technologies": [
+      "Optimization algorithm performance by GPU, NEON, Halide, DSP, etc.",
+      "C/C++ build systems and tooling.",
+      "Experience with low compute or power constrained Android devices."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310352057": {
+    "title": "Senior Software Engineer, Serverless Engineering Productivity and Excellence",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310352057",
+    "responsibilities": [
+      "Write and test product or system development code.",
+      "Participate in or lead design reviews with peers and stakeholders.",
+      "Review code developed by other developers and provide feedback."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "5 years of experience with software development.",
+      "3 years of experience testing, maintaining, or launching software products."
+    ],
+    "technologies": [
+      "Experience with data structures/algorithms.",
+      "Experience in distributed computing, large-scale system design.",
+      "Knowledge in security, artificial intelligence, natural language processing."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310351094": {
+    "title": "Software Engineer III, Infrastructure, Google Cloud Platforms",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4310351094",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Participate in or lead design reviews with peers and stakeholders.",
+      "Review code developed by others and provide feedback."
+    ],
+    "requirements": [
+      "Bachelor's degree or equivalent practical experience.",
+      "2 years of experience with software development in C++.",
+      "Experience with data structures, algorithms, and cloud-based environments."
+    ],
+    "technologies": [
+      "Proficiency in C++, GoLang, and Kubernetes.",
+      "Familiarity with Google Kubernetes Engine (GKE) Networking.",
+      "Experience with Large Language Models and Operating Systems."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4333401673": {
+    "title": "Language Engineer, Artificial General Intelligence - Data Services",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4333401673",
+    "responsibilities": [
+      "Design data collection tasks in response to science needs.",
+      "Analyze and extract language-related insights from large data.",
+      "Collaborate with scientists and engineers to evaluate language model performance."
+    ],
+    "requirements": [
+      "Masters or higher degree in a relevant field (computational linguistics).",
+      "2+ years experience in computational linguistics or language data processing.",
+      "Experience with scripting languages, such as Python."
+    ],
+    "technologies": [
+      "Python or other scripting languages.",
+      "Modeling tools for bootstrapping or testing new functionalities.",
+      "Database queries and data analysis processes (SQL, R, Matlab, etc.)."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332405999": {
+    "title": "Senior Software Development Engineer, Sponsored Products and Brands",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332405999",
+    "responsibilities": [
+      "Own end-to-end deployment of ML and GenAI technology at scale.",
+      "Manage project prioritization, deliverables, and timelines.",
+      "Collaborate with Applied Scientists to plan experiments and prototype new technology."
+    ],
+    "requirements": [
+      "5+ years of professional software development experience.",
+      "Experience as a mentor, tech lead or leading an engineering team.",
+      "Experience in online advertising role and familiarity with ad serving technologies."
+    ],
+    "technologies": [
+      "Generative AI models.",
+      "Deep retrieval models and deep ranking models.",
+      "Reinforcement learning solutions."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332386371": {
+    "title": "PLM Integration Developer, Project Kuiper",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332386371",
+    "responsibilities": [
+      "Design, build, and maintain infrastructure for hybrid-cloud Siemens engineering applications",
+      "Monitor system performance, ensuring uptime, scalability, and reliability of applications and Infrastructure",
+      "Automate Siemens deployment and administration of Siemens engineering tools"
+    ],
+    "requirements": [
+      "Experience in automating, deploying, and supporting large-scale infrastructure",
+      "Proficiency in at least one modern language such as Python, Ruby, Golang, Java, C++, C#, Rust",
+      "Experience with Linux/Unix and CI/CD pipelines build processes"
+    ],
+    "technologies": [
+      "Siemens engineering applications",
+      "AWS Cloud Infrastructure",
+      "Python, Ruby, Golang, Java, C++, C#, Rust"
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332380475": {
+    "title": "Applied Scientist, Sales AI",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332380475",
+    "responsibilities": [
+      "Lead research on new Machine Learning and Generative AI solutions for Ad Sales business.",
+      "Guide technical approach for design and implementation of successful models and algorithms.",
+      "Conduct deep data analysis, run A/B experiments, and perform statistical analysis."
+    ],
+    "requirements": [
+      "3+ years of experience in building models for business application.",
+      "PhD or Master's degree and 4+ years of CS, CE, ML or related field experience.",
+      "Experience in patents or publications at top-tier peer-reviewed conferences or journals."
+    ],
+    "technologies": [
+      "Proficiency in Java, C++, Python or related language.",
+      "Experience in algorithms and data structures, parsing, numerical optimization, data mining.",
+      "Knowledge of parallel and distributed computing, high-performance computing."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332370846": {
+    "title": "MTS-ML Infra, AGI",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332370846",
+    "responsibilities": [
+      "Design, build, and maintain a Spark-based infrastructure for large datasets.",
+      "Develop tooling for emerging data-related needs in collaboration with researchers.",
+      "Manage project prioritization, deliverables, timelines, and stakeholder communication."
+    ],
+    "requirements": [
+      "5+ years of non-internship professional software development experience.",
+      "5+ years of programming with at least one software language or a Bachelor's in Computer Science.",
+      "Experience leading design or architecture of new and existing systems."
+    ],
+    "technologies": [
+      "Spark-based infrastructure.",
+      "Large-scale data extraction and transformation tools.",
+      "Software development life cycle management tools."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332368992": {
+    "title": "Software Development Engineer , AGI Customization",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332368992",
+    "responsibilities": [
+      "Lead the development of novel LLM training techniques and optimizations",
+      "Collaborate with Applied Scientists to develop multimodal Large Language Models",
+      "Deliver high-quality technology products/services in a hyper-growth environment"
+    ],
+    "requirements": [
+      "3+ years of professional software development experience",
+      "2+ years of design or architecture experience",
+      "Experience programming with at least one software programming language"
+    ],
+    "technologies": [
+      "Machine Learning",
+      "Large Language Models",
+      "Generative Artificial Intelligence solutions"
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4193890231": {
+    "title": "Sr. Applied Scientist, FAR (Frontier AI & Robotics)",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4193890231",
+    "responsibilities": [
+      "Lead technical initiatives in robotics foundation models and hands-on research.",
+      "Design and implement novel deep learning architectures for robotics.",
+      "Mentor fellow scientists and collaborate with engineering teams for real-world applications."
+    ],
+    "requirements": [
+      "PhD or Master's degree with 6+ years of applied research experience.",
+      "3+ years of industry or academic research experience.",
+      "Strong publication record at top-tier conferences."
+    ],
+    "technologies": [
+      "Proficiency in Java, C++, Python or related language.",
+      "Experience with deep learning and model development.",
+      "Familiarity with large-scale distributed systems."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4225752418": {
+    "title": "Applied Scientist, AGI Information",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4225752418",
+    "responsibilities": [
+      "Conduct research in LLM technologies for applications across Alexa, AWS, and other Amazon businesses.",
+      "Integrate a broad range of structured and unstructured information into AI systems.",
+      "Work with other science and engineering teams to maximize velocity and impact of deliverables."
+    ],
+    "requirements": [
+      "PhD or Master's degree and 3+ years of CS, CE, ML or related field experience.",
+      "Experience programming in Java, C++, Python or related language.",
+      "1+ years of building models for business application experience."
+    ],
+    "technologies": [
+      "LLMs (Latent Linear Models)",
+      "Natural language processing",
+      "Computer vision and machine learning."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4279139301": {
+    "title": "2026 Applied Science Internship - United States - Master's Student Science Recruiting",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4279139301",
+    "responsibilities": [
+      "Design and develop end-to-end systems as an Applied Science Intern.",
+      "Create technical roadmaps and drive production level projects.",
+      "Collaborate with Amazon scientists and other interns to develop and deploy solutions."
+    ],
+    "requirements": [
+      "Enrolled in a Master's degree program.",
+      "Able to work full-time (40 hours/week) for the duration of the internship.",
+      "Willing to relocate to where the internship is based."
+    ],
+    "technologies": [
+      "Experience with machine learning and natural language processing.",
+      "Proficient in programming or scripting languages like Python, Java, C or C++.",
+      "Familiarity with computer vision, automated reasoning, or robotics."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4310808957": {
+    "title": "Applied Scientist II, Special Projects",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4310808957",
+    "responsibilities": [
+      "Design and implement novel AI/ML solutions for complex healthcare challenges.",
+      "Collaborate with cross-functional teams to deliver impactful solutions.",
+      "Translate research findings into practical solutions."
+    ],
+    "requirements": [
+      "3+ years of experience in building models for business applications.",
+      "PhD or Master's degree and 4+ years of CS, CE, ML or related field experience.",
+      "Experience in patents or publications at top-tier peer-reviewed conferences or journals."
+    ],
+    "technologies": [
+      "Proficiency in Java, C++, Python or related language.",
+      "Experience in algorithms and data structures, parsing, numerical optimization.",
+      "Knowledge in data mining, parallel and distributed computing, high-performance computing."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4258440292": {
+    "title": "Embedded Software Dev Engineer, Kuiper Software & Networking",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4258440292",
+    "responsibilities": [
+      "Design, craft, and deploy reliable embedded software for consumer electronic products.",
+      "Develop embedded software for terrestrial devices within the Project Kuiper system.",
+      "Participate in all phases of SDLC including requirements gathering, design, code, test, and code/test coverage."
+    ],
+    "requirements": [
+      "Must be a U.S. citizen or national, U.S. permanent resident, or lawfully admitted into the U.S.",
+      "3+ years of non-internship professional software development experience.",
+      "2+ years of non-internship design or architecture of new and existing systems experience."
+    ],
+    "technologies": [
+      "Experience with real-time embedded software philosophies and practices.",
+      "Expertise with Linux and RTOS.",
+      "Programming experience in assembly, C, C++, Rust or other languages."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4264909995": {
+    "title": "Controls SDE, UTR, Last Mile",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4264909995",
+    "responsibilities": [
+      "Develop complex mechatronics products for Amazon's Last Mile ecosystem.",
+      "Build scalable tools and technology for delivery hubs.",
+      "Troubleshoot PLC code, carry out testing, build prototypes, and support execution."
+    ],
+    "requirements": [
+      "3+ years of non-internship professional software development experience.",
+      "2+ years of experience in embedded software development for mechatronic systems.",
+      "Experience with industrial automation systems and communication protocols."
+    ],
+    "technologies": [
+      "Experience with TIA Portal 16+, Codesys 3.5, HMI, VFDs, Servo Drive, Industrial Fieldbuses.",
+      "Knowledge of Object-Orientated Industrial Programming (OOIP).",
+      "Experience with Python, Ruby, Golang, Java, C++, C#, Rust."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4279918825": {
+    "title": "2026 Applied Science Internship - Reinforcement Learning & Optimization (Machine Learning) - United States, PhD Student Science Recruiting",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4279918825",
+    "responsibilities": [
+      "Conduct research into theory and application of deep reinforcement learning.",
+      "Propose and deploy solutions drawing from various scientific areas.",
+      "Develop scalable, efficient, automated processes for large scale data analyses, model development, and implementation."
+    ],
+    "requirements": [
+      "Enrolled in a PhD and at least 18 years old.",
+      "Able to work 40 hours/week minimum and commit to a 12-week internship.",
+      "Experience programming in Java, C++, Python or related language."
+    ],
+    "technologies": [
+      "Optimization, Programming/Scripting Languages, Statistics.",
+      "Reinforcement Learning, Causal Inference, Large Language Models.",
+      "Time Series, Graph Modeling, Supervised/Unsupervised Learning, Deep Learning, Predictive Modeling."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4241053112": {
+    "title": "Applied Scientist, Books Core Recommendations",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4241053112",
+    "responsibilities": [
+      "Collaborate with team to develop and implement innovative science solutions.",
+      "Analyze customer behavior and product relationships using Amazon's resources.",
+      "Assist in developing and maintaining recommendation models and running A/B tests."
+    ],
+    "requirements": [
+      "PhD or Master's degree with 4+ years of experience in CS, CE, ML or related field.",
+      "Programming experience in Java, C++, Python or related language.",
+      "Experience in algorithms, data structures, parsing, numerical optimization, data mining, parallel and distributed computing."
+    ],
+    "technologies": [
+      "Natural Language Processing (NLP)",
+      "Reinforcement Learning (RL)",
+      "Deep learning and graph networks."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4241046672": {
+    "title": "Sr. Software Engineer - Digital Twin, Project Kuiper",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4241046672",
+    "responsibilities": [
+      "Develop and deploy digital twin models for hardware system health tracking.",
+      "Perform simulations, scenario testing, and predictive analysis for system optimization.",
+      "Develop cloud-native software systems and automate operational workflows."
+    ],
+    "requirements": [
+      "5+ years of professional software development experience.",
+      "Experience in leading design or architecture of new and existing systems.",
+      "Experience in building and deploying models, statistical analysis, and data analysis tools."
+    ],
+    "technologies": [
+      "Python, Java or other modern programming languages.",
+      "Cloud-native software systems.",
+      "APIs for software services."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4300963778": {
+    "title": "ServiceNow Application Development Engineer, Ops Tech Solutions",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4300963778",
+    "responsibilities": [
+      "Develop customer experience and set new service standards in IT Delivery.",
+      "Manage administration, maintenance, and development of the ServiceNow platform.",
+      "Create ServiceNow workflows and business rules for service improvements."
+    ],
+    "requirements": [
+      "Bachelors degree in IT, MIS, Computer Science, Business or equivalent work experience.",
+      "Certified ServiceNow Administrator (CSA) or other ServiceNow certification.",
+      "3+ years of direct experience with the ServiceNow platform."
+    ],
+    "technologies": [
+      "Experience with JavaScript, Perl or PHP.",
+      "Experience with web service integrations using REST, SOAP, etc.",
+      "Experience with Agile scrum/Kanban methodology."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4290669941": {
+    "title": "Systems Development Engineer - Ground Infrastructure, Project Kuiper",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4290669941",
+    "responsibilities": [
+      "Build tools and processes for monitoring, operating, and scaling ground infrastructure.",
+      "Automate repetitive processes to eliminate outages and ensure high availability.",
+      "Provide critical operations support and incident response, participating in an on-call rotation."
+    ],
+    "requirements": [
+      "Must be a U.S. citizen, national, permanent resident, refugee, or granted asylum.",
+      "Experience in automating, deploying, and supporting large-scale infrastructure.",
+      "Experience programming with at least one modern language."
+    ],
+    "technologies": [
+      "Familiarity with Python, Ruby, Golang, Java, C++, C#, Rust.",
+      "Experience with Linux/Unix.",
+      "Experience with CI/CD pipelines build processes."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4311775749": {
+    "title": "Software Dev Engineer II, Amazon",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4311775749",
+    "responsibilities": [
+      "Lead the development of new state-of-the-art products at internet scale.",
+      "Develop and maintain AI-powered advertising solutions and services.",
+      "Collaborate closely with Principal Engineer and Scientists on technical strategy."
+    ],
+    "requirements": [
+      "3+ years of professional software development experience.",
+      "2+ years of experience in system design or architecture.",
+      "Bachelor's degree in computer science or equivalent."
+    ],
+    "technologies": [
+      "Experience with at least one software programming language.",
+      "Familiarity with full software development life cycle.",
+      "Experience with source control management and build processes."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332896280": {
+    "title": "Software Dev Engineer II - AMZ26335.1",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332896280",
+    "responsibilities": [
+      "Design, develop, implement, test, and document software applications, tools, systems, and services.",
+      "Translate functional requirements into robust, efficient, supportable solutions.",
+      "Mentor junior development engineers and produce comprehensive, usable software documentation."
+    ],
+    "requirements": [
+      "Bachelor's degree or equivalent in Computer Science, Engineering, Mathematics, or a related field.",
+      "One year of experience in the job offered or a related occupation.",
+      "Must have experience in designing and developing large-scale, multi-tiered, multi-threaded software."
+    ],
+    "technologies": [
+      "Proficient in C#, C++, Java, or Perl.",
+      "Experience with Object Oriented Design.",
+      "Knowledge of new or existing software products and tools."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4332876639": {
+    "title": "System Development Engineer, macOS MDM, Kuiper Devices & Systems",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4332876639",
+    "responsibilities": [
+      "Design and maintain MDM configurations for device lifecycle management.",
+      "Implement scalable solutions for managing endpoints, including patching and reporting.",
+      "Collaborate with security teams to ensure device configurations comply with internal policies."
+    ],
+    "requirements": [
+      "Must be a U.S. citizen due to government-imposed requirements.",
+      "Experience in automating, deploying, and supporting infrastructure.",
+      "Experience programming with at least one modern language such as Python, Ruby, or Java."
+    ],
+    "technologies": [
+      "Apple ecosystem device management, including JAMF Pro, Apple Business Manager.",
+      "MDM solutions like FleetDM for device management tasks.",
+      "Linux/Unix experience is preferred."
+    ],
+    "employment_type": "Full-time"
+  }
+}

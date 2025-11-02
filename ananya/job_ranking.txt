@@ -1,0 +1,8 @@
+JOB RELEVANCE RANKING ANALYSIS
+==================================================
+
+1. Job #3: 2026 Applied Science Internship - Reinforcement Learning & Optimization (Machine Learning) at Amazon
+2. Job #4: Applied Scientist, Books Core Recommendations at Amazon
+3. Job #8: Software Dev Engineer II at Amazon
+4. Job #9: Software Dev Engineer II - AMZ26335.1 at Amazon
+5. Job #2: Controls SDE, UTR, Last Mile at Amazon

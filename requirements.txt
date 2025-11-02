@@ -1,9 +1,0 @@
-python-dotenv
-requests
-langchain
-langchain-community
-langchain-openai
-openai
-pypdf
-beautifulsoup4
-markdownify
