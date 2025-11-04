@@ -42,6 +42,9 @@ dist/
 dist-ssr/
 *.local
 
+# Also add this to .gitignore to fix the large file warning
+backend/venv/
+
 # Environment variables
 .env
 .env.local
