@@ -323,11 +323,33 @@ async def filter_jobs(
         
         if not ranking_is_valid or not urls_is_valid:
             error_msg = f"Failed to filter jobs - ranking_result valid: {ranking_is_valid}, top_urls valid: {urls_is_valid}"
+            
+            # Provide more helpful error messages
+            if ranking_result is None:
+                if not resume_content:
+                    error_msg += ". Possible causes: Resume content not found (check if resume is uploaded), or LLM call failed (check OPENAI_API_KEY)."
+                else:
+                    error_msg += ". LLM ranking returned None - check OPENAI_API_KEY and prompt length."
+            elif isinstance(ranking_result, str) and len(ranking_result.strip()) == 0:
+                error_msg += ". LLM returned empty ranking."
+            
+            if top_urls is None or (isinstance(top_urls, list) and len(top_urls) == 0):
+                if ranking_result:
+                    error_msg += " Ranking result exists but URL extraction failed - check ranking format."
+                else:
+                    error_msg += " No URLs extracted because ranking failed."
+            
             logger.error(f"❌ DEBUG: {error_msg}")
             logger.error(f"❌ DEBUG: ranking_result type: {type(ranking_result).__name__ if ranking_result is not None else 'None'}")
             logger.error(f"❌ DEBUG: ranking_result preview: {str(ranking_result)[:500] if ranking_result else 'None'}")
             logger.error(f"❌ DEBUG: top_urls type: {type(top_urls).__name__ if top_urls is not None else 'None'}")
             logger.error(f"❌ DEBUG: top_urls value: {top_urls}")
+            logger.error(f"❌ DEBUG: resume_content was provided: {resume_content is not None}")
+            if resume_content:
+                logger.error(f"❌ DEBUG: resume_content length: {len(resume_content)} chars")
+            else:
+                logger.error(f"❌ DEBUG: No resume_content - PDF fallback may have failed")
+            
             return {
                 "error": error_msg,
                 "filtered_jobs": [],
@@ -339,7 +361,9 @@ async def filter_jobs(
                     "ranking_result_type": type(ranking_result).__name__ if ranking_result is not None else None,
                     "top_urls_type": type(top_urls).__name__ if top_urls is not None else None,
                     "top_urls_value": top_urls if top_urls is not None else None,
-                    "ranking_result_preview": str(ranking_result)[:500] if ranking_result else None
+                    "ranking_result_preview": str(ranking_result)[:500] if ranking_result else None,
+                    "resume_content_provided": resume_content is not None,
+                    "resume_content_length": len(resume_content) if resume_content else None
                 }
             }
         

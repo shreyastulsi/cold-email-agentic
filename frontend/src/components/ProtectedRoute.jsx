@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import Loading from '../pages/Loading'
 import { getCurrentUser } from '../utils/supabase'
 
 export default function ProtectedRoute({ children }) {
@@ -16,14 +17,7 @@ export default function ProtectedRoute({ children }) {
   }, [])
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <Loading />
   }
 
   if (!user) {

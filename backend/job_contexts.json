@@ -751,5 +751,356 @@
     "requirements": [],
     "technologies": [],
     "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4007935390": {
+    "title": "Principal Engineer, Amazon | Multiple Locations, USA",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4007935390",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4292069906": {
+    "title": "Embedded Firmware QA Engineer, eero QA",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4292069906",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4301700639": {
+    "title": "Software Development Engineer II, Kuiper - Linux Embedded",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4301700639",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312398760": {
+    "title": "Applied Scientist, Artificial General Intelligence",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4312398760",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312553417": {
+    "title": "Lab Engineer - Integrated Test, Project Kuiper",
+    "company": "Amazon",
+    "url": "https://www.linkedin.com/jobs/view/4312553417",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4293066079": {
+    "title": "Software Engineer III, Infrastructure, Google Cloud Performance",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4293066079",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4320001806": {
+    "title": "Software Engineer, Vertex Model Garden",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4320001806",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4319981911": {
+    "title": "Software Engineer III, Full Stack, Google Workspace",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4319981911",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4319961954": {
+    "title": "Software Engineer III, Full Stack, Search",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4319961954",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4266530741": {
+    "title": "Software Engineer, Systems Research, PhD, Early Career",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4266530741",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312801809": {
+    "title": "Software Engineer, Location and Context, Android",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312801809",
+    "responsibilities": [
+      "Build user-facing features using location awareness and AI.",
+      "Develop and update algorithms with integration testing and documentation.",
+      "Review code and provide feedback for best practices."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of software development experience in programming languages.",
+      "Experience with full stack Java or Kotlin development."
+    ],
+    "technologies": [
+      "Android app and OS development.",
+      "Data structures and algorithms.",
+      "Location and activity recognition technologies."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4314710441": {
+    "title": "Integration Engineer, Google Cloud",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4314710441",
+    "responsibilities": [
+      "Manage and deliver cloud solution implementations.",
+      "Propose solution architectures based on customer requirements.",
+      "Collaborate with internal teams to develop best practices."
+    ],
+    "requirements": [
+      "Bachelor's degree in STEM or equivalent experience.",
+      "8 years in project management and technical delivery.",
+      "5 years in networking and cloud solutions."
+    ],
+    "technologies": [
+      "Cloud solutions and virtualized infrastructure.",
+      "Networking, DevOps, and Security technologies.",
+      "AI/ML frameworks like JAX and PyTorch."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4314599650": {
+    "title": "Software Engineer, BigQuery Metadata",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4314599650",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4291658114": {
+    "title": "Software Engineer, PhD, Early Career, Infrastructure, 2026 Start",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4291658114",
+    "responsibilities": [
+      "Participate in team projects for advanced systems design and development.",
+      "Write documents to set new technical directions.",
+      "Diagnose and resolve complex technical issues."
+    ],
+    "requirements": [
+      "PhD in Computer Science or related field.",
+      "Experience coding in C, C++, Python, Java, or Golang.",
+      "Knowledge of distributed systems, concurrency, or multi-threading."
+    ],
+    "technologies": [
+      "Distributed systems and architecture.",
+      "Machine learning and artificial intelligence.",
+      "Performance analysis and debugging tools."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4291653525": {
+    "title": "Software Engineer, PhD, Early Career, Infrastructure, 2026 Start",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4291653525",
+    "responsibilities": [
+      "Participate in or lead team projects for advanced systems design.",
+      "Write documents that set new technical directions.",
+      "Diagnose and resolve complex technical issues."
+    ],
+    "requirements": [
+      "PhD in Computer Science or related field.",
+      "Experience coding in C, C++, Python, Java, or Golang.",
+      "Experience with distributed systems, concurrency, or multi-threading."
+    ],
+    "technologies": [
+      "Distributed systems and architecture.",
+      "Machine learning and artificial intelligence.",
+      "Data analysis and visualization tools."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4320456680": {
+    "title": "Distinguished Engineer, Agentic Solutions Search AI",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4320456680",
+    "responsibilities": [
+      "Lead technical design and implementation of Search's Agentic solution.",
+      "Drive technical vision and roadmap for scalable architecture.",
+      "Collaborate with teams to transition research innovations to production."
+    ],
+    "requirements": [
+      "Bachelor's degree in Computer Science or equivalent experience.",
+      "15 years of software development experience required.",
+      "Experience in AI platforms or Applied ML preferred."
+    ],
+    "technologies": [
+      "Machine Learning (ML) infrastructure.",
+      "ML developer tooling.",
+      "Large Language Models (LLMs)."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312143097": {
+    "title": "Software Engineer, Embedded Systems, Firmware, Ambient Platform",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312143097",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Participate in design reviews with peers and stakeholders.",
+      "Debug and resolve product or system issues."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of C/C++ software development experience.",
+      "2 years working with embedded operating systems."
+    ],
+    "technologies": [
+      "Embedded operating systems.",
+      "C/C++ programming languages.",
+      "Low-level hardware interaction."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4281300320": {
+    "title": "Software Engineer III, Google Cloud Compute Infrastructure",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4281300320",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312189693": {
+    "title": "Software Engineer Manager II, Platforms Storage",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312189693",
+    "responsibilities": [
+      "Set and communicate team priorities aligned with organizational goals.",
+      "Provide feedback and coaching to team members regularly.",
+      "Design and guide system designs and code development."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "8 years of software development experience.",
+      "3 years in a technical leadership role."
+    ],
+    "technologies": [
+      "C, C++, embedded systems, kernel, Linux.",
+      "Experience with SSD and HDD storage systems.",
+      "Familiarity with firmware and device drivers."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312138436": {
+    "title": "Software Engineer, Search Discover, Machine Learning",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312138436",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4334033799": {
+    "title": "Software Engineer III, Embedded Systems, Geo Hardware",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4334033799",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312175515": {
+    "title": "Software Engineer, ML Infrastructure, Chrome",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312175515",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312187276": {
+    "title": "Software Engineer III, Infrastructure, Google Cloud Platforms",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312187276",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312174486": {
+    "title": "Optics and Display Test Engineer, Consumer Hardware",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312174486",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312181595": {
+    "title": "Senior Staff Software Engineer, Data Infrastructure, Cloud SQL",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312181595",
+    "responsibilities": [
+      "Provide technical leadership on projects.",
+      "Influence and coach a distributed engineering team.",
+      "Manage project priorities, deadlines, and deliverables."
+    ],
+    "requirements": [
+      "Bachelor's degree or equivalent practical experience.",
+      "8 years of software development experience.",
+      "5 years in design, architecture, and testing."
+    ],
+    "technologies": [
+      "Cloud SQL (MySQL, PostgreSQL, SQL Server).",
+      "Google Cloud Platform (GCP).",
+      "Large-scale software solutions and data infrastructure."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312124786": {
+    "title": "Software Engineer III, Full Stack, Google Cloud Platforms",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312124786",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4312184941": {
+    "title": "Software Engineer III, Front End, Google Workspace",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4312184941",
+    "responsibilities": [
+      "Write product or system development code.",
+      "Participate in design reviews with peers and stakeholders.",
+      "Debug and resolve product or system issues."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "2 years of software development experience.",
+      "Proficiency in Java and JavaScript/TypeScript."
+    ],
+    "technologies": [
+      "Front-end frameworks and full-stack development.",
+      "Generative AI or Agentic AI technologies.",
+      "Data structures, algorithms, and performance analysis."
+    ],
+    "employment_type": "Full-time"
   }
 }

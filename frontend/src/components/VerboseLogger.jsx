@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { apiRequest } from '../utils/api'
+import { useEffect, useRef, useState } from 'react'
 
 export default function VerboseLogger({ active = true }) {
   const [logs, setLogs] = useState([])

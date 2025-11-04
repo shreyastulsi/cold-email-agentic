@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../utils/api'
-import { trackLinkedInInvite, trackEmailSent } from '../utils/dashboardStats'
+import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
 // API functions
 async function sendLinkedInInvitation(linkedinUrl, message) {
@@ -178,20 +178,20 @@ export default function Messages() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'sent':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-900/50 text-green-300 border border-green-700/50'
       case 'sending':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50'
       case 'error':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-900/50 text-red-300 border border-red-700/50'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-800/50 text-gray-300 border border-gray-700/50'
     }
   }
 
   if (messages.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-gray-600 mb-4">No messages found. Redirecting to search...</p>
+        <p className="text-gray-400 mb-4">No messages found. Redirecting to search...</p>
       </div>
     )
   }
@@ -200,14 +200,14 @@ export default function Messages() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">📨 Review & Send Messages</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-white">📨 Review & Send Messages</h1>
+          <p className="mt-2 text-gray-300">
             Review and edit your LinkedIn messages and emails before sending to {messages.length} recruiter{messages.length !== 1 ? 's' : ''}
           </p>
         </div>
         <button
           onClick={() => navigate('/search')}
-          className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
+          className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
         >
           ← Back to Search
         </button>
@@ -221,18 +221,18 @@ export default function Messages() {
           const emailStatus = sendingStatus[index]?.email
 
           return (
-            <div key={index} className="rounded-lg border border-gray-200 bg-white p-6 shadow">
+            <div key={index} className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               {/* Recruiter Info */}
-              <div className="mb-6 border-b border-gray-200 pb-4">
+              <div className="mb-6 border-b border-gray-700/50 pb-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-xl font-semibold text-white">
                       {recruiter.name || mapItem.recruiter_name || 'Unknown Recruiter'}
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-300">
                       {recruiter.company || mapItem.recruiter_company || 'Unknown Company'}
                     </p>
-                    <div className="mt-2 space-y-1 text-sm text-gray-500">
+                    <div className="mt-2 space-y-1 text-sm text-gray-400">
                       {recruiter.extracted_email && (
                         <p>📧 Email: {recruiter.extracted_email}</p>
                       )}
@@ -252,10 +252,10 @@ export default function Messages() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-gray-700">
+                    <div className="text-sm font-medium text-gray-300">
                       Job: {mapItem.job_title || 'N/A'}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-400">
                       {mapItem.job_company || 'N/A'}
                     </div>
                   </div>
@@ -266,7 +266,7 @@ export default function Messages() {
                 {/* LinkedIn Message Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-semibold text-gray-900">💼 LinkedIn Message</h4>
+                    <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
                     {linkedinStatus && (
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus)}`}>
                         {getStatusIcon(linkedinStatus)} {linkedinStatus}
@@ -275,7 +275,7 @@ export default function Messages() {
                   </div>
                   
                   <textarea
-                    className="h-64 w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                    className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
                     value={messageData.editedLinkedInMessage || ''}
                     onChange={(e) => updateMessage(index, 'editedLinkedInMessage', e.target.value)}
                     placeholder="LinkedIn message will appear here..."
@@ -295,7 +295,7 @@ export default function Messages() {
                 {/* Email Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-semibold text-gray-900">📧 Email</h4>
+                    <h4 className="text-lg font-semibold text-white">📧 Email</h4>
                     {emailStatus && (
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus)}`}>
                         {getStatusIcon(emailStatus)} {emailStatus}
@@ -304,18 +304,18 @@ export default function Messages() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Subject</label>
+                    <label className="block text-sm font-medium text-gray-300">Subject</label>
                     <input
                       type="text"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
                       value={messageData.editedEmailSubject || ''}
                       onChange={(e) => updateMessage(index, 'editedEmailSubject', e.target.value)}
                       placeholder="Email subject..."
                     />
                     
-                    <label className="block text-sm font-medium text-gray-700">Body</label>
+                    <label className="block text-sm font-medium text-gray-300">Body</label>
                     <textarea
-                      className="h-48 w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                      className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
                       value={messageData.editedEmailBody || ''}
                       onChange={(e) => updateMessage(index, 'editedEmailBody', e.target.value)}
                       placeholder="Email body will appear here..."
@@ -337,11 +337,11 @@ export default function Messages() {
       </div>
 
       {/* Summary Actions */}
-      <div className="mt-8 rounded-lg bg-gray-50 p-6">
+      <div className="mt-8 rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Batch Actions</h3>
-            <p className="text-sm text-gray-600">Send all messages at once</p>
+            <h3 className="text-lg font-semibold text-white">Batch Actions</h3>
+            <p className="text-sm text-gray-300">Send all messages at once</p>
           </div>
           <div className="flex gap-3">
             <button

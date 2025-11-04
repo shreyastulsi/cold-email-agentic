@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { signIn, signUp, signOut, getCurrentUser } from '../utils/supabase'
+import { useEffect, useState } from 'react'
+import { getCurrentUser, signIn, signOut, signUp } from '../utils/supabase'
 
 export default function Auth() {
   const [email, setEmail] = useState('')
@@ -47,11 +47,11 @@ export default function Auth() {
 
   if (user) {
     return (
-      <div className="rounded-lg bg-white p-4 shadow">
+      <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-4 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-900">Signed in</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="text-sm font-medium text-white">Signed in</p>
+            <p className="text-xs text-gray-400">{user.email}</p>
           </div>
           <button
             onClick={handleSignOut}
@@ -65,20 +65,20 @@ export default function Auth() {
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">
+    <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
+      <h2 className="mb-4 text-lg font-semibold text-white">
         {isSignUp ? 'Sign Up' : 'Sign In'}
       </h2>
       
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
+        <div className="mb-4 rounded-lg bg-red-900/50 border border-red-700/50 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
       <form onSubmit={handleAuth} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Email
           </label>
           <input
@@ -86,13 +86,13 @@ export default function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
             placeholder="your@email.com"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Password
           </label>
           <input
@@ -100,7 +100,7 @@ export default function Auth() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
             placeholder="••••••••"
           />
         </div>
@@ -116,7 +116,7 @@ export default function Auth() {
 
       <button
         onClick={() => setIsSignUp(!isSignUp)}
-        className="mt-4 w-full text-sm text-gray-600 hover:text-gray-900"
+        className="mt-4 w-full text-sm text-gray-400 hover:text-gray-200"
       >
         {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
       </button>

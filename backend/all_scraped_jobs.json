@@ -1,15 +1,15 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4266941471",
-    "title": "Research Scientist (L4/5) - Globalization - Multimodal LLM",
+    "url": "https://www.linkedin.com/jobs/view/4334033799",
+    "title": "Software Engineer III, Embedded Systems, Geo Hardware",
     "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "Los Gatos, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$170,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Research and develop Multimodal LLMs and Computer Vision algorithms  \n• Collaborate with ML scientists and engineers on business applications  \n• Identify new research opportunities with significant business impact  \n\n**REQUIREMENTS:**\n• Proven research track record in Multimodal LLMs and Computer Vision  \n• MS or PhD in ML, Computer Science, or related fields  \n• Exceptional communication and collaboration skills  \n\n**KEY TECHNOLOGIES:**\n• PyTorch  \n• TensorFlow  \n• Machine Learning and Deep Learning frameworks",
+    "location": "Mountain View, CA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$141,000.00/yr - $202,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Write and review product/system development code.\n- Triage and resolve product/system issues.\n- Own software life cycle for sensor systems.\n- Collaborate with cross-functional engineering teams.\n- Develop high-performance software for advanced sensor systems.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.\n- 2 years of C++ software development experience.\n- 2 years working with embedded operating systems.\n- Experience in a Linux environment.\n- Familiarity with GNSS and sensor integration.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Embedded operating systems.\n- Linux environment.\n- GNSS technologies (e.g., GPS).\n- Serial protocols (e.g., SPI, I2C).",
     "criteria": [
       {
         "name": "Seniority level",
@@ -21,26 +21,26 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Entertainment Providers"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Research and develop Multimodal LLMs and Computer Vision algorithms  \n• Collaborate with ML scientists and engineers on business applications  \n• Identify new research opportunities with significant business impact  \n\n**REQUIREMENTS:**\n• Proven research track record in Multimodal LLMs and Computer Vision  \n• MS or PhD in ML, Computer Science, or related fields  \n• Exceptional communication and collaboration skills  \n\n**KEY TECHNOLOGIES:**\n• PyTorch  \n• TensorFlow  \n• Machine Learning and Deep Learning frameworks"
+    "condensed_description": "**RESPONSIBILITIES:**\n- Write and review product/system development code.\n- Triage and resolve product/system issues.\n- Own software life cycle for sensor systems.\n- Collaborate with cross-functional engineering teams.\n- Develop high-performance software for advanced sensor systems.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.\n- 2 years of C++ software development experience.\n- 2 years working with embedded operating systems.\n- Experience in a Linux environment.\n- Familiarity with GNSS and sensor integration.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Embedded operating systems.\n- Linux environment.\n- GNSS technologies (e.g., GPS).\n- Serial protocols (e.g., SPI, I2C)."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4313093762",
-    "title": "Machine Learning Engineer 5 - Ads",
+    "url": "https://www.linkedin.com/jobs/view/4312175515",
+    "title": "Software Engineer, ML Infrastructure, Chrome",
     "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "Washington, DC",
-    "applications": "182 applicants",
-    "salary": "$100,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop scalable machine learning models for ad personalization.\n- Collaborate with researchers to integrate models into production.\n- Enhance ML model performance for increasing ad demand.\n- Design advanced models for ad ranking and personalization.\n- Drive business impact through innovative advertising solutions.\n- Collaborate across disciplines to meet technical and business needs.\n- Champion user experience while balancing advertiser goals.\n\n**REQUIREMENTS:**\n- Proficiency in Java, Python, or Scala.\n- Experience with end-to-end ML model deployment.\n- Familiarity with DevOps tools and practices.\n- Strong problem-solving and collaboration skills.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks and tools.\n- Real-time systems and data processing technologies.\n- Ad tech and optimization algorithms.",
+    "location": "San Francisco, CA",
+    "applications": "41 applicants",
+    "salary": "$141,000.00/yr - $202,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Build and maintain scalable ML infrastructure for Chrome.\n- Develop systems for model management and execution.\n- Collaborate with feature teams to integrate ML solutions.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of software development experience.\n- Experience with software development life-cycle and codebases.\n\n**KEY TECHNOLOGIES:**\n- Programming languages: C++, Java, Python, Go.\n- Machine learning tools: TensorFlow, TFLite.\n- ML infrastructure: model serving platforms, data pipelines.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -52,26 +52,26 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Entertainment Providers"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop scalable machine learning models for ad personalization.\n- Collaborate with researchers to integrate models into production.\n- Enhance ML model performance for increasing ad demand.\n- Design advanced models for ad ranking and personalization.\n- Drive business impact through innovative advertising solutions.\n- Collaborate across disciplines to meet technical and business needs.\n- Champion user experience while balancing advertiser goals.\n\n**REQUIREMENTS:**\n- Proficiency in Java, Python, or Scala.\n- Experience with end-to-end ML model deployment.\n- Familiarity with DevOps tools and practices.\n- Strong problem-solving and collaboration skills.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks and tools.\n- Real-time systems and data processing technologies.\n- Ad tech and optimization algorithms."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Build and maintain scalable ML infrastructure for Chrome.\n- Develop systems for model management and execution.\n- Collaborate with feature teams to integrate ML solutions.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of software development experience.\n- Experience with software development life-cycle and codebases.\n\n**KEY TECHNOLOGIES:**\n- Programming languages: C++, Java, Python, Go.\n- Machine learning tools: TensorFlow, TFLite.\n- ML infrastructure: model serving platforms, data pipelines."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4303423248",
-    "title": "Product Manager, Machine Learning Architecture (Ads Platform)",
+    "url": "https://www.linkedin.com/jobs/view/4312187276",
+    "title": "Software Engineer III, Infrastructure, Google Cloud Platforms",
     "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "Los Gatos, CA",
-    "applications": "161 applicants",
-    "salary": "$240,000.00/yr - $725,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Define and own product vision for shared ML architecture.  \n• Deliver APIs, SDKs, and UI for product teams.  \n• Establish governance and privacy standards with Legal and Privacy teams.  \n• Partner with Experience Design to improve workflows and reduce task time.  \n• Integrate third-party applications with Netflix Ad Suite.  \n• Track success metrics and iterate based on feedback.  \n\n**REQUIREMENTS:**\n• 10+ years of Product Management experience.  \n• Proven track record in foundational tech infrastructures.  \n• Strong visionary leadership and roadmap development skills.  \n• Deep understanding of advertising and machine learning technologies.  \n• Experience with cross-functional team collaboration.  \n• Familiarity with data privacy regulations.  \n\n**KEY TECHNOLOGIES:**\n• Machine Learning infrastructure.  \n• APIs and SDKs for product integration.  \n• Advertising technology components.",
+    "location": "San Francisco, CA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$141,000.00/yr - $202,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Write product or system development code.\n- Participate in design reviews with peers and stakeholders.\n- Review and provide feedback on code developed by others.\n- Triage and debug product or system issues.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of experience in C++ software development.\n- 2 years of experience with large-scale infrastructure or distributed systems.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Cloud networking and cloud infrastructure.\n- Performance analysis and visualization tools.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -83,26 +83,26 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Entertainment Providers"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Define and own product vision for shared ML architecture.  \n• Deliver APIs, SDKs, and UI for product teams.  \n• Establish governance and privacy standards with Legal and Privacy teams.  \n• Partner with Experience Design to improve workflows and reduce task time.  \n• Integrate third-party applications with Netflix Ad Suite.  \n• Track success metrics and iterate based on feedback.  \n\n**REQUIREMENTS:**\n• 10+ years of Product Management experience.  \n• Proven track record in foundational tech infrastructures.  \n• Strong visionary leadership and roadmap development skills.  \n• Deep understanding of advertising and machine learning technologies.  \n• Experience with cross-functional team collaboration.  \n• Familiarity with data privacy regulations.  \n\n**KEY TECHNOLOGIES:**\n• Machine Learning infrastructure.  \n• APIs and SDKs for product integration.  \n• Advertising technology components."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Write product or system development code.\n- Participate in design reviews with peers and stakeholders.\n- Review and provide feedback on code developed by others.\n- Triage and debug product or system issues.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of experience in C++ software development.\n- 2 years of experience with large-scale infrastructure or distributed systems.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Cloud networking and cloud infrastructure.\n- Performance analysis and visualization tools."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4293170601",
-    "title": "Product Manager, Content Lifecycle Management",
+    "url": "https://www.linkedin.com/jobs/view/4312174486",
+    "title": "Optics and Display Test Engineer, Consumer Hardware",
     "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "Los Angeles, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$240,000.00/yr - $725,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Lead development of Content Lifecycle Management platform.\n- Define and deliver multi-year platform strategy.\n- Build business cases and measure product impact.\n- Collaborate with cross-functional teams for adoption.\n- Establish lifecycle governance framework and standardized stages.\n\n**REQUIREMENTS:**\n- 7+ years of Product Management experience.\n- Proven success in scaling technical products.\n- Strong understanding of data modeling and governance.\n- Excellent communication and relationship-building skills.\n- High AI literacy and experience with AI products.\n\n**KEY TECHNOLOGIES:**\n- Product Lifecycle Management (PLM) systems.\n- Data management and governance tools.\n- AI-enabled product solutions.",
+    "location": "Mountain View, CA",
+    "applications": "166 applicants",
+    "salary": "$122,000.00/yr - $174,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Design and develop factory test stations for optics/display/camera calibration.  \n- Collaborate with manufacturers to integrate hardware and software for production lines.  \n- Analyze build data to improve accuracy and stabilize hardware setups.  \n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.  \n- 3 years of experience in testing consumer electronic products.  \n- Experience in optics, display, or camera testing.  \n\n**KEY TECHNOLOGIES:**\n- Hardware/software debug and failure analysis.  \n- Mechanical and software test station development.  \n- Calibration of cameras, colorimeters, and optical instruments.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -114,26 +114,26 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Entertainment Providers"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Lead development of Content Lifecycle Management platform.\n- Define and deliver multi-year platform strategy.\n- Build business cases and measure product impact.\n- Collaborate with cross-functional teams for adoption.\n- Establish lifecycle governance framework and standardized stages.\n\n**REQUIREMENTS:**\n- 7+ years of Product Management experience.\n- Proven success in scaling technical products.\n- Strong understanding of data modeling and governance.\n- Excellent communication and relationship-building skills.\n- High AI literacy and experience with AI products.\n\n**KEY TECHNOLOGIES:**\n- Product Lifecycle Management (PLM) systems.\n- Data management and governance tools.\n- AI-enabled product solutions."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Design and develop factory test stations for optics/display/camera calibration.  \n- Collaborate with manufacturers to integrate hardware and software for production lines.  \n- Analyze build data to improve accuracy and stabilize hardware setups.  \n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.  \n- 3 years of experience in testing consumer electronic products.  \n- Experience in optics, display, or camera testing.  \n\n**KEY TECHNOLOGIES:**\n- Hardware/software debug and failure analysis.  \n- Mechanical and software test station development.  \n- Calibration of cameras, colorimeters, and optical instruments."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4302692636",
-    "title": "Senior Product Designer, Content Scheduling Enterprise XD",
+    "url": "https://www.linkedin.com/jobs/view/4312143097",
+    "title": "Software Engineer, Embedded Systems, Firmware, Ambient Platform",
     "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$120,000.00/yr - $515,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Collaborate with multi-disciplinary team members to enhance business outcomes.\n- Conduct user research and create intuitive design solutions.\n- Develop prototypes and conduct usability testing for user feedback.\n\n**REQUIREMENTS:**\n- 7+ years in enterprise software product design experience.\n- Proven track record in designing scalable B2B experiences.\n- Strong communication skills for diverse stakeholder engagement.\n\n**KEY TECHNOLOGIES:**\n- Mastery of Figma's advanced features.\n- Experience with machine learning and data science collaboration.\n- Familiarity with off-shore development team collaboration.",
+    "location": "Mountain View, CA",
+    "applications": "167 applicants",
+    "salary": "$141,000.00/yr - $202,000.00/yr",
+    "description": "RESPONSIBILITIES:\n• Write product or system development code.  \n• Participate in design reviews with peers and stakeholders.  \n• Debug and resolve product or system issues.  \n\nREQUIREMENTS:\n• Bachelor’s degree or equivalent practical experience.  \n• 2 years of C/C++ software development experience.  \n• 2 years working with embedded operating systems.  \n\nKEY TECHNOLOGIES:\n• Embedded operating systems.  \n• C/C++ programming languages.  \n• Low-level hardware interaction.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -145,13 +145,13 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Entertainment Providers"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Collaborate with multi-disciplinary team members to enhance business outcomes.\n- Conduct user research and create intuitive design solutions.\n- Develop prototypes and conduct usability testing for user feedback.\n\n**REQUIREMENTS:**\n- 7+ years in enterprise software product design experience.\n- Proven track record in designing scalable B2B experiences.\n- Strong communication skills for diverse stakeholder engagement.\n\n**KEY TECHNOLOGIES:**\n- Mastery of Figma's advanced features.\n- Experience with machine learning and data science collaboration.\n- Familiarity with off-shore development team collaboration."
+    "condensed_description": "RESPONSIBILITIES:\n• Write product or system development code.  \n• Participate in design reviews with peers and stakeholders.  \n• Debug and resolve product or system issues.  \n\nREQUIREMENTS:\n• Bachelor’s degree or equivalent practical experience.  \n• 2 years of C/C++ software development experience.  \n• 2 years working with embedded operating systems.  \n\nKEY TECHNOLOGIES:\n• Embedded operating systems.  \n• C/C++ programming languages.  \n• Low-level hardware interaction."
   }
 ]

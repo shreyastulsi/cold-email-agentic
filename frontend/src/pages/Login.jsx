@@ -1,10 +1,22 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { signIn, signUp, getCurrentUser } from '../utils/supabase'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Logo } from '../components/logo'
+import { Button } from '../components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { getCurrentUser, signIn, signUp } from '../utils/supabase'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [isSignUp, setIsSignUp] = useState(false)
+  const location = useLocation()
+  const [isSignUp, setIsSignUp] = useState(location.pathname === '/signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -17,11 +29,21 @@ export default function Login() {
     const checkUser = async () => {
       const user = await getCurrentUser()
       if (user) {
-        navigate('/')
+        navigate('/dashboard')
       }
     }
     checkUser()
   }, [navigate])
+
+  // Update isSignUp based on current route
+  useEffect(() => {
+    setIsSignUp(location.pathname === '/signup')
+    // Clear form when switching between login/signup
+    setError(null)
+    setMessage(null)
+    setPassword('')
+    setConfirmPassword('')
+  }, [location.pathname])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -58,8 +80,11 @@ export default function Login() {
         }, 3000)
       } else {
         await signIn(email, password)
-        // Successful login - navigate to dashboard
-        navigate('/')
+        // Successful login - navigate to loading then dashboard
+        navigate('/loading')
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 1000)
       }
     } catch (err) {
       setError(err.message || 'Authentication failed')
@@ -69,138 +94,124 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray to-gray flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md flex flex-col gap-6">
         {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xl">Κ</span>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Kayrux</h1>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center mb-4">
+            <Link to="/">
+              <Logo />
+            </Link>
           </div>
-          <p className="text-gray-600">Intelligent Outreach Platform</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 text-center">
-              {isSignUp ? 'Create Account' : 'Welcome Back'}
-            </h2>
-            <p className="text-sm text-gray-600 text-center mt-2">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">
+              {isSignUp ? 'Create Account' : 'Welcome Back!'}
+            </CardTitle>
+            <CardDescription>
               {isSignUp ? 'Sign up to get started' : 'Sign in to your account'}
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
-              {message}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
-                placeholder="your@email.com"
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
-                placeholder="••••••••"
-                disabled={loading}
-                minLength={isSignUp ? 6 : undefined}
-              />
-              {isSignUp && (
-                <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
-              )}
-            </div>
-
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
-                  placeholder="••••••••"
-                  disabled={loading}
-                />
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-3 text-sm text-red-800 dark:text-red-200">
+                {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 text-white font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md hover:shadow-lg"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                </span>
-              ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
-              )}
-            </button>
-          </form>
+            {message && (
+              <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+                {message}
+              </div>
+            )}
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError(null)
-                setMessage(null)
-                setPassword('')
-                setConfirmPassword('')
-              }}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              {isSignUp ? (
-                <>Already have an account? <span className="underline">Sign in</span></>
-              ) : (
-                <>Don't have an account? <span className="underline">Sign up</span></>
-              )}
-            </button>
-          </div>
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    minLength={isSignUp ? 6 : undefined}
+                  />
+                  {isSignUp && (
+                    <p className="text-xs text-muted-foreground mt-1">At least 6 characters</p>
+                  )}
+                </div>
+                {isSignUp && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                    </span>
+                  ) : (
+                    isSignUp ? 'Create Account' : 'Sign In'
+                  )}
+                </Button>
+              </div>
+              <div className="mt-6 text-center text-sm">
+                {isSignUp ? (
+                  <>
+                    Already have an account?{' '}
+                    <Link to="/login" className="underline underline-offset-4 hover:text-primary">
+                      Sign in
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    Don&apos;t have an account?{' '}
+                    <Link to="/signup" className="underline underline-offset-4 hover:text-primary">
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
+          By clicking continue, you agree to our <a href="#">Terms of Service</a>{' '}
+          and <a href="#">Privacy Policy</a>.
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
       </div>
     </div>
   )

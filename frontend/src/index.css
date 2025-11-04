@@ -1,13 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=The+Seasons:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  :root {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 83.1%;
+    --radius: 0.5rem;
+    --sidebar-background: transparent;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 100% / 0.1;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 100%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 83.1%;
+    --sidebar-background: transparent;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 100% / 0.1;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    background: linear-gradient(to bottom right, rgb(17, 24, 39), rgb(3, 7, 18), rgb(3, 7, 18));
+    min-height: 100vh;
+  }
+  body {
+    background: transparent;
+    color: hsl(var(--foreground));
+    margin: 0;
+    font-family: 'Avenir', 'Avenir Next', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Sidebar glass effect - matching hero navbar */
+[data-sidebar="sidebar"],
+.bg-sidebar,
+[class*="bg-sidebar"] {
+  background: transparent !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+}
+
+/* Ensure sidebar wrapper is also transparent */
+[data-state="expanded"] [data-sidebar="sidebar"],
+[data-state="collapsed"] [data-sidebar="sidebar"] {
+  background: transparent !important;
+}
+
+/* Sidebar parent container */
+.group[data-state] > div[class*="fixed"] {
+  background: transparent !important;
+}
+
+/* Ensure SidebarProvider wrapper shows gradient background */
+.group.sidebar-wrapper,
+[class*="group/sidebar-wrapper"] {
+  background: linear-gradient(to bottom right, rgb(17, 24, 39), rgb(3, 7, 18), rgb(3, 7, 18)) !important;
+  min-height: 100vh;
+}
+
+/* Ensure html/body background is visible */
+html {
+  background: linear-gradient(to bottom right, rgb(17, 24, 39), rgb(3, 7, 18), rgb(3, 7, 18)) !important;
+}
+
+/* Sidebar active state highlighting */
+[data-sidebar="menu-button"][data-active="true"],
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+  font-weight: 500;
+  border-left: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Sidebar hover states */
+[data-sidebar="menu-button"]:hover:not([data-active="true"]),
+[data-sidebar="menu-sub-button"]:hover:not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+}
+
+/* Active icon color */
+[data-sidebar="menu-button"][data-active="true"] svg,
+[data-sidebar="menu-sub-button"][data-active="true"] svg {
+  color: white !important;
 }
 

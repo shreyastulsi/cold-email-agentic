@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiRequest } from '../utils/api'
 
 export default function ResumeUpload() {
   const navigate = useNavigate()
@@ -96,12 +95,12 @@ export default function ResumeUpload() {
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
+    <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Resume Upload</h2>
+        <h2 className="text-lg font-semibold text-white">Resume Upload</h2>
         <button
           onClick={() => navigate('/search')}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-blue-400 hover:text-blue-300"
         >
           Go to Search →
         </button>
@@ -109,7 +108,7 @@ export default function ResumeUpload() {
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Upload Your Resume (PDF)
           </label>
           <div className="flex items-center space-x-4">
@@ -121,11 +120,11 @@ export default function ResumeUpload() {
                 className="hidden"
                 disabled={uploading}
               />
-              <div className="flex items-center justify-between rounded-lg border-2 border-dashed border-gray-300 p-4 hover:border-blue-500 transition-colors">
-                <span className="text-sm text-gray-600">
+              <div className="flex items-center justify-between rounded-lg border-2 border-dashed border-gray-700/50 p-4 hover:border-blue-500 transition-colors bg-gray-900/30">
+                <span className="text-sm text-gray-300">
                   {file ? file.name : 'Choose a PDF file'}
                 </span>
-                <span className="text-sm text-blue-600 hover:text-blue-800">
+                <span className="text-sm text-blue-400 hover:text-blue-300">
                   Browse
                 </span>
               </div>
@@ -133,23 +132,23 @@ export default function ResumeUpload() {
           </div>
           
           {file && (
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-gray-400">
               File: {file.name} ({(file.size / 1024).toFixed(2)} KB)
             </div>
           )}
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
+          <div className="rounded-lg bg-red-900/50 border border-red-700/50 p-3 text-sm text-red-300">
             {error}
           </div>
         )}
 
         {uploadStatus === 'success' && (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+          <div className="rounded-lg bg-green-900/50 border border-green-700/50 p-3 text-sm text-green-300">
             ✅ Resume uploaded successfully!
             <br />
-            <span className="text-xs text-green-700 mt-1 block">
+            <span className="text-xs text-green-400 mt-1 block">
               Old resume content has been replaced. Redirecting to resume editor...
             </span>
           </div>
@@ -163,16 +162,16 @@ export default function ResumeUpload() {
           {uploading ? 'Uploading...' : 'Upload Resume'}
         </button>
 
-        <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 mt-4">
-          <p className="text-xs text-yellow-800 font-medium mb-1">⚠️ Note:</p>
-          <p className="text-xs text-yellow-700">
+        <div className="rounded-lg bg-yellow-900/50 border border-yellow-700/50 p-3 mt-4">
+          <p className="text-xs text-yellow-300 font-medium mb-1">⚠️ Note:</p>
+          <p className="text-xs text-yellow-200">
             Uploading a new resume will replace your existing resume content. The old extracted bullets will be replaced with new ones from the uploaded PDF.
           </p>
         </div>
         
-        <div className="text-xs text-gray-500 mt-4">
-          <p>💡 Your resume will be used to:</p>
-          <ul className="list-disc list-inside mt-1 space-y-1 ml-2">
+        <div className="text-xs text-gray-400 mt-4">
+          <p className="text-gray-300">💡 Your resume will be used to:</p>
+          <ul className="list-disc list-inside mt-1 space-y-1 ml-2 text-gray-400">
             <li>Extract 7-8 key bullets using AI</li>
             <li>Filter jobs by relevance to your background</li>
             <li>Generate personalized messages for recruiters</li>

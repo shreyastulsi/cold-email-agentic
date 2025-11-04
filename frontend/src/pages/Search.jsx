@@ -1,7 +1,11 @@
-import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { AnimatePresence } from 'framer-motion'
+import { motion } from 'motion/react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import VerboseLogger from '../components/VerboseLogger'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { LoaderOne } from '../components/ui/loader'
+import { apiRequest } from '../utils/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -14,8 +18,6 @@ const steps = [
 ]
 
 // API functions
-import { apiRequest } from '../utils/api'
-
 async function searchCompany(name) {
   return apiRequest('/api/v1/search/company', {
     method: 'POST',
@@ -30,7 +32,7 @@ async function searchJobs(companyIds, jobTitles, jobType = 'full_time') {
       company_ids: companyIds,
       job_titles: jobTitles,
       job_type: jobType,
-      location_id: '102571732' // Default to US
+      location_id: '102571732'
     })
   })
 }
@@ -65,6 +67,15 @@ async function mapJobsToRecruiters(jobs, recruiters, maxPairs = 2) {
   })
 }
 
+async function extractEmails(recruiters) {
+  return apiRequest('/api/v1/outreach/emails/extract', {
+    method: 'POST',
+    body: JSON.stringify({
+      recruiters: recruiters
+    })
+  })
+}
+
 async function generateLinkedInMessage(recruiter, jobTitle, companyName) {
   return apiRequest('/api/v1/outreach/linkedin/generate', {
     method: 'POST',
@@ -73,16 +84,6 @@ async function generateLinkedInMessage(recruiter, jobTitle, companyName) {
       job_title: jobTitle,
       company_name: companyName,
       resume_file: 'Resume-Tulsi,Shreyas.pdf'
-    })
-  })
-}
-
-async function sendLinkedInInvitation(linkedinUrl, message) {
-  return apiRequest('/api/v1/outreach/linkedin/send', {
-    method: 'POST',
-    body: JSON.stringify({
-      linkedin_url: linkedinUrl,
-      message: message
     })
   })
 }
@@ -98,533 +99,491 @@ async function generateEmail(jobTitles, jobType, recruiter) {
   })
 }
 
-async function sendEmail(to, subject, body) {
-  return apiRequest('/api/v1/outreach/email/send', {
-    method: 'POST',
-    body: JSON.stringify({
-      to: to,
-      subject: subject,
-      body: body
-    })
-  })
-}
+// Floating GPT-like thinking component
+function ThinkingIndicator({ logs, isActive }) {
+  const latestLog = logs && logs.length > 0 ? logs[logs.length - 1] : null
+  
+  if (!isActive && !latestLog) return null
 
-async function extractEmails(recruiters) {
-  return apiRequest('/api/v1/outreach/emails/extract', {
-    method: 'POST',
-    body: JSON.stringify({
-      recruiters: recruiters
-    })
-  })
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="fixed bottom-8 right-8 max-w-md bg-gray-900/90 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 shadow-2xl z-50"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-1">
+          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+        </div>
+        <div className="flex-1 min-w-0">
+          {latestLog ? (
+            <>
+              <div className="text-xs text-cyan-400/70 font-mono mb-1">
+                {latestLog.emoji || '•'} {latestLog.message}
+              </div>
+              <div className="text-[10px] text-gray-500 font-mono">
+                {new Date(latestLog.timestamp).toLocaleTimeString()}
+              </div>
+            </>
+          ) : (
+            <div className="text-xs text-cyan-400/70 font-mono">
+              Thinking...
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 export default function Search() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedCompanies, setSelectedCompanies] = useState([])
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]) // Store company IDs
-  const [selectedJobs, setSelectedJobs] = useState([])
+  const [selectedCompanies, setSelectedCompanies] = useState([]) // Array of company objects {name, id}
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTrigger, setSearchTrigger] = useState(null)
   const [jobTitle, setJobTitle] = useState('')
-  const [jobTitles, setJobTitles] = useState([]) // List of job titles to search
   const [jobType, setJobType] = useState('full_time')
   const [jobSearchTrigger, setJobSearchTrigger] = useState(null)
   const [isFiltering, setIsFiltering] = useState(false)
-  const [filterError, setFilterError] = useState(null)
-  const [filteredJobResults, setFilteredJobResults] = useState(null) // Store filtered jobs separately
-  const [recruiters, setRecruiters] = useState([])
-  const [isSearchingRecruiters, setIsSearchingRecruiters] = useState(false)
-  const [recruiterSearchError, setRecruiterSearchError] = useState(null)
-  const [mappedRecruiters, setMappedRecruiters] = useState([])
+  const [jobResults, setJobResults] = useState(null)
+  const [mappedJobs, setMappedJobs] = useState([]) // Jobs in recruiter mapping placeholders (dynamic slots)
+  const [isMappingToRecruiters, setIsMappingToRecruiters] = useState(false)
   const [mapping, setMapping] = useState([])
-  const [isMapping, setIsMapping] = useState(false)
-  const [mappingError, setMappingError] = useState(null)
-  
-  // Message generation and sending state
-  const [generatedMessages, setGeneratedMessages] = useState({}) // {index: {linkedinMessage, email}}
+  const [mappedRecruiters, setMappedRecruiters] = useState([])
   const [isGeneratingMessages, setIsGeneratingMessages] = useState(false)
-  const [sendingStatus, setSendingStatus] = useState({}) // {index: {linkedin: 'pending'|'success'|'error', email: 'pending'|'success'|'error'}}
-  const [recruitersWithEmails, setRecruitersWithEmails] = useState([])
-  const [isExtractingEmails, setIsExtractingEmails] = useState(false)
-  
+  const [thinkingLogs, setThinkingLogs] = useState([])
+  const eventSourceRef = useRef(null)
+  const [draggedJob, setDraggedJob] = useState(null)
+  const [draggedOverIndex, setDraggedOverIndex] = useState(null)
+
+  // Connect to verbose logger stream for thinking indicator
+  useEffect(() => {
+    let isMounted = true
+    const connectSSE = async () => {
+      try {
+        const { getSessionToken } = await import('../utils/supabase')
+        const token = await getSessionToken()
+        
+        if (!token) {
+          console.log('No token available for verbose logger')
+          return
+        }
+        
+        console.log('Connecting to verbose logger stream...')
+        const response = await fetch(`${API_BASE_URL}/api/v1/verbose/stream`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+          },
+          credentials: 'include'
+        })
+        
+        if (!response.ok) {
+          console.error('SSE connection failed:', response.status, response.statusText)
+          return
+        }
+        
+        console.log('SSE connection established')
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        
+        const readStream = async () => {
+          try {
+            while (isMounted) {
+              const { done, value } = await reader.read()
+              if (done) {
+                console.log('SSE stream ended')
+                break
+              }
+              
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() || ''
+              
+              for (const line of lines) {
+                if (line.trim() === '' || line.trim() === ': heartbeat') continue
+                
+                if (line.startsWith('data: ')) {
+                  try {
+                    const logEntry = JSON.parse(line.slice(6))
+                    if (isMounted) {
+                      setThinkingLogs(prev => {
+                        const newLogs = [...prev, logEntry]
+                        // Keep only last 5 logs
+                        return newLogs.slice(-5)
+                      })
+                    }
+                  } catch (e) {
+                    console.error('Error parsing log entry:', e, line)
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error reading stream:', error)
+            if (isMounted) {
+              // Try to reconnect after 3 seconds
+              setTimeout(() => {
+                if (isMounted) connectSSE()
+              }, 3000)
+            }
+          }
+        }
+        
+        readStream()
+        eventSourceRef.current = { close: () => {
+          isMounted = false
+          reader.cancel()
+        } }
+      } catch (error) {
+        console.error('Error connecting to verbose logger:', error)
+        // Try to reconnect after 3 seconds
+        if (isMounted) {
+          setTimeout(() => {
+            if (isMounted) connectSSE()
+          }, 3000)
+        }
+      }
+    }
+
+    connectSSE()
+
+    return () => {
+      isMounted = false
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [])
+
   // Search companies query
-  const { data: searchResults, isLoading: isSearching, error: searchError } = useQuery({
+  const { data: searchResults, isLoading: isSearching } = useQuery({
     queryKey: ['searchCompanies', searchTrigger],
     queryFn: () => searchCompany(searchTrigger),
-    enabled: !!searchTrigger, // Only run when searchTrigger is set
+    enabled: !!searchTrigger,
     retry: false
   })
 
-  // Helper function to evenly sample N jobs from all results
-  // Examples: 10 jobs -> positions 1,3,5,7,9 (0-based: 0,2,4,6,8)
-  //           20 jobs -> positions 1,5,9,13,17 (0-based: 0,4,8,12,16)
-  const sampleJobsEvenly = (jobs, sampleSize = 5) => {
-    if (!jobs || jobs.length === 0) return []
-    if (jobs.length <= sampleSize) return jobs
-    
-    const totalJobs = jobs.length
-    
-    // Calculate evenly distributed indices across the array
-    // Formula: index = Math.floor(i * (totalJobs - 1) / (sampleSize - 1))
-    // This ensures we get evenly spaced positions
-    const indices = []
-    
-    for (let i = 0; i < sampleSize; i++) {
-      // Calculate position: evenly distribute across the array
-      // For 10 jobs, 5 samples: 0, floor(9/4*1)=2, floor(9/4*2)=4, floor(9/4*3)=6, 9
-      if (i === 0) {
-        indices.push(0)
-      } else if (i === sampleSize - 1) {
-        indices.push(totalJobs - 1)
-      } else {
-        // Calculate step: how far apart each sample should be
-        const step = (totalJobs - 1) / (sampleSize - 1)
-        const index = Math.floor(i * step)
-        indices.push(Math.min(index, totalJobs - 1))
-      }
-    }
-    
-    // Remove duplicates and sort
-    const uniqueIndices = [...new Set(indices)].sort((a, b) => a - b)
-    
-    // Sample jobs at these indices
-    return uniqueIndices.slice(0, sampleSize).map(idx => jobs[idx])
-  }
-
-  // Search jobs query - search all companies, then evenly sample 5 for display
-  const { data: jobResults, isLoading: isSearchingJobs, error: jobSearchError } = useQuery({
+  // Search jobs query - limit to 5 jobs total
+  const { data: jobsData, isLoading: isSearchingJobs, error: jobSearchError } = useQuery({
     queryKey: ['searchJobs', jobSearchTrigger],
     queryFn: async () => {
-      const { companyIds, titles, type } = jobSearchTrigger
-      const results = await searchJobs(companyIds, titles, type)
-      // Search all companies, then evenly sample 5 jobs for display (before AI filtering)
-      if (results?.jobs && results.jobs.length > 5) {
-        const sampledJobs = sampleJobsEvenly(results.jobs, 5)
-        return { ...results, jobs: sampledJobs, total_jobs_found: results.jobs.length }
+      if (!jobSearchTrigger) throw new Error('Job search trigger not set')
+      const { companyIds, title, type } = jobSearchTrigger
+      const result = await searchJobs(companyIds, [title], type)
+      // Limit to 5 jobs total from unipile
+      if (result?.jobs && result.jobs.length > 5) {
+        return { ...result, jobs: result.jobs.slice(0, 5) }
       }
-      return results
+      return result
     },
-    enabled: !!jobSearchTrigger && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.titles.length > 0,
+    enabled: !!(jobSearchTrigger && jobSearchTrigger.companyIds && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.title),
     retry: false
   })
 
-  // Add job title to list
-  const addJobTitle = () => {
-    if (jobTitle.trim() && !jobTitles.includes(jobTitle.trim())) {
-      setJobTitles([...jobTitles, jobTitle.trim()])
-      setJobTitle('')
+  // Update step based on progress
+  useEffect(() => {
+    if (selectedCompanies.length > 0) setCurrentStep(0)
+    if (jobResults) setCurrentStep(1)
+    if (mappedJobs.length > 0) setCurrentStep(1)
+    if (mapping.length > 0) setCurrentStep(3)
+  }, [selectedCompanies, jobResults, mappedJobs, mapping])
+
+  // Handle company selection
+  const handleSelectCompany = () => {
+    if (searchResults?.company_id && searchResults?.company?.name) {
+      const companyName = searchResults.company.name
+      const companyId = searchResults.company_id
+      
+      // Check if already selected
+      if (!selectedCompanies.find(c => c.id === companyId)) {
+        setSelectedCompanies([...selectedCompanies, { name: companyName, id: companyId }])
+        setSearchQuery('')
+        setSearchTrigger(null)
+      }
     }
   }
 
-  // Remove job title from list
-  const removeJobTitle = (title) => {
-    setJobTitles(jobTitles.filter(t => t !== title))
+  // Remove company
+  const handleRemoveCompany = (companyId) => {
+    setSelectedCompanies(selectedCompanies.filter(c => c.id !== companyId))
   }
 
-  // Search for jobs
-  const handleJobSearch = () => {
-    if (selectedCompanyIds.length > 0 && jobTitles.length > 0) {
-      // Clear filtered results when starting new search
-      setFilteredJobResults(null)
+  // Handle job search
+  const handleSearchJobs = () => {
+    const companyIds = selectedCompanies.map(c => c.id)
+    if (companyIds.length > 0 && jobTitle.trim()) {
       setJobSearchTrigger({
-        companyIds: selectedCompanyIds,
-        titles: jobTitles,
+        companyIds: companyIds,
+        title: jobTitle.trim(),
         type: jobType
       })
     }
   }
 
-  // Filter jobs using AI
-  const handleFilterJobs = async () => {
-    const jobsToFilter = filteredJobResults?.jobs || jobResults?.jobs
-    if (!jobsToFilter || jobsToFilter.length === 0) {
-      setFilterError('No jobs to filter. Please search for jobs first.')
-      return
+  // Update job results
+  useEffect(() => {
+    if (jobsData?.jobs) {
+      setJobResults(jobsData)
+      setCurrentStep(1)
+      // Initialize mappedJobs array with nulls matching the number of jobs
+      const jobCount = jobsData.jobs.length
+      setMappedJobs(Array(jobCount).fill(null))
     }
+  }, [jobsData])
+
+  // Handle filter jobs
+  const handleFilterJobs = async () => {
+    if (!jobResults?.jobs || jobResults.jobs.length === 0) return
 
     setIsFiltering(true)
-    setFilterError(null)
-
     try {
-      const result = await filterJobs(jobsToFilter)
-      
-      if (result.error) {
-        // Include debug info in error message
-        let errorMsg = result.error
-        if (result.debug) {
-          const debugStr = typeof result.debug === 'string' 
-            ? result.debug 
-            : JSON.stringify(result.debug, null, 2)
-          errorMsg += `\n\nDebug Info:\n${debugStr}`
-        }
-        setFilterError(errorMsg)
-      } else if (result.filtered_jobs) {
-        // Update filtered job results (top 2 for testing)
-        setFilteredJobResults({ jobs: result.filtered_jobs })
-        // Automatically select the filtered jobs for next stage
-        setSelectedJobs(result.filtered_jobs)
-        setFilterError(null)
+      const result = await filterJobs(jobResults.jobs)
+      if (result.filtered_jobs && result.filtered_jobs.length > 0) {
+        // Auto-place filtered jobs into mapping slots
+        const filtered = result.filtered_jobs
+        const newMappedJobs = Array(jobResults.jobs.length).fill(null)
+        filtered.forEach((job, index) => {
+          if (index < newMappedJobs.length) {
+            newMappedJobs[index] = job
+          }
+        })
+        setMappedJobs(newMappedJobs)
       }
     } catch (error) {
-      setFilterError(error.message || 'Failed to filter jobs')
+      console.error('Error filtering jobs:', error)
     } finally {
       setIsFiltering(false)
     }
   }
 
-  // Update selected companies when company is added
-  const handleAddCompany = () => {
-    if (searchResults?.company_id && searchResults?.company?.name) {
-      const companyName = searchResults.company.name
-      const companyId = searchResults.company_id
-      
-      // Check if company is already selected (by ID, not just name, in case of name duplicates)
-      if (!selectedCompanyIds.includes(companyId)) {
-        setSelectedCompanies(prev => [...prev, companyName])
-        setSelectedCompanyIds(prev => [...prev, companyId])
-        // Clear search results after adding to show fresh search state
-        setSearchTrigger(null)
-        setSearchQuery('')
-      } else {
-        // Company already selected - could show a message
-        console.log('Company already selected:', companyName)
+  // Handle select all jobs
+  const handleSelectAll = () => {
+    if (!jobResults?.jobs || jobResults.jobs.length === 0) return
+    
+    // Place all jobs into mapping slots
+    const newMappedJobs = [...jobResults.jobs]
+    setMappedJobs(newMappedJobs)
+  }
+
+  // Handle drag and drop - improved state management
+  const handleDragStart = (e, job) => {
+    console.log('Drag start', job)
+    setDraggedJob(job)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('application/json', JSON.stringify(job))
+    e.dataTransfer.setData('text/plain', '') // Required for some browsers
+  }
+
+  const handleDragEnd = (e) => {
+    console.log('Drag end')
+    // Don't clear immediately - let drop handler process first
+    setTimeout(() => {
+      setDraggedJob(null)
+      setDraggedOverIndex(null)
+    }, 100)
+  }
+
+  const handleDrop = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('Drop event triggered', { draggedJob, index })
+    
+    // Try to get data from dataTransfer first, then fall back to state
+    let jobToDrop = draggedJob
+    try {
+      const data = e.dataTransfer.getData('application/json')
+      if (data) {
+        jobToDrop = JSON.parse(data)
       }
+    } catch (err) {
+      console.log('Could not parse drag data, using state', err)
+    }
+    
+    // Check if it's a valid job object (has title or id, and is not our internal drag state object)
+    // Internal drag state objects have type: 'job' or type: 'recruiter' (lowercase)
+    // Actual job objects have type: 'JOB' (uppercase) or no type property
+    const isInternalDragState = jobToDrop && (jobToDrop.type === 'job' || jobToDrop.type === 'recruiter')
+    const isValidJob = jobToDrop && 
+                       typeof jobToDrop === 'object' && 
+                       !isInternalDragState &&
+                       (jobToDrop.title || jobToDrop.id || jobToDrop.reference_id)
+    
+    if (isValidJob) {
+      const newMappedJobs = [...mappedJobs]
+      newMappedJobs[index] = jobToDrop
+      setMappedJobs(newMappedJobs)
+      setDraggedJob(null)
+      setDraggedOverIndex(null)
+      console.log('Job dropped successfully', newMappedJobs)
+    } else {
+      console.log('Invalid drop - jobToDrop:', jobToDrop, 'isInternalDragState:', isInternalDragState)
     }
   }
 
-  // Search for recruiters
-  const handleSearchRecruiters = async () => {
-    if (selectedCompanyIds.length === 0) {
-      setRecruiterSearchError('Please select companies first')
-      return
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedJob) {
+      setDraggedOverIndex(index)
     }
+  }
 
-    setIsSearchingRecruiters(true)
-    setRecruiterSearchError(null)
+  const handleRemoveJob = (index) => {
+    const newMappedJobs = [...mappedJobs]
+    newMappedJobs[index] = null
+    setMappedJobs(newMappedJobs)
+  }
+
+  // Handle clear all mapped jobs
+  const handleClearAll = () => {
+    const newMappedJobs = Array(mappedJobs.length).fill(null)
+    setMappedJobs(newMappedJobs)
+  }
+
+  // Map to recruiters
+  const handleMapToRecruiters = async () => {
+    const jobsToMap = mappedJobs.filter(j => j !== null)
+    if (jobsToMap.length === 0) return
+
+    setIsMappingToRecruiters(true)
+    setThinkingLogs([])
 
     try {
-      const result = await searchRecruiters(selectedCompanyIds)
-      
-      if (result.recruiters) {
-        setRecruiters(result.recruiters)
-        setRecruiterSearchError(null)
-      } else {
-        setRecruiterSearchError('No recruiters found')
-      }
-    } catch (error) {
-      setRecruiterSearchError(error.message || 'Failed to search recruiters')
-    } finally {
-      setIsSearchingRecruiters(false)
-    }
-  }
-
-  // Map jobs to best recruiters
-  const handleMapToRecruiters = async () => {
-    if (selectedJobs.length === 0) {
-      setMappingError('Please select jobs first')
-      return
-    }
-
-    // Determine which recruiters to use (use state if available, otherwise fetch)
-    let recruitersToUse = recruiters
-    
-    // First search for recruiters if we don't have them
-    if (recruitersToUse.length === 0) {
-      if (selectedCompanyIds.length === 0) {
-        setMappingError('Please select companies and search for recruiters first')
-        return
-      }
-      
-      // Search for recruiters first
-      setIsMapping(true)
-      setMappingError(null)
-
-      try {
-        const recruiterResult = await searchRecruiters(selectedCompanyIds)
-        
+      // First get recruiters - use all selected company IDs
+      const companyIds = selectedCompanies.map(c => c.id)
+      const recruiterResult = await searchRecruiters(companyIds)
         if (!recruiterResult.recruiters || recruiterResult.recruiters.length === 0) {
-          setMappingError('No recruiters found for selected companies')
-          setIsMapping(false)
+        alert('No recruiters found')
+        setIsMappingToRecruiters(false)
           return
         }
         
-        // Use the newly fetched recruiters
-        recruitersToUse = recruiterResult.recruiters
-        setRecruiters(recruiterResult.recruiters)
-      } catch (error) {
-        setMappingError(error.message || 'Failed to search recruiters')
-        setIsMapping(false)
-        return
-      }
-    }
-
-    // Validate we have recruiters to map
-    if (recruitersToUse.length === 0) {
-      setMappingError('No recruiters available for mapping. Please search for recruiters first.')
-      setIsMapping(false)
-      return
-    }
-
-    // Now map jobs to recruiters
-    // Map top 2 jobs (testing mode)
-    const jobsToMap = selectedJobs.slice(0, 2)
-    
-    if (jobsToMap.length === 0) {
-      setMappingError('Please select at least one job')
-      setIsMapping(false)
-      return
-    }
-    
-    setIsMapping(true)
-    setMappingError(null)
-
-      try {
-      // Map top 2 jobs to 2 recruiters (1:1 mapping, testing mode)
-      console.log('🔍 DEBUG: Attempting to map jobs to recruiters', {
-        jobsCount: jobsToMap.length,
-        recruitersCount: recruitersToUse.length,
-        jobs: jobsToMap.map(j => ({ title: j.title, company: j.company?.name || j.company })),
-        recruiters: recruitersToUse.slice(0, 3).map(r => ({ name: r.name, company: r.company }))
-      })
+      // Then map jobs to recruiters
+      const mapResult = await mapJobsToRecruiters(jobsToMap, recruiterResult.recruiters, jobsToMap.length)
       
-      const result = await mapJobsToRecruiters(jobsToMap, recruitersToUse, jobsToMap.length)
-      
-      console.log('🔍 DEBUG: Mapping result received', {
-        hasMapping: !!result.mapping,
-        mappingLength: result.mapping?.length || 0,
-        hasSelectedRecruiters: !!result.selected_recruiters,
-        selectedRecruitersLength: result.selected_recruiters?.length || 0,
-        resultKeys: Object.keys(result || {}),
-        result: result
-      })
-      
-      if (result.mapping && result.mapping.length > 0) {
-        setMapping(result.mapping)
-        
-        let finalRecruitersList = []
-        // Use selected_recruiters if available, otherwise extract from mapping
-        if (result.selected_recruiters && result.selected_recruiters.length > 0) {
-          // Ensure we only have the mapped recruiters (should be exactly 1 for testing)
-          finalRecruitersList = result.selected_recruiters.slice(0, jobsToMap.length)
-          setMappedRecruiters(finalRecruitersList)
-        } else {
-          // Extract unique recruiters from mapping (ensuring 1:1 with jobs)
-          const mappedRecruitersList = result.mapping.map(m => ({
+      if (mapResult.mapping && mapResult.mapping.length > 0) {
+        setMapping(mapResult.mapping)
+        setMappedRecruiters(mapResult.selected_recruiters || mapResult.mapping.map(m => ({
             name: m.recruiter_name,
             company: m.recruiter_company,
-            profile_url: m.recruiter_profile_url,
-            job_title: m.job_title,
-            job_company: m.job_company
-          }))
-          finalRecruitersList = mappedRecruitersList
-          setMappedRecruiters(mappedRecruitersList)
-        }
-        setMappingError(null)
-        
-        // Automatically extract emails and generate messages after mapping
-        if (finalRecruitersList.length > 0) {
-          handleExtractEmailsAndGenerateMessages(result.mapping, finalRecruitersList)
-        }
-      } else {
-        // Better error message with debugging info
-        const debugInfo = {
-          jobsCount: jobsToMap.length,
-          recruitersCount: recruitersToUse.length,
-          resultType: typeof result,
-          resultKeys: result ? Object.keys(result) : [],
-          hasMapping: !!result?.mapping,
-          mappingLength: result?.mapping?.length || 0
-        }
-        console.error('❌ DEBUG: Mapping returned empty results', debugInfo)
-        setMappingError(
-          `Failed to map jobs to recruiters. ` +
-          `Tried to map ${jobsToMap.length} job(s) to ${recruitersToUse.length} recruiter(s), ` +
-          `but got ${result?.mapping?.length || 0} mapping(s). ` +
-          `Check console and server logs for details.`
-        )
+          profile_url: m.recruiter_profile_url
+        })))
+        setCurrentStep(3)
       }
     } catch (error) {
-      console.error('❌ DEBUG: Error mapping jobs to recruiters', {
-        error: error,
-        message: error.message,
-        stack: error.stack,
-        response: error.response,
-        jobsCount: jobsToMap.length,
-        recruitersCount: recruitersToUse.length
-      })
-      
-      let errorMessage = 'Failed to map jobs to recruiters'
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      // Add debugging context
-      errorMessage += ` (Jobs: ${jobsToMap.length}, Recruiters: ${recruitersToUse.length})`
-      
-      setMappingError(errorMessage)
+      console.error('Error mapping to recruiters:', error)
+      alert('Failed to map jobs to recruiters')
     } finally {
-      setIsMapping(false)
+      setIsMappingToRecruiters(false)
     }
   }
 
-  // Extract emails and generate messages for mapped recruiter-job pairs
-  const handleExtractEmailsAndGenerateMessages = async (mappingList, recruitersList) => {
-    setIsExtractingEmails(true)
+  // Generate messages
+  const handleGenerateMessages = async () => {
+    if (mapping.length === 0) return
+
     setIsGeneratingMessages(true)
-    
+    setThinkingLogs([])
+
     try {
-      // Extract emails for all mapped recruiters
-      const emailResult = await extractEmails(recruitersList)
-      if (emailResult.recruiters) {
-        setRecruitersWithEmails(emailResult.recruiters)
-        
-        // Generate messages for each recruiter-job pair
-        const messages = {}
-        for (let i = 0; i < mappingList.length; i++) {
-          const mapItem = mappingList[i]
-          const recruiter = recruitersList.find(r => 
+      // Extract emails
+      const emailResult = await extractEmails(mappedRecruiters)
+      const recruitersWithEmails = emailResult.recruiters || []
+
+      // Generate messages for each mapping
+      const messages = []
+      for (let i = 0; i < mapping.length; i++) {
+        const mapItem = mapping[i]
+        const recruiter = recruitersWithEmails.find(r => 
             (r.name || r.profile_url) === mapItem.recruiter_name || 
             r.profile_url === mapItem.recruiter_profile_url
           ) || {}
           
-          const recruiterWithEmail = emailResult.recruiters.find(r => 
-            (r.name || r.profile_url) === mapItem.recruiter_name || 
-            r.profile_url === mapItem.recruiter_profile_url
-          ) || recruiter
-          
-          try {
-            // Generate LinkedIn message
             const linkedinResult = await generateLinkedInMessage(
-              recruiterWithEmail,
+          recruiter,
               mapItem.job_title || 'Position',
-              mapItem.job_company || mapItem.recruiter_company || 'Company'
+          mapItem.job_company || 'Company'
             )
             
-            // Generate email
             const emailResult_gen = await generateEmail(
               [mapItem.job_title || 'Position'],
               jobType,
-              recruiterWithEmail
+          recruiter
             )
             
-            messages[i] = {
+        messages.push({
               linkedinMessage: linkedinResult.message || linkedinResult,
               email: emailResult_gen,
-              recruiter: recruiterWithEmail,
+          recruiter: recruiter,
               mapItem: mapItem
-            }
-          } catch (error) {
-            console.error(`Error generating messages for pair ${i}:`, error)
-            messages[i] = {
-              linkedinMessage: null,
-              email: null,
-              error: error.message,
-              recruiter: recruiterWithEmail,
-              mapItem: mapItem
-            }
-          }
-        }
-        
-        setGeneratedMessages(messages)
-        
-        // Convert messages object to array for navigation
-        const messagesArray = Object.keys(messages).map(key => messages[key])
-        
-        // Save to localStorage as backup
-        localStorage.setItem('outreachMessages', JSON.stringify(messagesArray))
-        
-        // Navigate to Messages page with the generated messages
-        navigate('/messages', { 
-          state: { messages: messagesArray },
-          replace: false
         })
       }
+
+      // Save and navigate
+      localStorage.setItem('outreachMessages', JSON.stringify(messages))
+        navigate('/messages', { 
+        state: { messages },
+          replace: false
+        })
     } catch (error) {
-      console.error('Error extracting emails or generating messages:', error)
+      console.error('Error generating messages:', error)
       alert(`Error generating messages: ${error.message}`)
     } finally {
-      setIsExtractingEmails(false)
       setIsGeneratingMessages(false)
     }
   }
 
-  // Send LinkedIn invitation
-  const handleSendLinkedInInvitation = async (index, linkedinUrl, message) => {
-    setSendingStatus(prev => ({
-      ...prev,
-      [index]: { ...prev[index], linkedin: 'pending' }
-    }))
-    
-    try {
-      const result = await sendLinkedInInvitation(linkedinUrl, message)
-      if (result.success) {
-        setSendingStatus(prev => ({
-          ...prev,
-          [index]: { ...prev[index], linkedin: 'success' }
-        }))
-      } else {
-        setSendingStatus(prev => ({
-          ...prev,
-          [index]: { ...prev[index], linkedin: 'error', linkedinError: result.error }
-        }))
-      }
-    } catch (error) {
-      setSendingStatus(prev => ({
-        ...prev,
-        [index]: { ...prev[index], linkedin: 'error', linkedinError: error.message }
-      }))
-    }
+  // Rearrange jobs and recruiters
+  const handleRearrangeJob = (fromIndex, toIndex) => {
+    const newMappedJobs = [...mappedJobs]
+    const temp = newMappedJobs[fromIndex]
+    newMappedJobs[fromIndex] = newMappedJobs[toIndex]
+    newMappedJobs[toIndex] = temp
+    setMappedJobs(newMappedJobs)
   }
 
-  // Send email
-  const handleSendEmail = async (index, email, subject, body) => {
-    setSendingStatus(prev => ({
-      ...prev,
-      [index]: { ...prev[index], email: 'pending' }
-    }))
+  const handleRearrangeRecruiter = (fromIndex, toIndex) => {
+    const newMapping = [...mapping]
+    const temp = newMapping[fromIndex]
+    newMapping[fromIndex] = newMapping[toIndex]
+    newMapping[toIndex] = temp
+    setMapping(newMapping)
     
-    try {
-      const result = await sendEmail(email, subject, body)
-      if (result.success) {
-        setSendingStatus(prev => ({
-          ...prev,
-          [index]: { ...prev[index], email: 'success' }
-        }))
-      } else {
-        setSendingStatus(prev => ({
-          ...prev,
-          [index]: { ...prev[index], email: 'error', emailError: result.error }
-        }))
-      }
-    } catch (error) {
-      setSendingStatus(prev => ({
-        ...prev,
-        [index]: { ...prev[index], email: 'error', emailError: error.message }
-      }))
-    }
+    const newRecruiters = [...mappedRecruiters]
+    const tempRecruiter = newRecruiters[fromIndex]
+    newRecruiters[fromIndex] = newRecruiters[toIndex]
+    newRecruiters[toIndex] = tempRecruiter
+    setMappedRecruiters(newRecruiters)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header CTA Rail */}
-      <div className="flex items-center space-x-2 overflow-x-auto">
+    <div className="space-y-6 min-h-screen pb-20">
+      {/* Progressive Step Indicator */}
+      <div className="flex items-center justify-center space-x-4 py-4">
         {steps.map((step, index) => (
           <React.Fragment key={index}>
-            <button
-              onClick={() => setCurrentStep(index)}
-              className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            <span
+              className={`text-sm font-medium transition-colors ${
                 index === currentStep
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'text-blue-400'
+                  : index < currentStep
+                  ? 'text-green-400'
+                  : 'text-gray-500'
               }`}
             >
               {step}
-            </button>
+            </span>
             {index < steps.length - 1 && (
-              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             )}
@@ -632,28 +591,31 @@ export default function Search() {
         ))}
       </div>
 
-      {/* Main Layout - Logger on left, panels on right */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* Verbose Logger Panel - Left side, vertical, fixed width */}
-        <div className="sticky top-4 z-40 h-[calc(100vh-120px)] w-full lg:w-[400px] lg:flex-shrink-0 lg:block hidden">
-          <VerboseLogger active={true} />
-        </div>
-        
-        {/* Mobile Logger - Show at top on small screens */}
-        <div className="lg:hidden mb-6 w-full">
-          <VerboseLogger active={true} />
-        </div>
+      {/* Thinking Indicator */}
+      <AnimatePresence>
+        {(thinkingLogs.length > 0 || isMappingToRecruiters || isGeneratingMessages || isFiltering) && (
+          <ThinkingIndicator 
+            logs={thinkingLogs} 
+            isActive={isMappingToRecruiters || isGeneratingMessages || isFiltering}
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Right side - Main Grid with proper spacing */}
-        <div className="flex-1 min-w-0 w-full grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Companies Panel */}
-        <div className="rounded-lg bg-white p-6 shadow min-w-0 overflow-hidden">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Companies</h3>
-          <div className="space-y-4 w-full">
-            <div className="flex space-x-2 w-full min-w-0">
+      {/* Initial Search Card - Keep visible during search */}
+      {!jobResults && mapping.length === 0 && (
+        <div className="max-w-2xl mx-auto">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-white">Search for Jobs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Company Search */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Company Name</label>
+                <div className="flex space-x-2">
               <input
                 type="text"
-                placeholder="Search companies..."
+                    placeholder="Enter company name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => {
@@ -661,7 +623,7 @@ export default function Search() {
                     setSearchTrigger(searchQuery.trim())
                   }
                 }}
-                className="flex-1 min-w-0 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                    className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
               />
               <button
                 onClick={() => {
@@ -670,574 +632,382 @@ export default function Search() {
                   }
                 }}
                 disabled={isSearching || !searchQuery.trim()}
-                className="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSearching ? 'Searching...' : 'Search'}
+                    {isSearching ? '...' : 'Search'}
               </button>
             </div>
-            {searchError && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                Error: {searchError.message || 'Failed to search companies'}
-                <br />
-                <span className="text-xs text-red-600">
-                  (Most endpoints require authentication. Check browser console for details.)
-                </span>
-              </div>
-            )}
-            {selectedCompanies.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedCompanies.map((company, index) => (
-                  <span
-                    key={`${company}-${index}`}
-                    className="flex items-center space-x-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
-                  >
-                    <span>{company}</span>
+                {searchResults?.company_id && (
+                  <div className="mt-2 p-3 rounded-lg bg-gray-900/50 border border-gray-700/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white">{searchResults.company.name}</span>
                     <button
-                      onClick={() => {
-                        // Remove from both arrays at the same index
-                        setSelectedCompanies(selectedCompanies.filter((c, i) => i !== index))
-                        setSelectedCompanyIds(selectedCompanyIds.filter((id, i) => i !== index))
-                      }}
-                      className="ml-1 hover:text-blue-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="rounded-lg border border-gray-200">
-              {isSearching ? (
-                <div className="p-4 text-center text-sm text-gray-500">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                  <div>Searching companies...</div>
-                </div>
-              ) : searchResults ? (
-                <div className="p-4">
-                  {searchResults.company_id ? (
-                    <div className="space-y-2">
-                      <div className="font-medium text-gray-900">
-                        Found: {searchResults.company?.name || 'Company'}
-                      </div>
-                      <button
-                        onClick={handleAddCompany}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        onClick={handleSelectCompany}
+                        className="text-sm text-blue-400 hover:text-blue-300"
                       >
-                        + Add to selection
+                        {selectedCompanies.find(c => c.id === searchResults.company_id) ? '✓ Selected' : '+ Add'}
+                    </button>
+              </div>
+                </div>
+                )}
+                {selectedCompanies.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {selectedCompanies.map((company) => (
+                      <div key={company.id} className="flex items-center justify-between p-2 rounded-lg bg-blue-900/50 border border-blue-700/50">
+                        <span className="text-blue-300 text-sm">{company.name}</span>
+                      <button
+                          onClick={() => handleRemoveCompany(company.id)}
+                          className="text-sm text-red-400 hover:text-red-300"
+                      >
+                          ×
                       </button>
                     </div>
-                  ) : (
-                    <div className="text-sm text-gray-500">No companies found</div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-sm text-gray-500">
-                  Enter a company name and click Search
+                    ))}
                 </div>
               )}
-            </div>
-          </div>
         </div>
 
-        {/* Jobs Panel */}
-        <div className="rounded-lg bg-white p-6 shadow min-w-0 overflow-hidden">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Jobs</h3>
-          <div className="space-y-4 w-full">
-            {selectedCompanies.length > 0 ? (
-              <>
-                {/* Selected Companies */}
-                <div className="flex flex-wrap gap-2">
-                  {selectedCompanies.map((company, index) => (
-                    <span
-                      key={`${company}-${index}`}
-                      className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
-                    >
-                      {company}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Job Title Input */}
+              {/* Job Title */}
+              {selectedCompanies.length > 0 && (
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Job Title
-                  </label>
-                  <div className="flex space-x-2 w-full min-w-0">
+                  <label className="text-sm font-medium text-gray-300">Job Title</label>
                     <input
                       type="text"
                       placeholder="e.g., Software Engineer"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          if (jobTitle.trim() && !jobTitles.includes(jobTitle.trim())) {
-                            addJobTitle()
-                          } else if (jobTitles.length > 0 && selectedCompanyIds.length > 0) {
-                            // If titles are already added, search for jobs
-                            handleJobSearch()
-                          }
-                        }
-                      }}
-                      className="flex-1 min-w-0 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                    />
-                    <button
-                      onClick={addJobTitle}
-                      disabled={!jobTitle.trim() || jobTitles.includes(jobTitle.trim())}
-                      className="flex-shrink-0 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  
-                  {/* Job Title Tags */}
-                  {jobTitles.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {jobTitles.map((title) => (
-                        <span
-                          key={title}
-                          className="flex items-center space-x-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-800"
-                        >
-                          <span>{title}</span>
-                          <button
-                            onClick={() => removeJobTitle(title)}
-                            className="ml-1 hover:text-green-900"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && jobTitle.trim() && selectedCompanies.length > 0) {
+                        handleSearchJobs()
+                      }
+                    }}
+                    className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  />
                     </div>
                   )}
 
-                  {/* Job Type Selector */}
-                  <div className="flex items-center space-x-4">
-                    <label className="text-sm font-medium text-gray-700">Job Type:</label>
+              {/* Job Type */}
+              {selectedCompanies.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Job Type</label>
                     <select
                       value={jobType}
                       onChange={(e) => setJobType(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && jobTitles.length > 0 && selectedCompanyIds.length > 0) {
-                          e.preventDefault()
-                          handleJobSearch()
-                        }
-                      }}
-                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-4 py-2 focus:border-blue-500 focus:outline-none"
                     >
                       <option value="full_time">Full Time</option>
                       <option value="internship">Internship</option>
                     </select>
                   </div>
+              )}
 
-                  {/* Search Jobs Button */}
+              {/* Search Button */}
+              {selectedCompanies.length > 0 && jobTitle.trim() && (
                   <button
-                    type="button"
-                    onClick={handleJobSearch}
-                    disabled={selectedCompanyIds.length === 0 || jobTitles.length === 0 || isSearchingJobs}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.target.disabled) {
-                        e.preventDefault()
-                        handleJobSearch()
-                      }
-                    }}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    {isSearchingJobs ? 'Searching Jobs...' : 'Search Jobs'}
+                  onClick={handleSearchJobs}
+                  disabled={isSearchingJobs || selectedCompanies.length === 0 || !jobTitle.trim()}
+                  className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {isSearchingJobs ? 'Searching...' : 'Search for Jobs'}
                   </button>
+              )}
+            </CardContent>
+          </Card>
                 </div>
+      )}
 
-                {/* Error Display */}
-                {jobSearchError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                    Error: {jobSearchError.message || 'Failed to search jobs'}
+      {/* Loading State - Show below search card when searching */}
+      {isSearchingJobs && jobResults === null && !isMappingToRecruiters && (
+        <div className="max-w-2xl mx-auto flex justify-center py-12">
+          <LoaderOne />
                   </div>
                 )}
 
-                {/* AI Filter Option */}
-                {(filteredJobResults?.jobs || jobResults?.jobs) && (filteredJobResults?.jobs?.length > 0 || jobResults?.jobs?.length > 0) && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between rounded-lg bg-purple-50 border border-purple-200 p-3">
-                      <div>
-                        <div className="text-sm font-medium text-purple-900">
-                          🤖 AI Filter Available
+      {/* Error Display */}
+      {jobSearchError && !jobResults && (
+        <div className="max-w-2xl mx-auto mt-4 p-4 rounded-lg bg-red-900/50 border border-red-700/50">
+          <div className="text-sm text-red-300">
+            Error: {jobSearchError.message || 'Failed to search jobs'}
                         </div>
-                        <div className="text-xs text-purple-600 mt-1">
-                          Filter to top 2 most relevant jobs based on your resume (testing mode)
                         </div>
-                      </div>
-                      <button
-                        onClick={handleFilterJobs}
-                        disabled={isFiltering || (!jobResults?.jobs && !filteredJobResults?.jobs)}
-                        className="rounded-lg bg-purple-600 px-4 py-2 text-sm text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        {isFiltering ? 'Filtering...' : 'Filter to Top 2'}
-                      </button>
-                    </div>
-                         {filterError && (
-                           <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                             <div className="whitespace-pre-wrap font-mono text-xs">{filterError}</div>
-                           </div>
-                         )}
-                  </div>
-                )}
+      )}
 
-                {/* Job Results */}
-                <div className="rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                  {isSearchingJobs ? (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                      <div>Searching jobs...</div>
-                    </div>
-                  ) : (filteredJobResults?.jobs || jobResults?.jobs) ? (
-                    <div className="p-4 space-y-3">
-                      <div className="text-sm font-medium text-gray-900 mb-2">
-                        {filteredJobResults?.jobs ? (
-                          <>
-                            🎯 Top {filteredJobResults.jobs.length} Most Relevant Job{filteredJobResults.jobs.length !== 1 ? 's' : ''}
-                            <span className="text-xs text-gray-500 ml-2">(AI Filtered)</span>
-                          </>
-                        ) : (
-                          <>Found {jobResults.total_jobs_found || jobResults.jobs.length} job{(jobResults.total_jobs_found || jobResults.jobs.length) !== 1 ? 's' : ''} (showing 5 evenly distributed samples)</>
-                        )}
-                      </div>
-                      {(filteredJobResults?.jobs || jobResults.jobs).slice(0, 10).map((job, index) => {
-                        // Safely extract company name (could be string or object)
+      {/* Job Results and Mapping View */}
+      {jobResults && mapping.length === 0 && !isMappingToRecruiters && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
+        >
+            {/* Jobs List Card */}
+            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white">Jobs</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSelectAll}
+                      disabled={!jobResults?.jobs || jobResults.jobs.length === 0}
+                      className="text-sm rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={handleFilterJobs}
+                      disabled={isFiltering || !jobResults?.jobs}
+                      className="text-sm rounded-lg bg-purple-600 px-3 py-1.5 text-white hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {isFiltering ? 'Filtering...' : 'Filter'}
+                    </button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {jobResults?.jobs?.map((job, index) => {
                         const companyName = typeof job.company === 'string' 
                           ? job.company 
-                          : (job.company?.name || job.company_name || 'Unknown Company')
+                      : (job.company?.name || job.company_name || 'Unknown')
+                    const isMapped = mappedJobs.some(m => m && m.url === job.url)
                         
                         return (
-                          <div
+                      <div
                             key={index}
-                            className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                            onClick={() => {
-                              const existingJob = selectedJobs.find(j => 
-                                j.title === job.title && 
-                                (typeof j.company === 'string' ? j.company : j.company?.name) === companyName
-                              )
-                              if (!existingJob) {
-                                setSelectedJobs([...selectedJobs, job])
-                              }
-                            }}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, job)}
+                        onDragEnd={handleDragEnd}
+                        className={`p-3 rounded-lg border cursor-move transition-all ${
+                          isMapped 
+                            ? 'bg-gray-700/50 border-gray-600/50' 
+                            : 'bg-gray-900/50 border-gray-700/50 hover:bg-gray-800/50'
+                        }`}
                           >
-                            <div className="font-medium text-sm text-gray-900">{job.title || 'Untitled'}</div>
-                            <div className="text-xs text-gray-600 mt-1">{companyName}</div>
+                            <div className="font-medium text-sm text-white">{job.title || 'Untitled'}</div>
+                            <div className="text-xs text-gray-300 mt-1">{companyName}</div>
                             {job.location && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {typeof job.location === 'string' ? job.location : job.location?.name || 'Unknown Location'}
+                              <div className="text-xs text-gray-400 mt-1">
+                            {typeof job.location === 'string' ? job.location : job.location?.name || ''}
                               </div>
                             )}
-                            {job.url && (
-                              <a
-                                href={typeof job.url === 'string' ? job.url : job.url?.url || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
-                              >
-                                View on LinkedIn →
-                              </a>
-                            )}
-                          </div>
-                        )
-                      })}
-                      {(filteredJobResults?.jobs || jobResults?.jobs)?.length > 10 && (
-                        <div className="text-xs text-gray-500 text-center pt-2">
-                          Showing first 10 of {(filteredJobResults?.jobs || jobResults?.jobs).length} jobs
+                      </div>
+                    )
+                  })}
+                        </div>
+              </CardContent>
+            </Card>
+
+            {/* Recruiter Mapping Placeholders */}
+            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white">Recruiter Mapping</CardTitle>
+                  {mappedJobs.some(j => j !== null) && (
+                    <button
+                      onClick={handleClearAll}
+                      className="text-sm rounded-lg bg-red-600 px-3 py-1.5 text-white hover:bg-red-700"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {jobResults?.jobs?.map((_, index) => (
+                    <div
+                      key={index}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={() => setDraggedOverIndex(null)}
+                      onDragEnter={(e) => {
+                        e.preventDefault()
+                        if (draggedJob) setDraggedOverIndex(index)
+                      }}
+                      className={`min-h-[100px] rounded-lg border-2 border-dashed p-4 transition-all ${
+                        mappedJobs[index]
+                          ? 'border-green-600/50 bg-green-900/20'
+                          : draggedOverIndex === index
+                          ? 'border-blue-500/50 bg-blue-900/20 scale-105'
+                          : 'border-gray-600/50 bg-gray-900/20'
+                      }`}
+                    >
+                      {mappedJobs[index] ? (
+                        <div className="relative">
+                          <div className="font-medium text-sm text-white">
+                            {mappedJobs[index].title || 'Untitled'}
+                    </div>
+                          <div className="text-xs text-gray-300 mt-1">
+                            {typeof mappedJobs[index].company === 'string' 
+                              ? mappedJobs[index].company 
+                              : mappedJobs[index].company?.name || 'Unknown'}
+                    </div>
+                          <button
+                            onClick={() => handleRemoveJob(index)}
+                            className="absolute top-0 right-0 text-gray-400 hover:text-red-400"
+                          >
+                            ×
+                          </button>
+                    </div>
+            ) : (
+                        <div className="text-sm text-gray-500 text-center py-4">
+                          Drop job here
                         </div>
                       )}
                     </div>
-                  ) : jobSearchTrigger && !isSearchingJobs && !jobSearchError ? (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      No jobs found. Try different job titles or companies.
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      Add job titles and click "Search Jobs" to find opportunities
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
-                Select companies to find jobs
-              </div>
-            )}
+                  ))}
           </div>
-        </div>
-
-        {/* Recruiters Panel */}
-        <div className="rounded-lg bg-white p-6 shadow min-w-0 overflow-hidden">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Recruiters</h3>
-          <div className="space-y-4 w-full">
-            {selectedJobs.length > 0 || mappedRecruiters.length > 0 ? (
-              <>
-                {selectedJobs.length > 0 && mappedRecruiters.length === 0 && (
+                {mappedJobs.some(j => j !== null) && (
                   <button
                     onClick={handleMapToRecruiters}
-                    disabled={isMapping || selectedJobs.length === 0}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isMappingToRecruiters || mappedJobs.filter(j => j !== null).length === 0}
+                    className="w-full mt-4 rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
-                    {isMapping ? 'Mapping...' : 'Map to Best Recruiters'}
+                    {isMappingToRecruiters ? 'Mapping to Recruiters...' : 'Map to Best Recruiters'}
                   </button>
                 )}
+              </CardContent>
+            </Card>
+          </motion.div>
+      )}
 
-                {recruiterSearchError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                    {recruiterSearchError}
-                  </div>
-                )}
+      {/* Mapping Loading State */}
+      {isMappingToRecruiters && mapping.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="max-w-2xl mx-auto text-center py-20"
+        >
+          <LoaderOne />
+        </motion.div>
+      )}
 
-                {mappingError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                    {mappingError}
-                  </div>
-                )}
-
-                {/* Show mapping results */}
-                {mapping.length > 0 && (
-                  <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800 mb-4">
-                    ✅ Mapped {mapping.length} job{mapping.length !== 1 ? 's' : ''} to {mappedRecruiters.length} recruiter{mappedRecruiters.length !== 1 ? 's' : ''} (1:1 mapping)
-                  </div>
-                )}
-
-                <div className="rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                  {isMapping || isSearchingRecruiters ? (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                      <div>{isMapping ? 'Mapping jobs to recruiters...' : 'Searching recruiters...'}</div>
-                    </div>
-                  ) : mappedRecruiters.length > 0 ? (
-                    <div className="p-4 space-y-3">
-                      <div className="text-sm font-medium text-gray-900 mb-2">
-                        🎯 {mappedRecruiters.length} Mapped Recruiter{mappedRecruiters.length !== 1 ? 's' : ''} (1 per job)
-                      </div>
-                      {mapping.slice(0, mappedRecruiters.length).map((mapItem, index) => (
-                        <div
+      {/* Mapping Results View */}
+      {mapping.length > 0 && !isMappingToRecruiters && (
+        <AnimatePresence>
+          <motion.div
+            key="results"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="relative grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
+          >
+            {/* Jobs Section */}
+            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
+                <CardHeader>
+                  <CardTitle className="text-white">Selected Jobs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {mappedJobs.filter(j => j !== null).map((job, index) => (
+                      <motion.div
                           key={index}
-                          className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0"
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedJob({ type: 'job', data: job, index })
+                          e.dataTransfer.effectAllowed = 'move'
+                        }}
+                        onDragEnd={() => setDraggedJob(null)}
+                        whileHover={{ scale: 1.02 }}
+                        className="relative p-3 rounded-lg border border-gray-700/50 bg-gray-900/50 cursor-move min-h-[80px]"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-white">
+                              {job.title || 'Untitled'}
+                            </div>
+                            <div className="text-xs text-gray-300 mt-1">
+                              {typeof job.company === 'string' 
+                                ? job.company 
+                                : job.company?.name || 'Unknown'}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-700/50">
+                              Selected job
+                            </div>
+                          </div>
+                        </div>
+                        {index < mapping.length && (
+                          <div className="absolute right-[-24px] top-1/2 -translate-y-1/2 hidden lg:flex items-center">
+                            <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </div>
+                        )}
+                      </motion.div>
+                      ))}
+                    </div>
+                </CardContent>
+              </Card>
+
+              {/* Recruiters Section */}
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="text-white">Mapped Recruiters</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {mapping.map((mapItem, index) => {
+                      const job = mappedJobs.filter(j => j !== null)[index]
+                        return (
+                      <motion.div
+                            key={index}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedJob({ type: 'recruiter', data: mapItem, index })
+                          e.dataTransfer.effectAllowed = 'move'
+                        }}
+                        onDragEnd={() => setDraggedJob(null)}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          if (draggedJob && draggedJob.type === 'recruiter' && draggedJob.index !== index) {
+                            handleRearrangeRecruiter(draggedJob.index, index)
+                          }
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.dataTransfer.dropEffect = 'move'
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        className="relative p-3 rounded-lg border border-gray-700/50 bg-gray-900/50 cursor-move min-h-[80px]"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="font-medium text-sm text-gray-900">
+                              <div className="font-medium text-sm text-white">
                                 {mapItem.recruiter_name || 'Unknown Recruiter'}
-                              </div>
-                              <div className="text-xs text-gray-600 mt-1">
+                          </div>
+                              <div className="text-xs text-gray-300 mt-1">
                                 {mapItem.recruiter_company || 'Unknown Company'}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+                    </div>
+                              <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-700/50">
                                 💼 Matched for: <span className="font-medium">{mapItem.job_title}</span> at {mapItem.job_company}
-                              </div>
+                    </div>
+                    </div>
+                          {job && (
+                            <div className="absolute left-[-32px] top-1/2 -translate-y-1/2 hidden lg:flex items-center">
+                              <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                              </svg>
                             </div>
-                            {mapItem.recruiter_profile_url && (
-                              <a
-                                href={mapItem.recruiter_profile_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
-                              >
-                                View →
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : recruiters.length > 0 ? (
-                    <div className="p-4 space-y-3">
-                      <div className="text-sm font-medium text-gray-900 mb-2">
-                        Found {recruiters.length} recruiters
-                      </div>
-                      {recruiters.slice(0, 10).map((recruiter, index) => {
-                        const recruiterName = recruiter.name || 'Unknown Recruiter'
-                        const recruiterCompany = typeof recruiter.company === 'string' 
-                          ? recruiter.company 
-                          : (recruiter.company?.name || 'Unknown Company')
-                        
-                        return (
-                          <div
-                            key={index}
-                            className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0"
-                          >
-                            <div className="font-medium text-sm text-gray-900">{recruiterName}</div>
-                            <div className="text-xs text-gray-600 mt-1">{recruiterCompany}</div>
-                            {recruiter.headline && (
-                              <div className="text-xs text-gray-500 mt-1">{recruiter.headline}</div>
-                            )}
-                            {recruiter.profile_url && (
-                              <a
-                                href={recruiter.profile_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
-                              >
-                                View on LinkedIn →
-                              </a>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : selectedJobs.length > 0 ? (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      Click "Map to Best Recruiters" to find the best recruiters for your selected jobs
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      Recruiter results will appear here
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
-                Select jobs to find recruiters
-              </div>
-            )}
+                          )}
           </div>
+                      </motion.div>
+                    )})}
         </div>
-
-        {/* Messages & Outreach Section - Shows after mapping */}
-        {mapping.length > 0 && (
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-xl font-bold text-gray-900">📨 Generated Messages & Outreach</h2>
-          
-          {isExtractingEmails || isGeneratingMessages ? (
-            <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-              <div className="text-sm text-gray-600">
-                {isExtractingEmails ? 'Extracting emails...' : 'Generating personalized messages...'}
-              </div>
-            </div>
-          ) : Object.keys(generatedMessages).length > 0 ? (
-            <div className="space-y-6">
-              {mapping.map((mapItem, index) => {
-                const messageData = generatedMessages[index]
-                const status = sendingStatus[index] || {}
-                const recruiterWithEmail = recruitersWithEmails.find(r => 
-                  (r.name || r.profile_url) === mapItem.recruiter_name || 
-                  r.profile_url === mapItem.recruiter_profile_url
-                ) || {}
-                
-                if (!messageData) return null
-                
-                const linkedinMessage = typeof messageData.linkedinMessage === 'string' 
-                  ? messageData.linkedinMessage 
-                  : messageData.linkedinMessage?.message || ''
-                const emailData = messageData.email || {}
-                const emailAddress = recruiterWithEmail.extracted_email || ''
-                
-                return (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="mb-3">
-                      <div className="font-semibold text-gray-900">
-                        {mapItem.recruiter_name} @ {mapItem.recruiter_company}
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        For: {mapItem.job_title} at {mapItem.job_company}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* LinkedIn Message Section */}
-                      <div className="border border-gray-200 rounded p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-gray-900">🔗 LinkedIn Message</span>
-                          {status.linkedin === 'success' && (
-                            <span className="text-xs text-green-600">✅ Sent</span>
-                          )}
-                          {status.linkedin === 'error' && (
-                            <span className="text-xs text-red-600">❌ Failed</span>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 rounded p-2 mb-2 text-sm text-gray-700 whitespace-pre-wrap min-h-[100px] max-h-[150px] overflow-y-auto">
-                          {linkedinMessage || 'Generating...'}
-                        </div>
-                        {mapItem.recruiter_profile_url && (
                           <button
-                            onClick={() => handleSendLinkedInInvitation(
-                              index,
-                              mapItem.recruiter_profile_url, 
-                              linkedinMessage
-                            )}
-                            disabled={!linkedinMessage || status.linkedin === 'pending' || status.linkedin === 'success'}
-                            className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {status.linkedin === 'pending' ? 'Sending...' : 
-                             status.linkedin === 'success' ? '✅ Sent' :
-                             status.linkedin === 'error' ? '❌ Retry' : 
-                             'Send LinkedIn Invitation'}
+                    onClick={handleGenerateMessages}
+                    disabled={isGeneratingMessages}
+                    className="w-full mt-4 rounded-lg bg-green-600 px-4 py-3 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {isGeneratingMessages ? 'Generating Messages...' : 'Generate Messages'}
                           </button>
-                        )}
-                        {status.linkedin === 'error' && status.linkedinError && (
-                          <div className="text-xs text-red-600 mt-1">{status.linkedinError}</div>
-                        )}
-                      </div>
-                      
-                      {/* Email Section */}
-                      <div className="border border-gray-200 rounded p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-gray-900">📧 Email</span>
-                          {status.email === 'success' && (
-                            <span className="text-xs text-green-600">✅ Sent</span>
-                          )}
-                          {status.email === 'error' && (
-                            <span className="text-xs text-red-600">❌ Failed</span>
-                          )}
-                        </div>
-                        {emailAddress && (
-                          <div className="text-xs text-gray-600 mb-2">
-                            To: {emailAddress}
-                          </div>
-                        )}
-                        {emailData.subject && (
-                          <div className="bg-gray-50 rounded p-2 mb-2">
-                            <div className="text-xs font-semibold text-gray-700 mb-1">Subject:</div>
-                            <div className="text-sm text-gray-900">{emailData.subject}</div>
-                          </div>
-                        )}
-                        <div className="bg-gray-50 rounded p-2 mb-2 text-sm text-gray-700 whitespace-pre-wrap min-h-[100px] max-h-[150px] overflow-y-auto">
-                          {emailData.body || 'Generating...'}
-                        </div>
-                        {emailAddress && (
-                          <button
-                            onClick={() => handleSendEmail(
-                              index,
-                              emailAddress,
-                              emailData.subject || '',
-                              emailData.body || ''
-                            )}
-                            disabled={!emailData.body || status.email === 'pending' || status.email === 'success'}
-                            className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {status.email === 'pending' ? 'Sending...' : 
-                             status.email === 'success' ? '✅ Sent' :
-                             status.email === 'error' ? '❌ Retry' : 
-                             'Send Email'}
-                          </button>
-                        )}
-                        {!emailAddress && (
-                          <div className="text-xs text-gray-500 italic">Email address not found</div>
-                        )}
-                        {status.email === 'error' && status.emailError && (
-                          <div className="text-xs text-red-600 mt-1">{status.emailError}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="p-4 text-center text-sm text-gray-500">
-              Generating messages... This may take a moment.
-            </div>
-          )}
-        </div>
-        )}
-        </div>
-      </div>
+                </CardContent>
+              </Card>
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   )
 }
-

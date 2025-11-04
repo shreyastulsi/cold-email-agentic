@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '../utils/api'
 
@@ -117,7 +117,7 @@ export default function ResumeEditor() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading resume content...</p>
+          <p className="text-gray-300">Loading resume content...</p>
         </div>
       </div>
     )
@@ -127,9 +127,9 @@ export default function ResumeEditor() {
     return (
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-6 text-center">
-            <h2 className="text-xl font-semibold text-yellow-900 mb-2">No Resume Content Found</h2>
-            <p className="text-yellow-700 mb-4">
+          <div className="rounded-lg bg-yellow-900/50 border border-yellow-700/50 p-6 text-center">
+            <h2 className="text-xl font-semibold text-yellow-300 mb-2">No Resume Content Found</h2>
+            <p className="text-yellow-400 mb-4">
               Please upload a resume first. After uploading, the extracted content will appear here for editing.
             </p>
             <button
@@ -150,12 +150,12 @@ export default function ResumeEditor() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">📄 Resume Key Bullets Editor</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-white">📄 Resume Key Bullets Editor</h1>
+            <p className="mt-2 text-gray-300">
               Edit your extracted resume key bullets. This version will be used for all message generation and job filtering.
             </p>
             {lastSaved && (
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-400">
                 Last saved: {new Date(lastSaved).toLocaleString()}
               </p>
             )}
@@ -169,7 +169,7 @@ export default function ResumeEditor() {
             </button>
             <button
               onClick={() => navigate('/settings')}
-              className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
+              className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
             >
               Upload New Resume
             </button>
@@ -178,13 +178,13 @@ export default function ResumeEditor() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4">
-            <p className="text-red-800">{error}</p>
+          <div className="mb-4 rounded-lg bg-red-900/50 border border-red-700/50 p-4">
+            <p className="text-red-300">{error}</p>
           </div>
         )}
 
         {/* Save/Reset/Delete Buttons */}
-        <div className="mb-4 flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 shadow-lg">
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
@@ -200,7 +200,7 @@ export default function ResumeEditor() {
             {hasChanges && content && (
               <button
                 onClick={handleReset}
-                className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
+                className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
               >
                 Reset
               </button>
@@ -209,32 +209,32 @@ export default function ResumeEditor() {
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : '🗑️ Delete Resume'}
               </button>
             )}
             {hasChanges && (
-              <span className="text-sm text-orange-600">⚠️ You have unsaved changes</span>
+              <span className="text-sm text-orange-400">⚠️ You have unsaved changes</span>
             )}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-400">
             {content.length} characters
           </div>
         </div>
 
         {/* Editor */}
-        <div className="rounded-lg bg-white shadow">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">Extracted Resume Key Bullets</h2>
-            <p className="text-sm text-gray-500 mt-1">
+        <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 shadow-lg">
+          <div className="border-b border-gray-700/50 px-6 py-4">
+            <h2 className="text-lg font-semibold text-white">Extracted Resume Key Bullets</h2>
+            <p className="text-sm text-gray-400 mt-1">
               These are the key bullets extracted from your PDF resume using AI. You can edit them to improve accuracy or add custom information.
             </p>
           </div>
           {content ? (
             <div className="p-6">
               <textarea
-                className="w-full min-h-[600px] rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none resize-y"
+                className="w-full min-h-[600px] rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none resize-y"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Upload a resume PDF to extract key bullets. The extracted bullets will appear here for editing."
@@ -242,7 +242,7 @@ export default function ResumeEditor() {
               />
             </div>
           ) : (
-            <div className="p-6 text-center text-gray-500">
+            <div className="p-6 text-center text-gray-400">
               <p className="mb-4">No resume content found.</p>
               <button
                 onClick={() => navigate('/settings')}
@@ -255,9 +255,9 @@ export default function ResumeEditor() {
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">💡 About Resume Key Bullets</h3>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+        <div className="mt-6 rounded-lg bg-blue-900/50 border border-blue-700/50 p-4">
+          <h3 className="font-semibold text-blue-300 mb-2">💡 About Resume Key Bullets</h3>
+          <ul className="text-sm text-blue-200 space-y-1 list-disc list-inside">
             <li>These are the 7-8 most important points extracted from your uploaded PDF resume using AI</li>
             <li>The bullets include: Education, Technical Skills, Work Experience, Projects, Certifications, and other highlights</li>
             <li>You can edit them to correct any extraction errors or add additional information</li>

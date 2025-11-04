@@ -121,11 +121,16 @@ class JobFilter:
     
     def rank_jobs_by_relevance(self, condensed_jobs, resume_content):
         """Use LLM to rank jobs by relevance to resume using bullets"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         jobs_content = self.format_jobs_for_llm(condensed_jobs)
         
         # Extract key resume bullets once
         print(f"\n📋 Extracting key resume bullets...")
+        logger.info(f"🔍 DEBUG: Extracting resume bullets...")
         resume_bullets = self.resume_parser.extract_key_bullets(resume_content)
+        logger.info(f"✅ DEBUG: Extracted resume bullets ({len(resume_bullets)} chars)")
         
         prompt = f"""
         Rank these jobs by relevance to candidate profile.
@@ -146,23 +151,50 @@ class JobFilter:
             print(f"🔍 Debug - Prompt length: {len(prompt)} characters")
             print(f"🔍 Debug - Resume bullets length: {len(resume_bullets)} characters")
             print(f"🔍 Debug - Jobs content length: {len(jobs_content)} characters")
+            logger.info(f"🔍 DEBUG: Calling LLM with prompt ({len(prompt)} chars)")
+            logger.info(f"🔍 DEBUG: Resume bullets length: {len(resume_bullets)} chars")
+            logger.info(f"🔍 DEBUG: Jobs content length: {len(jobs_content)} chars")
+            
+            if not self.resume_generator or not self.resume_generator.llm:
+                error_msg = "LLM not available - check OPENAI_API_KEY"
+                logger.error(f"❌ DEBUG: {error_msg}")
+                print(f"❌ {error_msg}")
+                return None
             
             result = self.resume_generator.llm.invoke(prompt)
+            
+            logger.info(f"🔍 DEBUG: LLM result type: {type(result).__name__}")
+            logger.info(f"🔍 DEBUG: LLM result has content attr: {hasattr(result, 'content')}")
             
             # Handle ChatOpenAI response format
             if hasattr(result, 'content'):
                 ranking = result.content.strip()
+                logger.info(f"✅ DEBUG: Extracted ranking from result.content ({len(ranking)} chars)")
             elif isinstance(result, dict):
                 ranking = result.get('text', result.get('content', str(result))).strip()
+                logger.info(f"✅ DEBUG: Extracted ranking from dict ({len(ranking)} chars)")
             else:
                 ranking = str(result).strip()
+                logger.info(f"✅ DEBUG: Extracted ranking from str() ({len(ranking)} chars)")
+            
+            if not ranking or len(ranking.strip()) == 0:
+                logger.warning(f"⚠️ DEBUG: Ranking result is empty after extraction")
+                print(f"⚠️ Warning: LLM returned empty ranking")
+                return None
+            
+            logger.info(f"✅ DEBUG: Ranking result length: {len(ranking)} chars")
+            logger.info(f"✅ DEBUG: Ranking preview: {ranking[:200]}")
             
             return ranking
         except Exception as e:
-            print(f"❌ Error ranking jobs: {e}")
+            error_msg = f"Error ranking jobs: {e}"
+            print(f"❌ {error_msg}")
+            logger.exception(f"❌ DEBUG: {error_msg}")
             print(f"🔍 Debug - Error type: {type(e)}")
             print(f"🔍 Debug - Estimated tokens: ~{len(prompt) // 4}")
             print(f"🔍 Debug - Full error details: {str(e)}")
+            import traceback
+            logger.error(f"❌ DEBUG: Full traceback:\n{traceback.format_exc()}")
             return None
     
     def extract_top_job_urls(self, ranking_result, condensed_jobs):
@@ -311,6 +343,7 @@ class JobFilter:
             resume_paths = [
                 resume_file,  # Try as-is first
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), resume_file),  # Backend root
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "resumes", resume_file),  # Backend/uploads/resumes
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "ananya", resume_file),  # Project root/ananya
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), resume_file),  # Project root
             ]

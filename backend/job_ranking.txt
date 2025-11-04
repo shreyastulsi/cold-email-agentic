@@ -1,11 +1,13 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on the candidate profile, the top 2 most relevant jobs are:
+Based on the candidate profile provided, the top 2 most relevant jobs are:
 
-1. **[Job #1] Research Scientist (L4/5) - Globalization - Multimodal LLM at Netflix**
-2. **[Job #2] Machine Learning Engineer 5 - Ads at Netflix**
+1. **[Job #2] Software Engineer, ML Infrastructure at Google**
+2. **[Job #5] Software Engineer, Embedded Systems, Firmware at Google**
 
-**Rationale:**
-- Job #1 aligns closely with the candidate's background in AI research and specialization in machine learning, particularly with experience in LLMs (Large Language Models) and relevant technologies like PyTorch.
-- Job #2 also matches the candidate's skills in Python and familiarity with machine learning, focusing on practical applications in ad personalization, which could leverage their experience with AI applications.
+**Reasoning:**
+
+- **Job #2** is the most relevant because it aligns well with the candidate's proficiency in Python and Java, and it emphasizes collaboration, which fits the candidate's experience in team environments. Additionally, it requires knowledge of software development life cycles, which is likely covered in their previous internship experience.
+
+- **Job #5** follows closely as it requires C/C++ software development experience and knowledge of embedded operating systems. The candidate's strong programming background and team collaboration in academic projects suit this role as well, despite it being more focused on embedded systems than the candidate's specific skills.

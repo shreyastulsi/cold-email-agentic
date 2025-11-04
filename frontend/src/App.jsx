@@ -1,22 +1,28 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import HeroSection from './components/hero-section'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Search from './pages/Search'
-import Messages from './pages/Messages'
-import ResumeEditor from './pages/ResumeEditor'
 import CampaignDetail from './pages/CampaignDetail'
-import Settings from './pages/Settings'
+import Dashboard from './pages/Dashboard'
 import EmailAccounts from './pages/EmailAccounts'
+import Loading from './pages/Loading'
+import Login from './pages/Login'
+import Messages from './pages/Messages'
+import NotFound from './pages/NotFound'
 import OAuthCallback from './pages/OAuthCallback'
+import ResumeEditor from './pages/ResumeEditor'
+import Search from './pages/Search'
+import Settings from './pages/Settings'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public route */}
+        {/* Public routes */}
+        <Route path="/" element={<HeroSection />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Login />} />
+        <Route path="/loading" element={<Loading />} />
         
         {/* OAuth callback - protected but no layout */}
         <Route
@@ -28,25 +34,28 @@ function App() {
           }
         />
         
-        {/* Protected routes */}
+        {/* Protected routes - all dashboard routes */}
         <Route
-          path="/*"
+          path="/dashboard/*"
           element={
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/resume" element={<ResumeEditor />} />
-                  <Route path="/campaigns/:id" element={<CampaignDetail />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/settings/email-accounts" element={<EmailAccounts />} />
+                  <Route index element={<Dashboard />} />
+                  <Route path="search" element={<Search />} />
+                  <Route path="messages" element={<Messages />} />
+                  <Route path="resume" element={<ResumeEditor />} />
+                  <Route path="campaigns/:id" element={<CampaignDetail />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="settings/email-accounts" element={<EmailAccounts />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
           }
         />
+        
+        {/* 404 - catch all route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
