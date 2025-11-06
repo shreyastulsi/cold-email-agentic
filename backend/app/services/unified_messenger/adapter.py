@@ -143,49 +143,180 @@ async def send_message_new(provider_id: str, text: str, inmail: bool = False) ->
         }
 
 
-async def send_invitation(provider_id: str, text: str) -> Dict[str, Any]:
+async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = None, db: Optional[Any] = None, linkedin_url: Optional[str] = None) -> Dict[str, Any]:
     """
-    Send LinkedIn connection invitation.
+    Send LinkedIn connection invitation directly via LinkedIn OAuth API.
+    
+    Users must have a LinkedIn account connected via OAuth.
     
     Args:
-        provider_id: Provider ID
+        provider_id: Provider ID (not used for direct OAuth, kept for compatibility)
         text: Invitation message
+        user_id: User ID (required)
+        db: Database session (required)
+        linkedin_url: Optional LinkedIn profile URL (used to identify recipient)
         
     Returns:
         Dict with success status and result/error
     """
-    messenger = get_messenger()
+    import os
     
-    loop = asyncio.get_event_loop()
-    success, result = await loop.run_in_executor(
-        None,
-        messenger.send_invitation,
-        provider_id,
-        text
-    )
-    
-    if success:
-        return {
-            "success": True,
-            "result": result
-        }
-    else:
+    if not user_id or not db:
         return {
             "success": False,
-            "error": result
+            "error": "User ID and database session are required",
+            "method": "linkedin_oauth"
+        }
+    
+    # Get user's LinkedIn account
+    try:
+        from app.db.models.linkedin_account import LinkedInAccount
+        from sqlalchemy import select
+        from datetime import datetime
+        from app.services.linkedin_oauth_client import LinkedInOAuthClient
+        
+        # Get user's active LinkedIn account
+        result = await db.execute(
+            select(LinkedInAccount)
+            .where(LinkedInAccount.owner_id == user_id)
+            .where(LinkedInAccount.is_active == True)
+            .where(LinkedInAccount.is_default == True)
+            .limit(1)
+        )
+        linkedin_account = result.scalar_one_or_none()
+        
+        # If no default, get any active account
+        if not linkedin_account:
+            result = await db.execute(
+                select(LinkedInAccount)
+                .where(LinkedInAccount.owner_id == user_id)
+                .where(LinkedInAccount.is_active == True)
+                .limit(1)
+            )
+            linkedin_account = result.scalar_one_or_none()
+        
+        if not linkedin_account:
+            return {
+                "success": False,
+                "error": "LinkedIn account not connected. Please connect your LinkedIn account to send invitations.",
+                "method": "linkedin_oauth"
+            }
+        
+        if not linkedin_account.access_token:
+            return {
+                "success": False,
+                "error": "LinkedIn account access token not available. Please reconnect your LinkedIn account.",
+                "method": "linkedin_oauth"
+            }
+        
+        # Check if token is expired and refresh if needed
+        if linkedin_account.token_expires_at and linkedin_account.token_expires_at < datetime.utcnow():
+            client_id = os.getenv('LINKEDIN_CLIENT_ID')
+            client_secret = os.getenv('LINKEDIN_CLIENT_SECRET')
+            
+            if client_id and client_secret and linkedin_account.refresh_token:
+                client = LinkedInOAuthClient(linkedin_account.access_token, linkedin_account.refresh_token)
+                new_token = client.refresh_access_token(client_id, client_secret)
+                
+                if new_token:
+                    linkedin_account.access_token = new_token
+                    linkedin_account.updated_at = datetime.utcnow()
+                    await db.commit()
+                else:
+                    return {
+                        "success": False,
+                        "error": "Failed to refresh LinkedIn token. Please reconnect your LinkedIn account.",
+                        "method": "linkedin_oauth"
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": "Cannot refresh LinkedIn token. Please reconnect your LinkedIn account.",
+                    "method": "linkedin_oauth"
+                }
+        
+        # Use LinkedIn OAuth to send invitation
+        print(f"✅ Using LinkedIn OAuth directly for user {user_id}")
+        client = LinkedInOAuthClient(linkedin_account.access_token, linkedin_account.refresh_token)
+        
+        # Use linkedin_url if provided, otherwise we can't send (need recipient identifier)
+        if not linkedin_url:
+            return {
+                "success": False,
+                "error": "LinkedIn URL is required to send invitation",
+                "method": "linkedin_oauth"
+            }
+        
+        # Send connection request via LinkedIn OAuth
+        result = client.send_connection_request(linkedin_url, text)
+        
+        if result.get("success"):
+            # Update last_used_at
+            linkedin_account.last_used_at = datetime.utcnow()
+            await db.commit()
+            
+            return {
+                "success": True,
+                "result": result.get("result"),
+                "method": "linkedin_oauth"
+            }
+        else:
+            error_msg = result.get('error', 'Unknown error')
+            return {
+                "success": False,
+                "error": f"Failed to send invitation: {error_msg}",
+                "method": "linkedin_oauth"
+            }
+        
+    except Exception as e:
+        print(f"⚠️  Error sending LinkedIn invitation: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": f"Error sending invitation: {str(e)}",
+            "method": "linkedin_oauth"
         }
 
 
-async def search_company(name: str) -> Dict[str, Any]:
+async def search_company(name: str, db: Optional[Any] = None) -> Dict[str, Any]:
     """
     Search for a company.
+    Checks database cache first, then calls API if not found.
     
     Args:
         name: Company name
+        db: Optional database session for caching
         
     Returns:
         Dict with company_id and company info
     """
+    from app.db.models.company import Company
+    from sqlalchemy import select
+    from datetime import datetime
+    
+    # Normalize company name for caching (lowercase, trim)
+    normalized_name = name.strip().lower()
+    
+    # Check database cache first if db session is available
+    if db:
+        try:
+            result = await db.execute(
+                select(Company).where(Company.company_name == normalized_name)
+            )
+            cached_company = result.scalar_one_or_none()
+            
+            if cached_company:
+                print(f"✅ Found company in cache: {cached_company.company_name} -> {cached_company.company_id}")
+                return {
+                    "company_id": cached_company.company_id,
+                    "company": cached_company.company_data or {}
+                }
+        except Exception as e:
+            print(f"⚠️  Error checking cache: {e}")
+            # Continue to API call if cache check fails
+    
+    # Not in cache, call API
     messenger = get_messenger()
     
     loop = asyncio.get_event_loop()
@@ -194,6 +325,37 @@ async def search_company(name: str) -> Dict[str, Any]:
         messenger.search_company,
         name
     )
+    
+    # If API call successful and we have a db session, cache the result
+    if company_id and company_info and db:
+        try:
+            # Check again to avoid race condition (another request might have added it)
+            result = await db.execute(
+                select(Company).where(Company.company_name == normalized_name)
+            )
+            existing = result.scalar_one_or_none()
+            
+            if existing:
+                # Update existing cache entry
+                existing.company_id = company_id
+                existing.company_data = company_info
+                existing.updated_at = datetime.utcnow()
+                print(f"✅ Updated company cache: {normalized_name} -> {company_id}")
+            else:
+                # Create new cache entry
+                new_company = Company(
+                    company_name=normalized_name,
+                    company_id=company_id,
+                    company_data=company_info
+                )
+                db.add(new_company)
+                print(f"✅ Cached company: {normalized_name} -> {company_id}")
+            
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️  Error caching company: {e}")
+            await db.rollback()
+            # Continue even if caching fails
     
     return {
         "company_id": company_id,
@@ -574,7 +736,8 @@ async def send_email(
     to_email: str,
     subject: str,
     body: str,
-    email_account: Optional[Any] = None
+    email_account: Optional[Any] = None,
+    db: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
     Send email via SMTP or OAuth (Gmail/Outlook API).
@@ -584,16 +747,48 @@ async def send_email(
         subject: Email subject
         body: Email body
         email_account: Optional EmailAccount model instance
+        db: Optional database session for token refresh
         
     Returns:
         Dict with success status and result/error
     """
+    from datetime import datetime
     messenger = get_messenger()
     
     loop = asyncio.get_event_loop()
     
     # If email_account provided, use it; otherwise use default SMTP from env
     if email_account:
+        # Check if token is expired and refresh if needed
+        if (email_account.provider in ['gmail', 'outlook'] and 
+            email_account.access_token and 
+            email_account.token_expires_at and 
+            email_account.token_expires_at < datetime.utcnow() and
+            email_account.refresh_token):
+            
+            # Token expired - refresh it
+            print(f"Access token expired for {email_account.email}, refreshing...")
+            success_refresh, new_access_token, new_expires_at, error, new_refresh_token = await loop.run_in_executor(
+                None,
+                messenger.refresh_access_token,
+                email_account
+            )
+            
+            if success_refresh and new_access_token and db:
+                # Update the account in database
+                email_account.access_token = new_access_token
+                email_account.token_expires_at = new_expires_at
+                if new_refresh_token:
+                    email_account.refresh_token = new_refresh_token
+                email_account.updated_at = datetime.utcnow()
+                await db.commit()
+                print(f"Token refreshed successfully for {email_account.email}")
+            elif not success_refresh:
+                return {
+                    "success": False,
+                    "error": f"Failed to refresh access token: {error}. Please re-link your email account."
+                }
+        
         success, result = await loop.run_in_executor(
             None,
             messenger.send_email_with_account,

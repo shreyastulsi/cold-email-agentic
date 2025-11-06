@@ -561,24 +561,27 @@ async def complete_oauth_setup(
             expires_in = tokens.get('expires_in', 3600)
             token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in) if expires_in else None
         
-        # Check if account already exists
-        print(f"[OAUTH DEBUG] Checking for existing account with email: {email}")
+        # Check if account already exists - check by email AND provider to prevent duplicates
+        print(f"[OAUTH DEBUG] Checking for existing account with email: {email} and provider: {request.provider}")
         result = await db.execute(
             select(EmailAccount)
             .where(EmailAccount.owner_id == current_user.id)
             .where(EmailAccount.email == email)
+            .where(EmailAccount.provider == request.provider)
         )
         existing_account = result.scalar_one_or_none()
         print(f"[OAUTH DEBUG] Existing account found: {existing_account is not None}")
         
         if existing_account:
             # Update existing account
-            print(f"[OAUTH DEBUG] Updating existing account...")
+            print(f"[OAUTH DEBUG] Updating existing account (ID: {existing_account.id})...")
             existing_account.refresh_token = refresh_token
             existing_account.access_token = access_token
             existing_account.token_expires_at = token_expires_at
             existing_account.is_active = True
             existing_account.updated_at = datetime.utcnow()
+            # Ensure provider matches
+            existing_account.provider = request.provider
             await db.commit()
             print(f"[OAUTH DEBUG] Account updated successfully")
             await db.refresh(existing_account)
@@ -597,15 +600,21 @@ async def complete_oauth_setup(
         result = await db.execute(
             select(EmailAccount).where(EmailAccount.owner_id == current_user.id)
         )
-        is_first_account = len(result.scalars().all()) == 0
+        existing_accounts = result.scalars().all()
+        is_first_account = len(existing_accounts) == 0
         
-        # If this is set as default, unset other defaults
+        # If this is the first account, it should be default. Otherwise, unset other defaults
         if is_first_account:
+            # First account - will be set as default
+            is_default = True
+        else:
+            # Not first account - unset other defaults and set this as default (OAuth accounts are always default)
             await db.execute(
                 update(EmailAccount)
                 .where(EmailAccount.owner_id == current_user.id)
                 .values(is_default=False)
             )
+            is_default = True
         
         # Create new email account
         email_account = EmailAccount(
@@ -616,7 +625,7 @@ async def complete_oauth_setup(
             refresh_token=refresh_token,
             access_token=access_token,
             token_expires_at=token_expires_at,
-            is_default=is_first_account,
+            is_default=is_default,
             is_active=True,
         )
         

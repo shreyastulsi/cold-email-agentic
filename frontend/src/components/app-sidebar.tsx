@@ -1,9 +1,9 @@
 import {
   FileText,
   LayoutDashboard,
-  Mail,
   Search as SearchIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  FileEdit
 } from "lucide-react"
 import * as React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -38,30 +38,34 @@ const navMain = [
     icon: SearchIcon,
   },
   {
-    title: "Messages",
-    url: "/dashboard/messages",
-    icon: Mail,
+    title: "Drafts",
+    url: "/dashboard/drafts",
+    icon: FileEdit,
   },
   {
     title: "Resume",
     url: "/dashboard/resume",
     icon: FileText,
   },
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: SettingsIcon,
-    items: [
       {
-        title: "General",
+        title: "Settings",
         url: "/dashboard/settings",
+        icon: SettingsIcon,
+        items: [
+          {
+            title: "General",
+            url: "/dashboard/settings",
+          },
+          {
+            title: "Email Accounts",
+            url: "/dashboard/settings/email-accounts",
+          },
+          {
+            title: "LinkedIn Accounts",
+            url: "/dashboard/settings/linkedin-accounts",
+          },
+        ],
       },
-      {
-        title: "Email Accounts",
-        url: "/dashboard/settings/email-accounts",
-      },
-    ],
-  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

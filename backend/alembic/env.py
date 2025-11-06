@@ -59,9 +59,41 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    # Configure SSL for Supabase connections
+    database_url = settings.database_url
+    connect_args = {}
+    
+    # Remove sslmode from URL if present (SQLAlchemy will try to pass it as keyword arg)
+    if "?sslmode=" in database_url or "&sslmode=" in database_url:
+        # Extract sslmode value
+        import urllib.parse
+        parsed = urllib.parse.urlparse(database_url)
+        query_params = urllib.parse.parse_qs(parsed.query)
+        
+        if 'sslmode' in query_params:
+            sslmode_value = query_params['sslmode'][0]
+            # Remove sslmode from query params
+            query_params.pop('sslmode')
+            # Rebuild URL without sslmode
+            new_query = urllib.parse.urlencode(query_params, doseq=True)
+            new_url = urllib.parse.urlunparse((
+                parsed.scheme, parsed.netloc, parsed.path,
+                parsed.params, new_query, parsed.fragment
+            ))
+            database_url = new_url
+            # Pass SSL mode to asyncpg via connect_args
+            connect_args['ssl'] = sslmode_value
+        elif "supabase.co" in database_url:
+            # If Supabase but no sslmode, add it
+            connect_args['ssl'] = 'require'
+    elif "supabase.co" in database_url:
+        # Supabase requires SSL
+        connect_args['ssl'] = 'require'
+    
     connectable = create_async_engine(
-        settings.database_url,
+        database_url,
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

@@ -2,8 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.models.user import User
+from app.db.base import get_db
 from app.services.unified_messenger.adapter import (
     linkedin_url_to_provider_id,
     find_existing_chat,
@@ -81,8 +83,14 @@ async def send_new_message(
 @router.post("/linkedin/invitations")
 async def send_linkedin_invitation(
     request: InvitationRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """Send LinkedIn connection invitation."""
-    return await send_invitation(request.provider_id, request.text)
+    """Send LinkedIn connection invitation. Uses LinkedIn OAuth if available, otherwise falls back to Unipile."""
+    return await send_invitation(
+        request.provider_id, 
+        request.text,
+        user_id=current_user.id,
+        db=db
+    )
 

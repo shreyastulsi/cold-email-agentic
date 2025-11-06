@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
@@ -25,12 +25,30 @@ async function sendEmail(to, subject, body) {
   })
 }
 
+async function saveDraft(draftData) {
+  return apiRequest('/api/v1/drafts', {
+    method: 'POST',
+    body: JSON.stringify(draftData)
+  })
+}
+
 export default function Messages() {
   const navigate = useNavigate()
   const location = useLocation()
   const [messages, setMessages] = useState([])
   const [sendingStatus, setSendingStatus] = useState({})
   const [isSending, setIsSending] = useState(false)
+  const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
+  const [isSavingAll, setIsSavingAll] = useState(false)
+  const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
+  const messagesRef = useRef(messages)
+  const sendingStatusRef = useRef(sendingStatus)
+
+  // Keep refs updated with latest values
+  useEffect(() => {
+    messagesRef.current = messages
+    sendingStatusRef.current = sendingStatus
+  }, [messages, sendingStatus])
 
   useEffect(() => {
     // Get messages from location state or localStorage
@@ -58,7 +76,7 @@ export default function Messages() {
       setMessages(initializedMessages)
     } else {
       // No messages found, redirect to search
-      navigate('/search')
+      navigate('/dashboard/search')
     }
   }, [location, navigate])
 
@@ -100,7 +118,7 @@ export default function Messages() {
         
         // Track in dashboard stats
         const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
         const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
         trackLinkedInInvite(role, company, recruiterName)
       } else {
@@ -137,7 +155,7 @@ export default function Messages() {
 
     try {
       const result = await sendEmail(email, subject, body)
-      if (result.success) {
+      if (result && result.success) {
         setSendingStatus(prev => ({
           ...prev,
           [index]: { ...prev[index], email: 'sent' }
@@ -145,21 +163,387 @@ export default function Messages() {
         
         // Track in dashboard stats
         const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
         const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
         trackEmailSent(role, company, recruiterName)
       } else {
-        throw new Error(result.message || 'Failed to send email')
+        // Handle both error formats: string or object with message
+        const errorMsg = typeof result?.error === 'string' 
+          ? result.error 
+          : result?.error?.message || result?.message || 'Failed to send email'
+        throw new Error(errorMsg)
       }
     } catch (error) {
+      const errorMessage = error.message || 'Failed to send email'
       setSendingStatus(prev => ({
         ...prev,
-        [index]: { ...prev[index], email: 'error', error: error.message }
+        [index]: { ...prev[index], email: 'error', error: errorMessage }
       }))
-      alert(`Failed to send email: ${error.message}`)
+      alert(`Failed to send email: ${errorMessage}`)
     } finally {
       setIsSending(false)
     }
+  }
+
+  const showNotification = (message, type = 'success') => {
+    const notification = document.createElement('div')
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+      type === 'success' ? 'bg-green-500 text-white' :
+      type === 'error' ? 'bg-red-500 text-white' :
+      'bg-blue-500 text-white'
+    }`
+    notification.textContent = message
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.style.opacity = '0'
+      notification.style.transform = 'translateY(-20px)'
+      setTimeout(() => {
+        document.body.removeChild(notification)
+      }, 300)
+    }, 3000)
+  }
+
+  const saveDraftForMessage = async (messageData, index, silent = true) => {
+    // Skip if we've already saved this draft
+    if (savedDraftsRef.current.has(index)) {
+      return true
+    }
+    
+    const recruiter = messageData.recruiter || {}
+    const mapItem = messageData.mapItem || {}
+    
+    // Skip if message has already been sent
+    const linkedinSent = sendingStatus[index]?.linkedin === 'sent'
+    const emailSent = sendingStatus[index]?.email === 'sent'
+    
+    // Skip if both messages are already sent
+    if (linkedinSent && emailSent) {
+      return true
+    }
+    
+    // Only save if there's content that hasn't been sent
+    const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
+    const linkedinUrl = messageData.recruiter?.profile_url || mapItem.recruiter_profile_url
+    const emailSubject = messageData.editedEmailSubject || messageData.email?.subject
+    const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content
+    const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage
+    
+    // Skip if nothing to save
+    if ((!emailSubject && !emailBody && !linkedinMessage) || (!email && !linkedinUrl)) {
+      return false
+    }
+    
+    // Determine draft type
+    let draftType = 'email'
+    if (linkedinMessage && emailSubject) {
+      draftType = 'both'
+    } else if (linkedinMessage) {
+      draftType = 'linkedin'
+    }
+    
+    try {
+      const draftData = {
+        draft_type: draftType,
+        recipient_name: recruiter.name || mapItem.recruiter_name || null,
+        recipient_email: email || null,
+        recipient_linkedin_url: linkedinUrl || null,
+        email_subject: emailSubject || null,
+        email_body: emailBody || null,
+        linkedin_message: linkedinMessage || null,
+        job_title: mapItem.job_title || null,
+        company_name: mapItem.job_company || recruiter.company || mapItem.recruiter_company || null,
+        recruiter_info: {
+          ...recruiter,
+          ...mapItem
+        }
+      }
+      
+      const result = await saveDraft(draftData)
+      if (result.success) {
+        savedDraftsRef.current.add(index)
+        if (!silent) {
+          showNotification('Draft saved successfully!', 'success')
+        }
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error(`Failed to save draft: ${error.message}`)
+      if (!silent) {
+        showNotification(`Failed to save draft: ${error.message}`, 'error')
+      }
+      return false
+    }
+  }
+
+  const handleSaveDraft = async (index) => {
+    setSavingStatus(prev => ({
+      ...prev,
+      [index]: 'saving'
+    }))
+
+    try {
+      const messageData = messages[index]
+      const success = await saveDraftForMessage(messageData, index, false)
+      
+      if (success) {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: 'saved'
+        }))
+        // Reset the saved status after 2 seconds
+        setTimeout(() => {
+          setSavingStatus(prev => ({
+            ...prev,
+            [index]: null
+          }))
+        }, 2000)
+      } else {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: 'error'
+        }))
+        setTimeout(() => {
+          setSavingStatus(prev => ({
+            ...prev,
+            [index]: null
+          }))
+        }, 3000)
+      }
+    } catch (error) {
+      setSavingStatus(prev => ({
+        ...prev,
+        [index]: 'error'
+      }))
+      setTimeout(() => {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: null
+        }))
+      }, 3000)
+    }
+  }
+
+  const handleSaveAllDrafts = async () => {
+    setIsSavingAll(true)
+    
+    try {
+      const savePromises = messages.map(async (messageData, index) => {
+        const linkedinSent = sendingStatus[index]?.linkedin === 'sent'
+        const emailSent = sendingStatus[index]?.email === 'sent'
+        
+        // Only save if at least one message hasn't been sent
+        if (!linkedinSent || !emailSent) {
+          return await saveDraftForMessage(messageData, index, true)
+        }
+        return false
+      })
+      
+      const results = await Promise.all(savePromises)
+      const savedCount = results.filter(r => r === true).length
+      
+      if (savedCount > 0) {
+        showNotification(`Saved ${savedCount} draft${savedCount !== 1 ? 's' : ''} successfully!`, 'success')
+      } else {
+        showNotification('No drafts to save', 'info')
+      }
+    } catch (error) {
+      showNotification(`Failed to save some drafts: ${error.message}`, 'error')
+    } finally {
+      setIsSavingAll(false)
+    }
+  }
+
+  const autoSaveAllDrafts = async () => {
+    if (messages.length === 0) {
+      return
+    }
+    
+    console.log('Auto-saving drafts...')
+    
+    // Save all unsent messages as drafts
+    const savePromises = messages.map(async (messageData, index) => {
+      const linkedinSent = sendingStatus[index]?.linkedin === 'sent'
+      const emailSent = sendingStatus[index]?.email === 'sent'
+      
+      // Only save if at least one message hasn't been sent
+      if (!linkedinSent || !emailSent) {
+        return await saveDraftForMessage(messageData, index, true)
+      }
+      return false
+    })
+    
+    await Promise.all(savePromises)
+    console.log('Auto-save complete')
+  }
+
+  // Auto-save drafts when leaving the page
+  useEffect(() => {
+    // Auto-save when component unmounts (navigating away)
+    return () => {
+      const doAutoSave = async () => {
+        if (messagesRef.current.length === 0) {
+          return
+        }
+        
+        console.log('Auto-saving drafts on unmount...')
+        
+        // Save all unsent messages as drafts
+        const savePromises = messagesRef.current.map(async (messageData, index) => {
+          const linkedinSent = sendingStatusRef.current[index]?.linkedin === 'sent'
+          const emailSent = sendingStatusRef.current[index]?.email === 'sent'
+          
+          // Only save if at least one message hasn't been sent
+          if (!linkedinSent || !emailSent) {
+            // Skip if we've already saved this draft
+            if (savedDraftsRef.current.has(index)) {
+              return true
+            }
+            
+            const recruiter = messageData.recruiter || {}
+            const mapItem = messageData.mapItem || {}
+            const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
+            const linkedinUrl = messageData.recruiter?.profile_url || mapItem.recruiter_profile_url
+            const emailSubject = messageData.editedEmailSubject || messageData.email?.subject
+            const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content
+            const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage
+            
+            if ((!emailSubject && !emailBody && !linkedinMessage) || (!email && !linkedinUrl)) {
+              return false
+            }
+            
+            let draftType = 'email'
+            if (linkedinMessage && emailSubject) {
+              draftType = 'both'
+            } else if (linkedinMessage) {
+              draftType = 'linkedin'
+            }
+            
+            try {
+              const draftData = {
+                draft_type: draftType,
+                recipient_name: recruiter.name || mapItem.recruiter_name || null,
+                recipient_email: email || null,
+                recipient_linkedin_url: linkedinUrl || null,
+                email_subject: emailSubject || null,
+                email_body: emailBody || null,
+                linkedin_message: linkedinMessage || null,
+                job_title: mapItem.job_title || null,
+                company_name: mapItem.job_company || recruiter.company || mapItem.recruiter_company || null,
+                recruiter_info: {
+                  ...recruiter,
+                  ...mapItem
+                }
+              }
+              
+              const result = await saveDraft(draftData)
+              if (result.success) {
+                savedDraftsRef.current.add(index)
+                console.log(`Draft saved for message ${index}`)
+                return true
+              }
+              return false
+            } catch (error) {
+              console.error(`Failed to save draft ${index}:`, error)
+              return false
+            }
+          }
+          return false
+        })
+        
+        await Promise.all(savePromises)
+        console.log('Auto-save complete')
+      }
+      
+      // Fire and forget - don't block navigation
+      doAutoSave().catch(err => {
+        console.error('Failed to auto-save drafts:', err)
+      })
+    }
+  }, [messages, sendingStatus])
+
+  // Also listen for beforeunload event (closing tab/window)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Note: beforeunload doesn't support async well, but we can try
+      if (messagesRef.current.length > 0) {
+        // Trigger the same auto-save logic
+        const doAutoSave = async () => {
+          const savePromises = messagesRef.current.map(async (messageData, index) => {
+            const linkedinSent = sendingStatusRef.current[index]?.linkedin === 'sent'
+            const emailSent = sendingStatusRef.current[index]?.email === 'sent'
+            
+            if ((!linkedinSent || !emailSent) && !savedDraftsRef.current.has(index)) {
+              const recruiter = messageData.recruiter || {}
+              const mapItem = messageData.mapItem || {}
+              const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
+              const linkedinUrl = messageData.recruiter?.profile_url || mapItem.recruiter_profile_url
+              const emailSubject = messageData.editedEmailSubject || messageData.email?.subject
+              const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content
+              const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage
+              
+              if ((!emailSubject && !emailBody && !linkedinMessage) || (!email && !linkedinUrl)) {
+                return false
+              }
+              
+              let draftType = 'email'
+              if (linkedinMessage && emailSubject) {
+                draftType = 'both'
+              } else if (linkedinMessage) {
+                draftType = 'linkedin'
+              }
+              
+              try {
+                const draftData = {
+                  draft_type: draftType,
+                  recipient_name: recruiter.name || mapItem.recruiter_name || null,
+                  recipient_email: email || null,
+                  recipient_linkedin_url: linkedinUrl || null,
+                  email_subject: emailSubject || null,
+                  email_body: emailBody || null,
+                  linkedin_message: linkedinMessage || null,
+                  job_title: mapItem.job_title || null,
+                  company_name: mapItem.job_company || recruiter.company || mapItem.recruiter_company || null,
+                  recruiter_info: {
+                    ...recruiter,
+                    ...mapItem
+                  }
+                }
+                
+                const result = await saveDraft(draftData)
+                if (result.success) {
+                  savedDraftsRef.current.add(index)
+                }
+                return result.success
+              } catch (error) {
+                console.error(`Failed to save draft ${index}:`, error)
+                return false
+              }
+            }
+            return false
+          })
+          
+          await Promise.all(savePromises)
+        }
+        
+        doAutoSave().catch(err => {
+          console.error('Failed to auto-save drafts on beforeunload:', err)
+        })
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
+  // Handle navigation away with the "Back to Search" button
+  const handleNavigateAway = async () => {
+    await autoSaveAllDrafts()
+    navigate('/dashboard/search')
   }
 
   const getStatusIcon = (status) => {
@@ -204,13 +588,24 @@ export default function Messages() {
           <p className="mt-2 text-gray-300">
             Review and edit your LinkedIn messages and emails before sending to {messages.length} recruiter{messages.length !== 1 ? 's' : ''}
           </p>
+          <p className="mt-1 text-sm text-gray-400">
+            💾 Save drafts manually or they will be automatically saved when you leave this page
+          </p>
         </div>
-        <button
-          onClick={() => navigate('/search')}
-          className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
-        >
-          ← Back to Search
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/dashboard/drafts')}
+            className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+          >
+            📝 View Drafts
+          </button>
+          <button
+            onClick={handleNavigateAway}
+            className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+          >
+            ← Back to Search
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -230,7 +625,7 @@ export default function Messages() {
                       {recruiter.name || mapItem.recruiter_name || 'Unknown Recruiter'}
                     </h3>
                     <p className="text-gray-300">
-                      {recruiter.company || mapItem.recruiter_company || 'Unknown Company'}
+                      {mapItem.job_company || recruiter.company || mapItem.recruiter_company || 'Unknown Company'}
                     </p>
                     <div className="mt-2 space-y-1 text-sm text-gray-400">
                       {recruiter.extracted_email && (
@@ -258,6 +653,26 @@ export default function Messages() {
                     <div className="text-sm text-gray-400">
                       {mapItem.job_company || 'N/A'}
                     </div>
+                    <div className="mt-2">
+                      <button
+                        onClick={() => handleSaveDraft(index)}
+                        disabled={savingStatus[index] === 'saving' || (sendingStatus[index]?.linkedin === 'sent' && sendingStatus[index]?.email === 'sent')}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                          savingStatus[index] === 'saved' 
+                            ? 'bg-green-900/50 text-green-300 border border-green-700/50'
+                            : savingStatus[index] === 'saving'
+                            ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50'
+                            : savingStatus[index] === 'error'
+                            ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                            : 'bg-gray-700/50 text-gray-300 border border-gray-600/50 hover:bg-gray-600/50'
+                        } disabled:cursor-not-allowed`}
+                      >
+                        {savingStatus[index] === 'saving' ? '💾 Saving...' :
+                         savingStatus[index] === 'saved' ? '✅ Saved' :
+                         savingStatus[index] === 'error' ? '❌ Error' :
+                         savedDraftsRef.current.has(index) ? '✅ Saved' : '💾 Save Draft'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -281,15 +696,13 @@ export default function Messages() {
                     placeholder="LinkedIn message will appear here..."
                   />
                   
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleSendLinkedIn(index)}
-                      disabled={isSending || linkedinStatus === 'sending' || linkedinStatus === 'sent'}
-                      className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      {linkedinStatus === 'sending' ? 'Sending...' : linkedinStatus === 'sent' ? 'Sent ✓' : 'Send LinkedIn Message'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleSendLinkedIn(index)}
+                    disabled={isSending || linkedinStatus === 'sending' || linkedinStatus === 'sent'}
+                    className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {linkedinStatus === 'sending' ? 'Sending...' : linkedinStatus === 'sent' ? 'Sent ✓' : 'Send LinkedIn Message'}
+                  </button>
                 </div>
 
                 {/* Email Section */}
@@ -341,9 +754,16 @@ export default function Messages() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Batch Actions</h3>
-            <p className="text-sm text-gray-300">Send all messages at once</p>
+            <p className="text-sm text-gray-300">Save all drafts or send all messages at once.</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={handleSaveAllDrafts}
+              disabled={isSavingAll}
+              className="rounded-lg bg-gray-700 px-6 py-2 text-white hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSavingAll ? '💾 Saving...' : '💾 Save All Drafts'}
+            </button>
             <button
               onClick={() => {
                 messages.forEach((_, index) => {

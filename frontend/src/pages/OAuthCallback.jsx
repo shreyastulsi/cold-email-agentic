@@ -36,8 +36,13 @@ export default function OAuthCallback() {
       }
 
       try {
+        // Determine which endpoint to use based on provider
+        const endpoint = provider === 'linkedin' 
+          ? '/api/v1/linkedin-accounts/oauth/complete'
+          : '/api/v1/email-accounts/oauth/complete'
+        
         // Exchange code for tokens and create account
-        const result = await apiRequest('/api/v1/email-accounts/oauth/complete', {
+        const result = await apiRequest(endpoint, {
           method: 'POST',
           body: JSON.stringify({
             provider: provider,
@@ -84,7 +89,11 @@ export default function OAuthCallback() {
           <>
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Completing Setup...</h2>
-            <p className="text-gray-600">Please wait while we link your email account.</p>
+            <p className="text-gray-600">
+              {provider === 'linkedin' 
+                ? 'Please wait while we link your LinkedIn account.'
+                : 'Please wait while we link your email account.'}
+            </p>
           </>
         )}
       </div>

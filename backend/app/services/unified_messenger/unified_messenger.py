@@ -252,17 +252,26 @@ class UnifiedMessenger:
             print(f"❌ Error: {e}")
             return False, str(e)
 
-    def send_invitation(self, provider_id, message="I'd like to connect with you on LinkedIn."):
+    def send_invitation(self, provider_id, message="I'd like to connect with you on LinkedIn.", account_id=None):
         """
         Send a LinkedIn connection invitation.
+        
+        Args:
+            provider_id: Provider ID of the recipient
+            message: Invitation message
+            account_id: Optional Unipile account_id to use (defaults to self.account_id)
         """
+        # Use provided account_id or fall back to default
+        unipile_account_id = account_id if account_id else self.account_id
+        
         print(f"\n📨 Sending connection invitation...")
         print(f"🆔 Provider ID: {provider_id}")
         print(f"💬 Message: {message}")
+        print(f"📧 Using Unipile account: {unipile_account_id}")
         print("-" * 50)
         
         data = {
-            'account_id': self.account_id,
+            'account_id': unipile_account_id,
             'provider_id': provider_id,
             'message': message
         }
@@ -1014,17 +1023,37 @@ class UnifiedMessenger:
         
         job_titles_str = ', '.join(job_titles)
         
-        # Use resume parser to extract key bullets if available
-        if self.resume_generator and self.resume_generator.resume_parser:
-            try:
-                resume_bullets = self.resume_generator.resume_parser.extract_key_bullets(resume_content)
-                # Use condensed bullets instead of truncated content
-                resume_highlights = resume_bullets
-            except Exception as e:
-                print(f"⚠️  Resume parser failed, using truncated content: {e}")
-                resume_highlights = resume_content[:1200] if resume_content else 'No resume content available'
+        # Resume content from database is already parsed bullets, use directly
+        # Only parse if this looks like raw resume content (very long, not bullet format)
+        is_parsed_bullets = False
+        if resume_content:
+            # Check if it's short enough to be parsed bullets
+            if len(resume_content) < 1000:
+                # Check if it contains bullet-like characters (•, -, *, etc.)
+                bullet_chars = ['•', '-', '*', '→', '·']
+                lines = resume_content.strip().split('\n')
+                bullet_lines = sum(1 for line in lines if line.strip() and any(line.strip().startswith(char) for char in bullet_chars))
+                # If more than half the non-empty lines start with bullets, it's likely parsed
+                if bullet_lines > len([l for l in lines if l.strip()]) * 0.3:
+                    is_parsed_bullets = True
+            
+            if not is_parsed_bullets and len(resume_content) > 1500:
+                # This looks like raw resume content, parse it
+                if self.resume_generator and self.resume_generator.resume_parser:
+                    try:
+                        print("📝 Parsing raw resume content (not from database)...")
+                        resume_bullets = self.resume_generator.resume_parser.extract_key_bullets(resume_content)
+                        resume_highlights = resume_bullets
+                    except Exception as e:
+                        print(f"⚠️  Resume parser failed, using truncated content: {e}")
+                        resume_highlights = resume_content[:1200]
+                else:
+                    resume_highlights = resume_content[:1200]
+            else:
+                # Already parsed bullets from database, use directly
+                resume_highlights = resume_content
         else:
-            resume_highlights = resume_content[:1200] if resume_content else 'No resume content available'
+            resume_highlights = 'No resume content available'
         
         # Create email generation prompt with strict structure and explicit output contract
         email_prompt = f"""
@@ -1220,10 +1249,90 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
         except Exception as e:
             return False, f"Error sending email: {str(e)}"
     
+    def refresh_access_token(self, email_account):
+        """
+        Refresh OAuth access token using refresh token.
+        Returns (success: bool, new_access_token: str or None, new_expires_at: datetime or None, error: str or None, new_refresh_token: str or None)
+        """
+        from datetime import datetime, timedelta
+        import httpx
+        
+        if not email_account.refresh_token:
+            return False, None, None, "No refresh token available", None
+        
+        try:
+            if email_account.provider == 'gmail':
+                client_id = os.getenv('GOOGLE_CLIENT_ID')
+                client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+                
+                if not client_id or not client_secret:
+                    return False, None, None, "Google OAuth not configured", None
+                
+                token_data = {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": email_account.refresh_token,
+                    "grant_type": "refresh_token"
+                }
+                
+                response = httpx.post(
+                    "https://oauth2.googleapis.com/token",
+                    data=token_data,
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    tokens = response.json()
+                    new_access_token = tokens.get('access_token')
+                    expires_in = tokens.get('expires_in', 3600)
+                    new_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+                    # Gmail doesn't return a new refresh token, use the existing one
+                    return True, new_access_token, new_expires_at, None, None
+                else:
+                    return False, None, None, f"Token refresh failed: {response.status_code} - {response.text}", None
+                    
+            elif email_account.provider == 'outlook':
+                client_id = os.getenv('MICROSOFT_CLIENT_ID')
+                client_secret = os.getenv('MICROSOFT_CLIENT_SECRET')
+                
+                if not client_id or not client_secret:
+                    return False, None, None, "Microsoft OAuth not configured", None
+                
+                token_data = {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": email_account.refresh_token,
+                    "grant_type": "refresh_token",
+                    "scope": "https://graph.microsoft.com/.default offline_access"
+                }
+                
+                response = httpx.post(
+                    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+                    data=token_data,
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    tokens = response.json()
+                    new_access_token = tokens.get('access_token')
+                    expires_in = tokens.get('expires_in', 3600)
+                    new_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+                    # Outlook may return a new refresh token
+                    new_refresh_token = tokens.get('refresh_token')
+                    return True, new_access_token, new_expires_at, None, new_refresh_token
+                else:
+                    return False, None, None, f"Token refresh failed: {response.status_code} - {response.text}", None
+            else:
+                return False, None, None, f"Unsupported provider: {email_account.provider}", None
+                
+        except Exception as e:
+            return False, None, None, f"Token refresh error: {str(e)}", None
+    
     def send_email_with_account(self, to_email, subject, body, email_account):
         """
         Send email using linked email account (OAuth or SMTP).
         Returns (success: bool, result: dict or error message)
+        Note: This method does NOT refresh tokens automatically - caller should handle refresh
         """
         from datetime import datetime
         import httpx
@@ -1231,12 +1340,6 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
         try:
             # Check if account is OAuth-based (Gmail/Outlook)
             if email_account.provider in ['gmail', 'outlook'] and email_account.access_token:
-                # Check if token is expired and refresh if needed
-                if email_account.token_expires_at and email_account.token_expires_at < datetime.utcnow():
-                    # Token expired - would need to refresh using refresh_token
-                    # For now, return error (you can implement refresh logic later)
-                    return False, "Access token expired. Please re-link your email account."
-                
                 # Use Gmail API for Gmail accounts
                 if email_account.provider == 'gmail':
                     return self._send_email_via_gmail_api(
