@@ -145,127 +145,100 @@ async def send_message_new(provider_id: str, text: str, inmail: bool = False) ->
 
 async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = None, db: Optional[Any] = None, linkedin_url: Optional[str] = None) -> Dict[str, Any]:
     """
-    Send LinkedIn connection invitation directly via LinkedIn OAuth API.
+    Send LinkedIn connection invitation via Unipile API.
     
-    Users must have a LinkedIn account connected via OAuth.
+    Uses user's connected Unipile account ID if available, otherwise falls back to default.
     
     Args:
-        provider_id: Provider ID (not used for direct OAuth, kept for compatibility)
+        provider_id: Provider ID of the recipient
         text: Invitation message
-        user_id: User ID (required)
-        db: Database session (required)
-        linkedin_url: Optional LinkedIn profile URL (used to identify recipient)
+        user_id: User ID (optional, but recommended for using user's account)
+        db: Database session (optional, needed if user_id is provided)
+        linkedin_url: Optional LinkedIn profile URL (not used, kept for compatibility)
         
     Returns:
         Dict with success status and result/error
     """
     import os
     
-    if not user_id or not db:
-        return {
-            "success": False,
-            "error": "User ID and database session are required",
-            "method": "linkedin_oauth"
-        }
-    
-    # Get user's LinkedIn account
     try:
+        from app.core.config import settings
         from app.db.models.linkedin_account import LinkedInAccount
         from sqlalchemy import select
         from datetime import datetime
-        from app.services.linkedin_oauth_client import LinkedInOAuthClient
         
-        # Get user's active LinkedIn account
-        result = await db.execute(
-            select(LinkedInAccount)
-            .where(LinkedInAccount.owner_id == user_id)
-            .where(LinkedInAccount.is_active == True)
-            .where(LinkedInAccount.is_default == True)
-            .limit(1)
-        )
-        linkedin_account = result.scalar_one_or_none()
+        # Determine which Unipile account ID to use
+        unipile_account_id = None
+        linkedin_account = None
         
-        # If no default, get any active account
-        if not linkedin_account:
+        # If user_id and db are provided, try to get user's connected LinkedIn account
+        if user_id and db:
+            # Get user's active LinkedIn account with Unipile account ID
             result = await db.execute(
                 select(LinkedInAccount)
                 .where(LinkedInAccount.owner_id == user_id)
                 .where(LinkedInAccount.is_active == True)
+                .where(LinkedInAccount.unipile_account_id.isnot(None))
+                .where(LinkedInAccount.is_default == True)
                 .limit(1)
             )
             linkedin_account = result.scalar_one_or_none()
-        
-        if not linkedin_account:
-            return {
-                "success": False,
-                "error": "LinkedIn account not connected. Please connect your LinkedIn account to send invitations.",
-                "method": "linkedin_oauth"
-            }
-        
-        if not linkedin_account.access_token:
-            return {
-                "success": False,
-                "error": "LinkedIn account access token not available. Please reconnect your LinkedIn account.",
-                "method": "linkedin_oauth"
-            }
-        
-        # Check if token is expired and refresh if needed
-        if linkedin_account.token_expires_at and linkedin_account.token_expires_at < datetime.utcnow():
-            client_id = os.getenv('LINKEDIN_CLIENT_ID')
-            client_secret = os.getenv('LINKEDIN_CLIENT_SECRET')
             
-            if client_id and client_secret and linkedin_account.refresh_token:
-                client = LinkedInOAuthClient(linkedin_account.access_token, linkedin_account.refresh_token)
-                new_token = client.refresh_access_token(client_id, client_secret)
-                
-                if new_token:
-                    linkedin_account.access_token = new_token
-                    linkedin_account.updated_at = datetime.utcnow()
-                    await db.commit()
-                else:
-                    return {
-                        "success": False,
-                        "error": "Failed to refresh LinkedIn token. Please reconnect your LinkedIn account.",
-                        "method": "linkedin_oauth"
-                    }
-            else:
+            # If no default, get any active account with Unipile account ID
+            if not linkedin_account:
+                result = await db.execute(
+                    select(LinkedInAccount)
+                    .where(LinkedInAccount.owner_id == user_id)
+                    .where(LinkedInAccount.is_active == True)
+                    .where(LinkedInAccount.unipile_account_id.isnot(None))
+                    .limit(1)
+                )
+                linkedin_account = result.scalar_one_or_none()
+            
+            if linkedin_account and linkedin_account.unipile_account_id:
+                unipile_account_id = linkedin_account.unipile_account_id
+                print(f"✅ Using user's Unipile account: {unipile_account_id}")
+        
+        # Fall back to default Unipile account ID if no user account found
+        if not unipile_account_id:
+            unipile_account_id = settings.unipile_account_id
+            if not unipile_account_id:
                 return {
                     "success": False,
-                    "error": "Cannot refresh LinkedIn token. Please reconnect your LinkedIn account.",
-                    "method": "linkedin_oauth"
+                    "error": "No Unipile account configured. Please connect your LinkedIn account or configure UNIPILE_ACCOUNT_ID.",
+                    "method": "unipile"
                 }
+            print(f"📧 Using default Unipile account: {unipile_account_id}")
         
-        # Use LinkedIn OAuth to send invitation
-        print(f"✅ Using LinkedIn OAuth directly for user {user_id}")
-        client = LinkedInOAuthClient(linkedin_account.access_token, linkedin_account.refresh_token)
+        # Use Unipile API to send invitation
+        messenger = get_messenger()
         
-        # Use linkedin_url if provided, otherwise we can't send (need recipient identifier)
-        if not linkedin_url:
-            return {
-                "success": False,
-                "error": "LinkedIn URL is required to send invitation",
-                "method": "linkedin_oauth"
-            }
+        loop = asyncio.get_event_loop()
+        success, result = await loop.run_in_executor(
+            None,
+            messenger.send_invitation,
+            provider_id,
+            text,
+            unipile_account_id
+        )
         
-        # Send connection request via LinkedIn OAuth
-        result = client.send_connection_request(linkedin_url, text)
-        
-        if result.get("success"):
-            # Update last_used_at
-            linkedin_account.last_used_at = datetime.utcnow()
-            await db.commit()
+        if success:
+            # Update last_used_at if we have a linkedin_account
+            if user_id and db and linkedin_account:
+                linkedin_account.last_used_at = datetime.utcnow()
+                await db.commit()
             
             return {
                 "success": True,
-                "result": result.get("result"),
-                "method": "linkedin_oauth"
+                "result": result,
+                "method": "unipile",
+                "account_id": unipile_account_id
             }
         else:
-            error_msg = result.get('error', 'Unknown error')
             return {
                 "success": False,
-                "error": f"Failed to send invitation: {error_msg}",
-                "method": "linkedin_oauth"
+                "error": result if isinstance(result, str) else str(result),
+                "method": "unipile"
             }
         
     except Exception as e:
@@ -275,7 +248,7 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
         return {
             "success": False,
             "error": f"Error sending invitation: {str(e)}",
-            "method": "linkedin_oauth"
+            "method": "unipile"
         }
 
 

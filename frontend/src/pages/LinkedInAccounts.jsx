@@ -26,66 +26,27 @@ export default function LinkedInAccounts() {
     loadAccounts()
   }, [])
 
-  // Handle OAuth flow
-  const handleOAuthLink = async () => {
+  // Refresh accounts when page becomes visible (e.g., after redirect from auth)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadAccounts()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
+
+  // Handle Unipile hosted auth flow
+  const handleUnipileAuthLink = async () => {
     try {
       setError(null)
-      const result = await apiRequest('/api/v1/linkedin-accounts/oauth/auth-url')
+      const result = await apiRequest('/api/v1/linkedin-accounts/unipile/auth-link')
       
-      // Open OAuth popup
-      const width = 600
-      const height = 700
-      const left = window.screen.width / 2 - width / 2
-      const top = window.screen.height / 2 - height / 2
-      
-      const popup = window.open(
-        result.auth_url,
-        'LinkedIn OAuth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      )
-      
-      if (!popup) {
-        setError('Popup blocked. Please allow popups for this site and try again.')
-        return
-      }
-      
-      // Listen for messages from popup
-      const messageHandler = (event) => {
-        // Verify origin for security
-        if (event.origin !== window.location.origin) {
-          return
-        }
-        
-        if (event.data.type === 'OAUTH_SUCCESS') {
-          // Success - reload accounts
-          window.removeEventListener('message', messageHandler)
-          try {
-            popup.close()
-          } catch (e) {
-            // Ignore COOP errors when closing popup
-          }
-          loadAccounts()
-        } else if (event.data.type === 'OAUTH_ERROR') {
-          // Error - show error message
-          window.removeEventListener('message', messageHandler)
-          try {
-            popup.close()
-          } catch (e) {
-            // Ignore COOP errors when closing popup
-          }
-          setError(event.data.error || 'LinkedIn OAuth authorization failed')
-        }
-      }
-      
-      window.addEventListener('message', messageHandler)
-      
-      // Cleanup after timeout
-      const cleanupTimeout = setTimeout(() => {
-        window.removeEventListener('message', messageHandler)
-      }, 600000) // 10 minutes
+      // Redirect to Unipile hosted auth wizard (full page redirect, not popup)
+      // Unipile will handle the OAuth flow and redirect back to our success/failure URLs
+      window.location.href = result.auth_url
       
     } catch (err) {
-      setError(err.message || 'Failed to start LinkedIn OAuth flow')
+      setError(err.message || 'Failed to start LinkedIn connection flow')
     }
   }
 
@@ -125,7 +86,7 @@ export default function LinkedInAccounts() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Connected Accounts</h2>
             <button
-              onClick={handleOAuthLink}
+              onClick={handleUnipileAuthLink}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
             >
               + Connect LinkedIn Account
@@ -205,7 +166,8 @@ export default function LinkedInAccounts() {
             <li>• Send messages and connection requests from your own LinkedIn account</li>
             <li>• Better rate limits (100+ connection requests per month per account)</li>
             <li>• Improved compliance and authenticity</li>
-            <li>• Unipile is still used for search and discovery features</li>
+            <li>• Uses Unipile's secure hosted auth wizard for easy connection</li>
+            <li>• Unipile handles LinkedIn OAuth authentication securely</li>
           </ul>
         </div>
       </div>

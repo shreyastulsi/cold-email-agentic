@@ -7,12 +7,14 @@ from sqlalchemy import select, update, delete, text
 from datetime import datetime, timedelta
 import os
 import logging
+import httpx
 from pathlib import Path
 from dotenv import load_dotenv
 from app.api.deps import get_current_user
 from app.db.models.user import User
 from app.db.models.linkedin_account import LinkedInAccount
 from app.db.base import get_db
+from app.core.config import settings
 
 # Ensure .env is loaded when this module is imported
 BACKEND_DIR = Path(__file__).parent.parent.parent.parent
@@ -29,6 +31,12 @@ class OAuthCallbackRequest(BaseModel):
     provider: str  # 'linkedin'
     code: str
     state: Optional[str] = None
+
+
+class UnipileWebhookRequest(BaseModel):
+    status: str  # 'CREATION_SUCCESS' or 'RECONNECTED'
+    account_id: str  # Unipile account ID
+    name: Optional[str] = None  # Internal user ID we passed
 
 
 @router.get("/linkedin-accounts")
@@ -69,6 +77,7 @@ async def list_linkedin_accounts(
                     "linkedin_profile_url": acc.linkedin_profile_url,
                     "profile_id": acc.profile_id,
                     "display_name": acc.display_name,
+                    "unipile_account_id": acc.unipile_account_id,
                     "is_active": acc.is_active,
                     "is_default": acc.is_default,
                     "created_at": acc.created_at.isoformat(),
@@ -85,11 +94,394 @@ async def list_linkedin_accounts(
         return {"accounts": [], "debug_error": str(e)}
 
 
+@router.get("/linkedin-accounts/unipile/auth-link")
+async def get_unipile_hosted_auth_link(
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """Generate Unipile Hosted Auth Wizard link for LinkedIn connection."""
+    
+    unipile_api_key = settings.unipile_api_key
+    unipile_base_url = settings.base_url
+    
+    if not unipile_api_key:
+        raise HTTPException(status_code=500, detail="Unipile API key not configured (UNIPILE_API_KEY missing)")
+    
+    if not unipile_base_url:
+        raise HTTPException(status_code=500, detail="Unipile base URL not configured (BASE_URL missing)")
+    
+    # Extract base API URL (remove /api/v1 if present)
+    api_url = unipile_base_url.replace('/api/v1', '').rstrip('/')
+    
+    frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+    backend_url = os.getenv('BACKEND_URL', 'http://localhost:8000')
+    
+    # Set expiration to 1 hour from now
+    # Format: YYYY-MM-DDTHH:MM:SS.sssZ (milliseconds, not microseconds)
+    expires_datetime = datetime.utcnow() + timedelta(hours=1)
+    expires_on = expires_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+    
+    # Success and failure redirect URLs
+    success_redirect_url = f"{frontend_url}/settings/linkedin-accounts/unipile-success"
+    failure_redirect_url = f"{frontend_url}/settings/linkedin-accounts/unipile-failure"
+    
+    # Notify URL for webhook callback (optional - only if backend is publicly accessible)
+    # For local development, we use API polling instead via /sync endpoint
+    notify_url = None
+    if backend_url and not backend_url.startswith("http://localhost") and not backend_url.startswith("http://127.0.0.1"):
+        notify_url = f"{backend_url.rstrip('/')}/api/v1/linkedin-accounts/unipile/webhook"
+    
+    # Request payload for Unipile hosted auth link
+    payload = {
+        "type": "create",
+        "providers": ["LINKEDIN"],  # Only LinkedIn
+        "api_url": api_url,
+        "expiresOn": expires_on,
+        "success_redirect_url": success_redirect_url,
+        "failure_redirect_url": failure_redirect_url,
+        "name": str(current_user.id)  # Pass user ID to match in webhook (if used)
+    }
+    
+    # Only add notify_url if backend is publicly accessible (not localhost)
+    if notify_url:
+        payload["notify_url"] = notify_url
+    
+    try:
+        # Log request details for debugging
+        logger.info(f"Generating Unipile hosted auth link")
+        logger.info(f"API URL: {api_url}/api/v1/hosted/accounts/link")
+        logger.info(f"API Key present: {bool(unipile_api_key)}")
+        logger.info(f"API Key (first 10 chars): {unipile_api_key[:10] if unipile_api_key else 'N/A'}...")
+        logger.info(f"Payload: {payload}")
+        
+        # Generate hosted auth link via Unipile API
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{api_url}/api/v1/hosted/accounts/link",
+                json=payload,
+                headers={
+                    "X-API-KEY": unipile_api_key,
+                    "accept": "application/json",
+                    "content-type": "application/json"
+                },
+                timeout=30.0
+            )
+            
+            logger.info(f"Unipile API response status: {response.status_code}")
+            logger.info(f"Unipile API response headers: {dict(response.headers)}")
+            logger.info(f"Unipile API response body: {response.text}")
+            
+            # Unipile returns 201 for successful creation
+            if response.status_code not in [200, 201]:
+                error_text = response.text
+                logger.error(f"Failed to generate Unipile hosted auth link: {response.status_code} - {error_text}")
+                
+                # Try to parse error message from response
+                try:
+                    error_json = response.json()
+                    error_detail = error_json.get("error", error_json.get("message", error_text))
+                except:
+                    error_detail = error_text
+                
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to generate Unipile hosted auth link (Status {response.status_code}): {error_detail}"
+                )
+            
+            result = response.json()
+            hosted_auth_url = result.get("url")
+            
+            if not hosted_auth_url:
+                logger.error(f"Invalid response from Unipile API: {result}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Invalid response from Unipile API: missing URL. Response: {result}"
+                )
+            
+            logger.info(f"Successfully generated hosted auth link")
+            return {
+                "auth_url": hosted_auth_url,
+                "expires_on": expires_on
+            }
+            
+    except httpx.HTTPError as e:
+        logger.error(f"HTTP error generating Unipile hosted auth link: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to connect to Unipile API: {str(e)}"
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"Error generating Unipile hosted auth link: {str(e)}")
+        import traceback
+        error_traceback = traceback.format_exc()
+        logger.error(error_traceback)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate hosted auth link: {str(e)}. Check backend logs for details."
+        )
+
+
+@router.post("/linkedin-accounts/unipile/sync")
+async def sync_unipile_accounts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """
+    Sync LinkedIn accounts from Unipile API.
+    This checks Unipile for newly connected accounts and creates them in our database.
+    This is an alternative to webhooks for local development.
+    """
+    unipile_api_key = settings.unipile_api_key
+    unipile_base_url = settings.base_url
+    
+    if not unipile_api_key or not unipile_base_url:
+        raise HTTPException(status_code=500, detail="Unipile not configured")
+    
+    try:
+        # Get all accounts from Unipile
+        api_url = unipile_base_url.replace('/api/v1', '').rstrip('/')
+        accounts_endpoint = f"{api_url}/api/v1/accounts"
+        
+        logger.info(f"Syncing Unipile accounts from: {accounts_endpoint}")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                accounts_endpoint,
+                headers={
+                    "X-API-KEY": unipile_api_key,
+                    "accept": "application/json"
+                },
+                timeout=30.0
+            )
+            
+            logger.info(f"Unipile accounts API response: {response.status_code}")
+            logger.info(f"Response body: {response.text[:500]}")  # First 500 chars
+            
+            if response.status_code not in [200, 201]:
+                logger.error(f"Failed to fetch Unipile accounts: {response.status_code} - {response.text}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to fetch Unipile accounts: {response.text}"
+                )
+            
+            unipile_accounts = response.json()
+            logger.info(f"Unipile accounts response type: {type(unipile_accounts)}")
+            logger.info(f"Unipile accounts data: {str(unipile_accounts)[:500]}")
+            
+            # Handle Unipile API response format: {"object": "AccountList", "items": [...], "cursor": null}
+            if isinstance(unipile_accounts, dict):
+                # Unipile returns accounts in "items" field
+                accounts_list = unipile_accounts.get("items", unipile_accounts.get("accounts", unipile_accounts.get("data", [])))
+            else:
+                accounts_list = unipile_accounts if isinstance(unipile_accounts, list) else []
+            
+            logger.info(f"Found {len(accounts_list)} accounts from Unipile")
+            
+            created_count = 0
+            updated_count = 0
+            
+            # Get existing accounts for this user
+            result = await db.execute(
+                select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
+            )
+            existing_accounts = {acc.unipile_account_id: acc for acc in result.scalars().all() if acc.unipile_account_id}
+            
+            # Process each Unipile account
+            for account_data in accounts_list:
+                logger.info(f"Processing account: {account_data}")
+                # Handle different response formats
+                if isinstance(account_data, dict):
+                    account_id = account_data.get("id") or account_data.get("account_id")
+                    provider = account_data.get("provider") or account_data.get("type", "") or account_data.get("provider_type", "")
+                    
+                    logger.info(f"Account ID: {account_id}, Provider: {provider}")
+                    
+                    # Only process LinkedIn accounts
+                    if provider.upper() != "LINKEDIN":
+                        logger.info(f"Skipping non-LinkedIn account: {provider}")
+                        continue
+                    
+                    if not account_id:
+                        logger.warning(f"Account data missing ID: {account_data}")
+                        continue
+                    
+                    # Check if account already exists
+                    if account_id in existing_accounts:
+                        # Update existing account
+                        existing_account = existing_accounts[account_id]
+                        existing_account.is_active = True
+                        existing_account.updated_at = datetime.utcnow()
+                        updated_count += 1
+                    else:
+                        # Create new account
+                        # Check if this should be default
+                        is_first_account = len(existing_accounts) == 0
+                        
+                        if not is_first_account:
+                            await db.execute(
+                                update(LinkedInAccount)
+                                .where(LinkedInAccount.owner_id == current_user.id)
+                                .values(is_default=False)
+                            )
+                        
+                        linkedin_account = LinkedInAccount(
+                            owner_id=current_user.id,
+                            unipile_account_id=account_id,
+                            is_default=is_first_account,
+                            is_active=True,
+                        )
+                        db.add(linkedin_account)
+                        created_count += 1
+                        existing_accounts[account_id] = linkedin_account
+            
+            await db.commit()
+            
+            logger.info(f"Synced Unipile accounts: {created_count} created, {updated_count} updated")
+            logger.info(f"Total accounts processed: {len(accounts_list)}, LinkedIn accounts found: {created_count + updated_count}")
+            
+            return {
+                "success": True,
+                "created": created_count,
+                "updated": updated_count,
+                "total_found": len(accounts_list),
+                "message": f"Synced {created_count + updated_count} LinkedIn account(s) from {len(accounts_list)} total account(s)"
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error syncing Unipile accounts: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to sync accounts: {str(e)}"
+        )
+
+
+@router.post("/linkedin-accounts/unipile/webhook")
+async def unipile_account_webhook(
+    request: UnipileWebhookRequest,
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """
+    Webhook endpoint to receive account connection notifications from Unipile.
+    
+    NOTE: This endpoint is public (no authentication required) because Unipile calls it directly.
+    In production, consider adding:
+    - IP whitelisting for Unipile servers
+    - Webhook signature verification (if Unipile supports it)
+    - Rate limiting
+    """
+    
+    logger.info(f"Received Unipile webhook: status={request.status}, account_id={request.account_id}, name={request.name}")
+    
+    if request.status not in ["CREATION_SUCCESS", "RECONNECTED"]:
+        logger.warning(f"Unknown webhook status: {request.status}")
+        return {"status": "ignored", "message": f"Unknown status: {request.status}"}
+    
+    if not request.account_id:
+        logger.error("Webhook missing account_id")
+        raise HTTPException(status_code=400, detail="Missing account_id in webhook payload")
+    
+    # Extract user ID from name parameter (we passed current_user.id when generating link)
+    user_id = request.name
+    if not user_id:
+        logger.error("Webhook missing name (user_id)")
+        raise HTTPException(status_code=400, detail="Missing name (user_id) in webhook payload")
+    
+    try:
+        # Get user from database
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.error(f"User not found: {user_id}")
+            raise HTTPException(status_code=404, detail=f"User not found: {user_id}")
+        
+        # Check if account already exists
+        result = await db.execute(
+            select(LinkedInAccount)
+            .where(LinkedInAccount.owner_id == user_id)
+            .where(LinkedInAccount.unipile_account_id == request.account_id)
+        )
+        existing_account = result.scalar_one_or_none()
+        
+        if existing_account:
+            # Update existing account
+            existing_account.is_active = True
+            existing_account.updated_at = datetime.utcnow()
+            await db.commit()
+            await db.refresh(existing_account)
+            
+            logger.info(f"Updated existing LinkedIn account: {existing_account.id} with Unipile account: {request.account_id}")
+            return {
+                "status": "success",
+                "message": "Account updated",
+                "account_id": existing_account.id
+            }
+        
+        # Check if this should be default (first account)
+        result = await db.execute(
+            select(LinkedInAccount).where(LinkedInAccount.owner_id == user_id)
+        )
+        existing_accounts = result.scalars().all()
+        is_first_account = len(existing_accounts) == 0
+        
+        # If not first account, unset other defaults
+        if not is_first_account:
+            await db.execute(
+                update(LinkedInAccount)
+                .where(LinkedInAccount.owner_id == user_id)
+                .values(is_default=False)
+            )
+            is_default = True
+        else:
+            is_default = True
+        
+        # Create new LinkedIn account with Unipile account ID
+        linkedin_account = LinkedInAccount(
+            owner_id=user_id,
+            unipile_account_id=request.account_id,
+            is_default=is_default,
+            is_active=True,
+        )
+        
+        db.add(linkedin_account)
+        await db.commit()
+        await db.refresh(linkedin_account)
+        
+        logger.info(f"Created new LinkedIn account: {linkedin_account.id} with Unipile account: {request.account_id}")
+        
+        return {
+            "status": "success",
+            "message": "Account created",
+            "account_id": linkedin_account.id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing Unipile webhook: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process webhook: {str(e)}"
+        )
+
+
 @router.get("/linkedin-accounts/oauth/auth-url")
 async def get_linkedin_oauth_auth_url(
     current_user: User = Depends(get_current_user)
 ) -> dict:
-    """Get LinkedIn OAuth authorization URL."""
+    """Get LinkedIn OAuth authorization URL (legacy - kept for backward compatibility)."""
     
     from urllib.parse import urlencode
     

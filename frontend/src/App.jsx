@@ -15,6 +15,8 @@ import OAuthCallback from './pages/OAuthCallback'
 import ResumeEditor from './pages/ResumeEditor'
 import Search from './pages/Search'
 import Settings from './pages/Settings'
+import UnipileAuthSuccess from './pages/UnipileAuthSuccess'
+import UnipileAuthFailure from './pages/UnipileAuthFailure'
 
 function App() {
   return (
@@ -40,6 +42,22 @@ function App() {
           element={
             <ProtectedRoute>
               <OAuthCallback />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/linkedin-accounts/unipile-success"
+          element={
+            <ProtectedRoute>
+              <UnipileAuthSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/linkedin-accounts/unipile-failure"
+          element={
+            <ProtectedRoute>
+              <UnipileAuthFailure />
             </ProtectedRoute>
           }
         />
