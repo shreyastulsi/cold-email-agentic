@@ -22,8 +22,25 @@ export default function LinkedInAccounts() {
     }
   }
 
+  // Cleanup duplicates on load
+  const cleanupDuplicates = async () => {
+    try {
+      const result = await apiRequest('/api/v1/linkedin-accounts/cleanup-duplicates', {
+        method: 'POST'
+      })
+      if (result.removed > 0) {
+        console.log(`Cleaned up ${result.removed} duplicate LinkedIn account(s)`)
+        loadAccounts() // Reload after cleanup
+      }
+    } catch (err) {
+      console.warn('Failed to cleanup duplicates:', err)
+    }
+  }
+
   useEffect(() => {
     loadAccounts()
+    // Cleanup duplicates automatically on load
+    cleanupDuplicates()
   }, [])
 
   // Refresh accounts when page becomes visible (e.g., after redirect from auth)

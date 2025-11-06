@@ -656,6 +656,74 @@ async def complete_oauth_setup(
         raise HTTPException(status_code=400, detail=f"OAuth setup failed: {str(e)}")
 
 
+@router.post("/email-accounts/cleanup-duplicates")
+async def cleanup_duplicate_email_accounts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """
+    Remove duplicate email accounts for the current user.
+    Keeps the oldest account for each email+provider combination.
+    """
+    try:
+        # Get all accounts for this user
+        result = await db.execute(
+            select(EmailAccount)
+            .where(EmailAccount.owner_id == current_user.id)
+            .order_by(EmailAccount.created_at.asc())
+        )
+        all_accounts = result.scalars().all()
+        
+        # Group by email+provider (case-insensitive email)
+        accounts_by_key = {}
+        duplicates_to_delete = []
+        
+        for account in all_accounts:
+            # Use lowercase email for comparison
+            key = (account.email.lower() if account.email else "", account.provider)
+            
+            if key in accounts_by_key:
+                # This is a duplicate - mark for deletion
+                duplicates_to_delete.append(account.id)
+            else:
+                # First occurrence - keep it
+                accounts_by_key[key] = account
+        
+        # Delete duplicates
+        if duplicates_to_delete:
+            await db.execute(
+                delete(EmailAccount)
+                .where(EmailAccount.id.in_(duplicates_to_delete))
+                .where(EmailAccount.owner_id == current_user.id)
+            )
+            await db.commit()
+            
+            logger.info(f"Removed {len(duplicates_to_delete)} duplicate email accounts for user {current_user.id}")
+            
+            return {
+                "success": True,
+                "removed": len(duplicates_to_delete),
+                "kept": len(accounts_by_key),
+                "message": f"Removed {len(duplicates_to_delete)} duplicate account(s)"
+            }
+        else:
+            return {
+                "success": True,
+                "removed": 0,
+                "kept": len(accounts_by_key),
+                "message": "No duplicates found"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error cleaning up duplicates: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to cleanup duplicates: {str(e)}"
+        )
+
+
 @router.get("/email-accounts/default")
 async def get_default_email_account(
     current_user: User = Depends(get_current_user),
