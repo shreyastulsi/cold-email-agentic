@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { LoaderOne } from '../components/ui/loader'
 import { apiRequest } from '../utils/api'
+import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -99,6 +100,34 @@ async function generateEmail(jobTitles, jobType, recruiter) {
   })
 }
 
+async function sendLinkedInInvitation(linkedinUrl, message) {
+  return apiRequest('/api/v1/outreach/linkedin/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      linkedin_url: linkedinUrl,
+      message: message
+    })
+  })
+}
+
+async function sendEmail(to, subject, body) {
+  return apiRequest('/api/v1/outreach/email/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      to: to,
+      subject: subject,
+      body: body
+    })
+  })
+}
+
+async function saveDraft(draftData) {
+  return apiRequest('/api/v1/drafts', {
+    method: 'POST',
+    body: JSON.stringify(draftData)
+  })
+}
+
 // Floating GPT-like thinking component
 function ThinkingIndicator({ logs, isActive }) {
   const latestLog = logs && logs.length > 0 ? logs[logs.length - 1] : null
@@ -157,6 +186,12 @@ export default function Search() {
   const eventSourceRef = useRef(null)
   const [draggedJob, setDraggedJob] = useState(null)
   const [draggedOverIndex, setDraggedOverIndex] = useState(null)
+  const [generatedMessages, setGeneratedMessages] = useState([])
+  const [sendingStatus, setSendingStatus] = useState({})
+  const [isSending, setIsSending] = useState(false)
+  const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
+  const [isSavingAll, setIsSavingAll] = useState(false)
+  const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
 
   // Connect to verbose logger stream for thinking indicator
   useEffect(() => {
@@ -293,7 +328,8 @@ export default function Search() {
     if (jobResults) setCurrentStep(1)
     if (mappedJobs.length > 0) setCurrentStep(1)
     if (mapping.length > 0) setCurrentStep(3)
-  }, [selectedCompanies, jobResults, mappedJobs, mapping])
+    if (generatedMessages.length > 0) setCurrentStep(4)
+  }, [selectedCompanies, jobResults, mappedJobs, mapping, generatedMessages])
 
   // Handle company selection
   const handleSelectCompany = () => {
@@ -519,26 +555,341 @@ export default function Search() {
               jobType,
           recruiter
             )
-            
+        
+        // Handle LinkedIn message - could be string or object with message property
+        const linkedinMsg = typeof linkedinResult === 'string' 
+          ? linkedinResult 
+          : linkedinResult?.message || linkedinResult || ''
+        
+        // Handle email - could have different structures
+        const emailSubject = emailResult_gen?.subject || emailResult_gen?.Subject || ''
+        const emailBody = emailResult_gen?.body || emailResult_gen?.Body || emailResult_gen?.content || emailResult_gen?.Content || emailResult_gen || ''
+        
         messages.push({
-              linkedinMessage: linkedinResult.message || linkedinResult,
-              email: emailResult_gen,
+          linkedinMessage: linkedinResult.message || linkedinResult,
+          email: emailResult_gen,
           recruiter: recruiter,
-              mapItem: mapItem
+          mapItem: mapItem,
+          editedLinkedInMessage: linkedinMsg,
+          editedEmailSubject: emailSubject,
+          editedEmailBody: typeof emailBody === 'string' ? emailBody : JSON.stringify(emailBody)
         })
       }
 
-      // Save and navigate
+      // Set messages in state and update step
+      setGeneratedMessages(messages)
+      setCurrentStep(4)
       localStorage.setItem('outreachMessages', JSON.stringify(messages))
-        navigate('/messages', { 
-        state: { messages },
-          replace: false
-        })
     } catch (error) {
       console.error('Error generating messages:', error)
       alert(`Error generating messages: ${error.message}`)
     } finally {
       setIsGeneratingMessages(false)
+    }
+  }
+
+  // Update message
+  const updateMessage = (index, field, value) => {
+    setGeneratedMessages(prev => {
+      const updated = [...prev]
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      }
+      return updated
+    })
+  }
+
+  // Send LinkedIn message
+  const handleSendLinkedIn = async (index) => {
+    const messageData = generatedMessages[index]
+    const linkedinUrl = messageData.recruiter?.profile_url || messageData.mapItem?.recruiter_profile_url
+    
+    if (!linkedinUrl) {
+      alert('LinkedIn URL not found for this recruiter')
+      return
+    }
+
+    const message = messageData.editedLinkedInMessage || messageData.linkedinMessage
+
+    setSendingStatus(prev => ({
+      ...prev,
+      [index]: { ...prev[index], linkedin: 'sending' }
+    }))
+    setIsSending(true)
+
+    try {
+      const result = await sendLinkedInInvitation(linkedinUrl, message)
+      if (result.success) {
+        setSendingStatus(prev => ({
+          ...prev,
+          [index]: { ...prev[index], linkedin: 'sent' }
+        }))
+        
+        // Track in dashboard stats
+        const role = messageData.mapItem?.job_title || 'Unknown Role'
+        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        trackLinkedInInvite(role, company, recruiterName)
+      } else {
+        throw new Error(result.message || 'Failed to send LinkedIn message')
+      }
+    } catch (error) {
+      setSendingStatus(prev => ({
+        ...prev,
+        [index]: { ...prev[index], linkedin: 'error', error: error.message }
+      }))
+      alert(`Failed to send LinkedIn message: ${error.message}`)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  // Send email
+  const handleSendEmail = async (index) => {
+    const messageData = generatedMessages[index]
+    const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
+    
+    if (!email) {
+      alert('Email address not found for this recruiter')
+      return
+    }
+
+    const subject = messageData.editedEmailSubject || messageData.email?.subject || 'Outreach Message'
+    const body = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content || ''
+
+    setSendingStatus(prev => ({
+      ...prev,
+      [index]: { ...prev[index], email: 'sending' }
+    }))
+    setIsSending(true)
+
+    try {
+      const result = await sendEmail(email, subject, body)
+      if (result && result.success) {
+        setSendingStatus(prev => ({
+          ...prev,
+          [index]: { ...prev[index], email: 'sent' }
+        }))
+        
+        // Track in dashboard stats
+        const role = messageData.mapItem?.job_title || 'Unknown Role'
+        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        trackEmailSent(role, company, recruiterName)
+      } else {
+        // Handle both error formats: string or object with message
+        const errorMsg = typeof result?.error === 'string' 
+          ? result.error 
+          : result?.error?.message || result?.message || 'Failed to send email'
+        throw new Error(errorMsg)
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to send email'
+      setSendingStatus(prev => ({
+        ...prev,
+        [index]: { ...prev[index], email: 'error', error: errorMessage }
+      }))
+      alert(`Failed to send email: ${errorMessage}`)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const showNotification = (message, type = 'success') => {
+    const notification = document.createElement('div')
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+      type === 'success' ? 'bg-green-500 text-white' :
+      type === 'error' ? 'bg-red-500 text-white' :
+      'bg-blue-500 text-white'
+    }`
+    notification.textContent = message
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.style.opacity = '0'
+      notification.style.transform = 'translateY(-20px)'
+      setTimeout(() => {
+        document.body.removeChild(notification)
+      }, 300)
+    }, 3000)
+  }
+
+  const saveDraftForMessage = async (messageData, index, silent = true) => {
+    // Skip if we've already saved this draft
+    if (savedDraftsRef.current.has(index)) {
+      return true
+    }
+    
+    const recruiter = messageData.recruiter || {}
+    const mapItem = messageData.mapItem || {}
+    
+    // Skip if message has already been sent
+    const linkedinSent = sendingStatus[index]?.linkedin === 'sent'
+    const emailSent = sendingStatus[index]?.email === 'sent'
+    
+    // Skip if both messages are already sent
+    if (linkedinSent && emailSent) {
+      return true
+    }
+    
+    // Only save if there's content that hasn't been sent
+    const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
+    const linkedinUrl = messageData.recruiter?.profile_url || mapItem.recruiter_profile_url
+    const emailSubject = messageData.editedEmailSubject || messageData.email?.subject
+    const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content
+    const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage
+    
+    // Skip if nothing to save
+    if ((!emailSubject && !emailBody && !linkedinMessage) || (!email && !linkedinUrl)) {
+      return false
+    }
+    
+    // Determine draft type
+    let draftType = 'email'
+    if (linkedinMessage && emailSubject) {
+      draftType = 'both'
+    } else if (linkedinMessage) {
+      draftType = 'linkedin'
+    }
+    
+    try {
+      const draftData = {
+        draft_type: draftType,
+        recipient_name: recruiter.name || mapItem.recruiter_name || null,
+        recipient_email: email || null,
+        recipient_linkedin_url: linkedinUrl || null,
+        email_subject: emailSubject || null,
+        email_body: emailBody || null,
+        linkedin_message: linkedinMessage || null,
+        job_title: mapItem.job_title || null,
+        company_name: mapItem.job_company || recruiter.company || mapItem.recruiter_company || null,
+        recruiter_info: {
+          ...recruiter,
+          ...mapItem
+        }
+      }
+      
+      const result = await saveDraft(draftData)
+      if (result.success) {
+        savedDraftsRef.current.add(index)
+        if (!silent) {
+          showNotification('Draft saved successfully!', 'success')
+        }
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error(`Failed to save draft: ${error.message}`)
+      if (!silent) {
+        showNotification(`Failed to save draft: ${error.message}`, 'error')
+      }
+      return false
+    }
+  }
+
+  const handleSaveDraft = async (index) => {
+    setSavingStatus(prev => ({
+      ...prev,
+      [index]: 'saving'
+    }))
+
+    try {
+      const messageData = generatedMessages[index]
+      const success = await saveDraftForMessage(messageData, index, false)
+      
+      if (success) {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: 'saved'
+        }))
+        // Reset the saved status after 2 seconds
+        setTimeout(() => {
+          setSavingStatus(prev => ({
+            ...prev,
+            [index]: null
+          }))
+        }, 2000)
+      } else {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: 'error'
+        }))
+        setTimeout(() => {
+          setSavingStatus(prev => ({
+            ...prev,
+            [index]: null
+          }))
+        }, 3000)
+      }
+    } catch (error) {
+      setSavingStatus(prev => ({
+        ...prev,
+        [index]: 'error'
+      }))
+      setTimeout(() => {
+        setSavingStatus(prev => ({
+          ...prev,
+          [index]: null
+        }))
+      }, 3000)
+    }
+  }
+
+  const handleSaveAllDrafts = async () => {
+    setIsSavingAll(true)
+    
+    try {
+      const savePromises = generatedMessages.map(async (messageData, index) => {
+        const linkedinSent = sendingStatus[index]?.linkedin === 'sent'
+        const emailSent = sendingStatus[index]?.email === 'sent'
+        
+        // Only save if at least one message hasn't been sent
+        if (!linkedinSent || !emailSent) {
+          return await saveDraftForMessage(messageData, index, true)
+        }
+        return false
+      })
+      
+      const results = await Promise.all(savePromises)
+      const savedCount = results.filter(r => r === true).length
+      
+      if (savedCount > 0) {
+        showNotification(`Saved ${savedCount} draft${savedCount !== 1 ? 's' : ''} successfully!`, 'success')
+      } else {
+        showNotification('No drafts to save', 'info')
+      }
+    } catch (error) {
+      showNotification(`Failed to save some drafts: ${error.message}`, 'error')
+    } finally {
+      setIsSavingAll(false)
+    }
+  }
+
+  // Status helpers
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'sent':
+        return '✅'
+      case 'sending':
+        return '⏳'
+      case 'error':
+        return '❌'
+      default:
+        return ''
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'sent':
+        return 'bg-green-900/50 text-green-300 border border-green-700/50'
+      case 'sending':
+        return 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50'
+      case 'error':
+        return 'bg-red-900/50 text-red-300 border border-red-700/50'
+      default:
+        return 'bg-gray-800/50 text-gray-300 border border-gray-700/50'
     }
   }
 
@@ -602,7 +953,7 @@ export default function Search() {
       </AnimatePresence>
 
       {/* Initial Search Card - Keep visible during search */}
-      {!jobResults && mapping.length === 0 && (
+      {!jobResults && mapping.length === 0 && generatedMessages.length === 0 && (
         <div className="max-w-2xl mx-auto">
           <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
             <CardHeader>
@@ -733,7 +1084,7 @@ export default function Search() {
       )}
 
       {/* Job Results and Mapping View */}
-      {jobResults && mapping.length === 0 && !isMappingToRecruiters && (
+      {jobResults && mapping.length === 0 && !isMappingToRecruiters && generatedMessages.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -885,7 +1236,7 @@ export default function Search() {
       )}
 
       {/* Mapping Results View */}
-      {mapping.length > 0 && !isMappingToRecruiters && (
+      {mapping.length > 0 && !isMappingToRecruiters && generatedMessages.length === 0 && (
         <AnimatePresence>
           <motion.div
             key="results"
@@ -979,7 +1330,7 @@ export default function Search() {
                                 {mapItem.recruiter_name || 'Unknown Recruiter'}
                           </div>
                               <div className="text-xs text-gray-300 mt-1">
-                                {mapItem.recruiter_company || 'Unknown Company'}
+                                {mapItem.job_company || mapItem.recruiter_company || 'Unknown Company'}
                     </div>
                               <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-700/50">
                                 💼 Matched for: <span className="font-medium">{mapItem.job_title}</span> at {mapItem.job_company}
@@ -1005,6 +1356,238 @@ export default function Search() {
                           </button>
                 </CardContent>
               </Card>
+          </motion.div>
+        </AnimatePresence>
+      )}
+
+      {/* Messages View - Show inline after generation */}
+      {generatedMessages.length > 0 && !isGeneratingMessages && (
+        <AnimatePresence>
+          <motion.div
+            key="messages"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-6xl mx-auto"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white">📨 Review & Send Messages</h1>
+                <p className="mt-2 text-gray-300">
+                  Review and edit your LinkedIn messages and emails before sending to {generatedMessages.length} recruiter{generatedMessages.length !== 1 ? 's' : ''}
+                </p>
+                <p className="mt-1 text-sm text-gray-400">
+                  💾 Save drafts manually or they will be automatically saved when you leave this page
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate('/dashboard/drafts')}
+                  className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+                >
+                  📝 View Drafts
+                </button>
+                <button
+                  onClick={() => {
+                    setGeneratedMessages([])
+                    setCurrentStep(3)
+                    setSendingStatus({})
+                  }}
+                  className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+                >
+                  ← Back to Mapping
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {generatedMessages.map((messageData, index) => {
+                const recruiter = messageData.recruiter || {}
+                const mapItem = messageData.mapItem || {}
+                const linkedinStatus = sendingStatus[index]?.linkedin
+                const emailStatus = sendingStatus[index]?.email
+
+                return (
+                  <div key={index} className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
+                    {/* Recruiter Info */}
+                    <div className="mb-6 border-b border-gray-700/50 pb-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-semibold text-white">
+                            {recruiter.name || mapItem.recruiter_name || 'Unknown Recruiter'}
+                          </h3>
+                          <p className="text-gray-300">
+                            {mapItem.job_company || recruiter.company || mapItem.recruiter_company || 'Unknown Company'}
+                          </p>
+                          <div className="mt-2 space-y-1 text-sm text-gray-400">
+                            {recruiter.extracted_email && (
+                              <p>📧 Email: {recruiter.extracted_email}</p>
+                            )}
+                            {mapItem.recruiter_profile_url && (
+                              <p>
+                                🔗 LinkedIn:{' '}
+                                <a
+                                  href={mapItem.recruiter_profile_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  View Profile
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-300">
+                            Job: {mapItem.job_title || 'N/A'}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {mapItem.job_company || 'N/A'}
+                          </div>
+                          <div className="mt-2">
+                            <button
+                              onClick={() => handleSaveDraft(index)}
+                              disabled={savingStatus[index] === 'saving' || (sendingStatus[index]?.linkedin === 'sent' && sendingStatus[index]?.email === 'sent')}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                                savingStatus[index] === 'saved' 
+                                  ? 'bg-green-900/50 text-green-300 border border-green-700/50'
+                                  : savingStatus[index] === 'saving'
+                                  ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50'
+                                  : savingStatus[index] === 'error'
+                                  ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                                  : 'bg-gray-700/50 text-gray-300 border border-gray-600/50 hover:bg-gray-600/50'
+                              } disabled:cursor-not-allowed`}
+                            >
+                              {savingStatus[index] === 'saving' ? '💾 Saving...' :
+                               savingStatus[index] === 'saved' ? '✅ Saved' :
+                               savingStatus[index] === 'error' ? '❌ Error' :
+                               savedDraftsRef.current.has(index) ? '✅ Saved' : '💾 Save Draft'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                      {/* LinkedIn Message Section */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
+                          {linkedinStatus && (
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus)}`}>
+                              {getStatusIcon(linkedinStatus)} {linkedinStatus}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <textarea
+                          className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                          value={messageData.editedLinkedInMessage || ''}
+                          onChange={(e) => updateMessage(index, 'editedLinkedInMessage', e.target.value)}
+                          placeholder="LinkedIn message will appear here..."
+                        />
+                        
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSendLinkedIn(index)}
+                            disabled={isSending || linkedinStatus === 'sending' || linkedinStatus === 'sent'}
+                            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {linkedinStatus === 'sending' ? 'Sending...' : linkedinStatus === 'sent' ? 'Sent ✓' : 'Send LinkedIn Message'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Email Section */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-lg font-semibold text-white">📧 Email</h4>
+                          {emailStatus && (
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus)}`}>
+                              {getStatusIcon(emailStatus)} {emailStatus}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-300">Subject</label>
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                            value={messageData.editedEmailSubject || ''}
+                            onChange={(e) => updateMessage(index, 'editedEmailSubject', e.target.value)}
+                            placeholder="Email subject..."
+                          />
+                          
+                          <label className="block text-sm font-medium text-gray-300">Body</label>
+                          <textarea
+                            className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                            value={messageData.editedEmailBody || ''}
+                            onChange={(e) => updateMessage(index, 'editedEmailBody', e.target.value)}
+                            placeholder="Email body will appear here..."
+                          />
+                        </div>
+                        
+                        <button
+                          onClick={() => handleSendEmail(index)}
+                          disabled={isSending || emailStatus === 'sending' || emailStatus === 'sent'}
+                          className="w-full rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {emailStatus === 'sending' ? 'Sending...' : emailStatus === 'sent' ? 'Sent ✓' : 'Send Email'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Summary Actions */}
+            <div className="mt-8 rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Batch Actions</h3>
+                  <p className="text-sm text-gray-300">Save all drafts or send all messages at once.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveAllDrafts}
+                    disabled={isSavingAll}
+                    className="rounded-lg bg-gray-700 px-6 py-2 text-white hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isSavingAll ? '💾 Saving...' : '💾 Save All Drafts'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      generatedMessages.forEach((_, index) => {
+                        if (!sendingStatus[index]?.linkedin) {
+                          handleSendLinkedIn(index)
+                        }
+                      })
+                    }}
+                    disabled={isSending || Object.values(sendingStatus).some(s => s?.linkedin === 'sending')}
+                    className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Send All LinkedIn Messages
+                  </button>
+                  <button
+                    onClick={() => {
+                      generatedMessages.forEach((_, index) => {
+                        if (!sendingStatus[index]?.email) {
+                          handleSendEmail(index)
+                        }
+                      })
+                    }}
+                    disabled={isSending || Object.values(sendingStatus).some(s => s?.email === 'sending')}
+                    className="rounded-lg bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Send All Emails
+                  </button>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </AnimatePresence>
       )}

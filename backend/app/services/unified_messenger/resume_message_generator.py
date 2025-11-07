@@ -119,7 +119,7 @@ class ResumeMessageGenerator:
     def generate_message(self, resume_content, recruiter_name, job_title, company_name):
         """
         Generate a personalized LinkedIn connection message.
-        Uses resume_parser for efficient content extraction when available.
+        resume_content is already parsed bullets from database (or raw content if loading from PDF).
         """
         print(f"🤖 Generating personalized message...")
         print(f"👤 Recruiter: {recruiter_name}")
@@ -127,18 +127,39 @@ class ResumeMessageGenerator:
         print("-" * 50)
         
         try:
-            # Use resume parser to extract key bullets if available
-            if self.resume_parser:
-                try:
-                    resume_bullets = self.resume_parser.extract_key_bullets(resume_content)
-                    # Use condensed bullets instead of full resume content
-                    short_resume = resume_bullets
-                except Exception as e:
-                    print(f"⚠️  Resume parser failed, using truncated content: {e}")
-                    short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+            # Resume content from database is already parsed bullets, use directly
+            # Only parse if this looks like raw resume content (very long, not bullet format)
+            # Parsed bullets are typically under 1000 chars and contain bullet points
+            # Check if content looks like parsed bullets (short with bullet-like characters)
+            is_parsed_bullets = False
+            if resume_content:
+                # Check if it's short enough to be parsed bullets
+                if len(resume_content) < 1000:
+                    # Check if it contains bullet-like characters (•, -, *, etc.)
+                    bullet_chars = ['•', '-', '*', '→', '·']
+                    lines = resume_content.strip().split('\n')
+                    bullet_lines = sum(1 for line in lines if line.strip() and any(line.strip().startswith(char) for char in bullet_chars))
+                    # If more than half the non-empty lines start with bullets, it's likely parsed
+                    if bullet_lines > len([l for l in lines if l.strip()]) * 0.3:
+                        is_parsed_bullets = True
+                
+                if not is_parsed_bullets and len(resume_content) > 1500:
+                    # This looks like raw resume content, parse it
+                    if self.resume_parser:
+                        try:
+                            print("📝 Parsing raw resume content (not from database)...")
+                            resume_bullets = self.resume_parser.extract_key_bullets(resume_content)
+                            short_resume = resume_bullets
+                        except Exception as e:
+                            print(f"⚠️  Resume parser failed, using truncated content: {e}")
+                            short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+                    else:
+                        short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+                else:
+                    # Already parsed bullets from database, use directly
+                    short_resume = resume_content
             else:
-                # Truncate resume to avoid token limits
-                short_resume = resume_content[:1500] + "..." if len(resume_content) > 1500 else resume_content
+                short_resume = 'No resume content available'
             
             # Generate message using the LLM chain
             result = self.chain.invoke({

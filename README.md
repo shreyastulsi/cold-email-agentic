@@ -1,6 +1,6 @@
-# Kayrux - Intelligent Outreach Platform
+# Keryx - Intelligent Outreach Platform
 
-Kayrux (Κῆρυξ) is Greek for "messenger" - a full-stack intelligent outreach platform with React frontend, FastAPI backend, and PostgreSQL database.
+Keryx (κῆρυξ) is Greek for "herald" - a full-stack intelligent outreach platform with React frontend, FastAPI backend, and PostgreSQL database.
 
 ## Architecture
 

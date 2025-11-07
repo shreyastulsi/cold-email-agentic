@@ -14,6 +14,7 @@ const getPageTitle = (pathname) => {
     '/dashboard': 'Dashboard',
     '/dashboard/search': 'Search Jobs',
     '/dashboard/messages': 'Messages',
+    '/dashboard/drafts': 'Drafts',
     '/dashboard/resume': 'Resume',
     '/dashboard/settings': 'Settings',
     '/dashboard/settings/email-accounts': 'Email Accounts',

@@ -143,49 +143,153 @@ async def send_message_new(provider_id: str, text: str, inmail: bool = False) ->
         }
 
 
-async def send_invitation(provider_id: str, text: str) -> Dict[str, Any]:
+async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = None, db: Optional[Any] = None, linkedin_url: Optional[str] = None) -> Dict[str, Any]:
     """
-    Send LinkedIn connection invitation.
+    Send LinkedIn connection invitation via Unipile API.
+    
+    Uses user's connected Unipile account ID if available, otherwise falls back to default.
     
     Args:
-        provider_id: Provider ID
+        provider_id: Provider ID of the recipient
         text: Invitation message
+        user_id: User ID (optional, but recommended for using user's account)
+        db: Database session (optional, needed if user_id is provided)
+        linkedin_url: Optional LinkedIn profile URL (not used, kept for compatibility)
         
     Returns:
         Dict with success status and result/error
     """
-    messenger = get_messenger()
+    import os
     
-    loop = asyncio.get_event_loop()
-    success, result = await loop.run_in_executor(
-        None,
-        messenger.send_invitation,
-        provider_id,
-        text
-    )
-    
-    if success:
-        return {
-            "success": True,
-            "result": result
-        }
-    else:
+    try:
+        from app.core.config import settings
+        from app.db.models.linkedin_account import LinkedInAccount
+        from sqlalchemy import select
+        from datetime import datetime
+        
+        # Determine which Unipile account ID to use
+        unipile_account_id = None
+        linkedin_account = None
+        
+        # If user_id and db are provided, try to get user's connected LinkedIn account
+        if user_id and db:
+            # Get user's active LinkedIn account with Unipile account ID
+            result = await db.execute(
+                select(LinkedInAccount)
+                .where(LinkedInAccount.owner_id == user_id)
+                .where(LinkedInAccount.is_active == True)
+                .where(LinkedInAccount.unipile_account_id.isnot(None))
+                .where(LinkedInAccount.is_default == True)
+                .limit(1)
+            )
+            linkedin_account = result.scalar_one_or_none()
+            
+            # If no default, get any active account with Unipile account ID
+            if not linkedin_account:
+                result = await db.execute(
+                    select(LinkedInAccount)
+                    .where(LinkedInAccount.owner_id == user_id)
+                    .where(LinkedInAccount.is_active == True)
+                    .where(LinkedInAccount.unipile_account_id.isnot(None))
+                    .limit(1)
+                )
+                linkedin_account = result.scalar_one_or_none()
+            
+            if linkedin_account and linkedin_account.unipile_account_id:
+                unipile_account_id = linkedin_account.unipile_account_id
+                print(f"✅ Using user's Unipile account: {unipile_account_id}")
+        
+        # Fall back to default Unipile account ID if no user account found
+        if not unipile_account_id:
+            unipile_account_id = settings.unipile_account_id
+            if not unipile_account_id:
+                return {
+                    "success": False,
+                    "error": "No Unipile account configured. Please connect your LinkedIn account or configure UNIPILE_ACCOUNT_ID.",
+                    "method": "unipile"
+                }
+            print(f"📧 Using default Unipile account: {unipile_account_id}")
+        
+        # Use Unipile API to send invitation
+        messenger = get_messenger()
+        
+        loop = asyncio.get_event_loop()
+        success, result = await loop.run_in_executor(
+            None,
+            messenger.send_invitation,
+            provider_id,
+            text,
+            unipile_account_id
+        )
+        
+        if success:
+            # Update last_used_at if we have a linkedin_account
+            if user_id and db and linkedin_account:
+                linkedin_account.last_used_at = datetime.utcnow()
+                await db.commit()
+            
+            return {
+                "success": True,
+                "result": result,
+                "method": "unipile",
+                "account_id": unipile_account_id
+            }
+        else:
+            return {
+                "success": False,
+                "error": result if isinstance(result, str) else str(result),
+                "method": "unipile"
+            }
+        
+    except Exception as e:
+        print(f"⚠️  Error sending LinkedIn invitation: {e}")
+        import traceback
+        traceback.print_exc()
         return {
             "success": False,
-            "error": result
+            "error": f"Error sending invitation: {str(e)}",
+            "method": "unipile"
         }
 
 
-async def search_company(name: str) -> Dict[str, Any]:
+async def search_company(name: str, db: Optional[Any] = None) -> Dict[str, Any]:
     """
     Search for a company.
+    Checks database cache first, then calls API if not found.
     
     Args:
         name: Company name
+        db: Optional database session for caching
         
     Returns:
         Dict with company_id and company info
     """
+    from app.db.models.company import Company
+    from sqlalchemy import select
+    from datetime import datetime
+    
+    # Normalize company name for caching (lowercase, trim)
+    normalized_name = name.strip().lower()
+    
+    # Check database cache first if db session is available
+    if db:
+        try:
+            result = await db.execute(
+                select(Company).where(Company.company_name == normalized_name)
+            )
+            cached_company = result.scalar_one_or_none()
+            
+            if cached_company:
+                print(f"✅ Found company in cache: {cached_company.company_name} -> {cached_company.company_id}")
+                return {
+                    "company_id": cached_company.company_id,
+                    "company": cached_company.company_data or {}
+                }
+        except Exception as e:
+            print(f"⚠️  Error checking cache: {e}")
+            # Continue to API call if cache check fails
+    
+    # Not in cache, call API
     messenger = get_messenger()
     
     loop = asyncio.get_event_loop()
@@ -194,6 +298,37 @@ async def search_company(name: str) -> Dict[str, Any]:
         messenger.search_company,
         name
     )
+    
+    # If API call successful and we have a db session, cache the result
+    if company_id and company_info and db:
+        try:
+            # Check again to avoid race condition (another request might have added it)
+            result = await db.execute(
+                select(Company).where(Company.company_name == normalized_name)
+            )
+            existing = result.scalar_one_or_none()
+            
+            if existing:
+                # Update existing cache entry
+                existing.company_id = company_id
+                existing.company_data = company_info
+                existing.updated_at = datetime.utcnow()
+                print(f"✅ Updated company cache: {normalized_name} -> {company_id}")
+            else:
+                # Create new cache entry
+                new_company = Company(
+                    company_name=normalized_name,
+                    company_id=company_id,
+                    company_data=company_info
+                )
+                db.add(new_company)
+                print(f"✅ Cached company: {normalized_name} -> {company_id}")
+            
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️  Error caching company: {e}")
+            await db.rollback()
+            # Continue even if caching fails
     
     return {
         "company_id": company_id,
@@ -574,7 +709,8 @@ async def send_email(
     to_email: str,
     subject: str,
     body: str,
-    email_account: Optional[Any] = None
+    email_account: Optional[Any] = None,
+    db: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
     Send email via SMTP or OAuth (Gmail/Outlook API).
@@ -584,16 +720,48 @@ async def send_email(
         subject: Email subject
         body: Email body
         email_account: Optional EmailAccount model instance
+        db: Optional database session for token refresh
         
     Returns:
         Dict with success status and result/error
     """
+    from datetime import datetime
     messenger = get_messenger()
     
     loop = asyncio.get_event_loop()
     
     # If email_account provided, use it; otherwise use default SMTP from env
     if email_account:
+        # Check if token is expired and refresh if needed
+        if (email_account.provider in ['gmail', 'outlook'] and 
+            email_account.access_token and 
+            email_account.token_expires_at and 
+            email_account.token_expires_at < datetime.utcnow() and
+            email_account.refresh_token):
+            
+            # Token expired - refresh it
+            print(f"Access token expired for {email_account.email}, refreshing...")
+            success_refresh, new_access_token, new_expires_at, error, new_refresh_token = await loop.run_in_executor(
+                None,
+                messenger.refresh_access_token,
+                email_account
+            )
+            
+            if success_refresh and new_access_token and db:
+                # Update the account in database
+                email_account.access_token = new_access_token
+                email_account.token_expires_at = new_expires_at
+                if new_refresh_token:
+                    email_account.refresh_token = new_refresh_token
+                email_account.updated_at = datetime.utcnow()
+                await db.commit()
+                print(f"Token refreshed successfully for {email_account.email}")
+            elif not success_refresh:
+                return {
+                    "success": False,
+                    "error": f"Failed to refresh access token: {error}. Please re-link your email account."
+                }
+        
         success, result = await loop.run_in_executor(
             None,
             messenger.send_email_with_account,

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Auth from '../components/Auth'
-import ResumeUpload from '../components/ResumeUpload'
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('resume') // 'resume', 'email', 'auth'
+  const [activeTab, setActiveTab] = useState('email') // 'email', 'auth'
 
   return (
     <div className="space-y-6">
@@ -13,16 +12,6 @@ export default function Settings() {
       {/* Tabs */}
       <div className="border-b border-gray-700/50">
         <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab('resume')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'resume'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-            }`}
-          >
-            Resume
-          </button>
           <button
             onClick={() => setActiveTab('email')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -47,26 +36,38 @@ export default function Settings() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'resume' && (
-        <div>
-          <ResumeUpload />
-        </div>
-      )}
-
       {activeTab === 'email' && (
-        <div>
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-white mb-2">Email Account Management</h2>
-            <p className="text-sm text-gray-300 mb-4">
-              Manage your linked email accounts to send messages from your own email addresses.
-            </p>
+        <div className="space-y-6">
+          <div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-white mb-2">Email Account Management</h2>
+              <p className="text-sm text-gray-300 mb-4">
+                Manage your linked email accounts to send messages from your own email addresses.
+              </p>
+            </div>
+            <Link
+              to="/dashboard/settings/email-accounts"
+              className="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              Manage Email Accounts →
+            </Link>
           </div>
-          <Link
-            to="/settings/email-accounts"
-            className="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Manage Email Accounts →
-          </Link>
+          
+          <div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-white mb-2">LinkedIn Account Management</h2>
+              <p className="text-sm text-gray-300 mb-4">
+                Connect your LinkedIn account to send messages and connection requests from your own LinkedIn profile.
+                Unipile is still used for search and discovery.
+              </p>
+            </div>
+            <Link
+              to="/dashboard/settings/linkedin-accounts"
+              className="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              Manage LinkedIn Accounts →
+            </Link>
+          </div>
         </div>
       )}
 

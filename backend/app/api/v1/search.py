@@ -46,11 +46,12 @@ class FilterJobsRequest(BaseModel):
 @router.post("/search/company")
 async def search_company_endpoint(
     request: CompanySearchRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """Search for a company."""
+    """Search for a company. Checks database cache first to avoid API calls."""
     try:
-        return await search_company(request.name)
+        return await search_company(request.name, db=db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 

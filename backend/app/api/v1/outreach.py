@@ -85,43 +85,61 @@ async def send_email_endpoint(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """Send email using the user's linked email account."""
-    # Get user's default active email account
-    result = await db.execute(
-        select(EmailAccount)
-        .where(EmailAccount.owner_id == current_user.id)
-        .where(EmailAccount.is_active == True)
-        .where(EmailAccount.is_default == True)
-        .limit(1)
-    )
-    email_account = result.scalar_one_or_none()
-    
-    # If no default, get any active account
-    if not email_account:
+    try:
+        # Get user's default active email account
         result = await db.execute(
             select(EmailAccount)
             .where(EmailAccount.owner_id == current_user.id)
             .where(EmailAccount.is_active == True)
+            .where(EmailAccount.is_default == True)
             .limit(1)
         )
         email_account = result.scalar_one_or_none()
-    
-    if not email_account:
-        raise HTTPException(
-            status_code=400,
-            detail="No linked email account found. Please link an email account in Settings."
+        
+        # If no default, get any active account
+        if not email_account:
+            result = await db.execute(
+                select(EmailAccount)
+                .where(EmailAccount.owner_id == current_user.id)
+                .where(EmailAccount.is_active == True)
+                .limit(1)
+            )
+            email_account = result.scalar_one_or_none()
+        
+        if not email_account:
+            raise HTTPException(
+                status_code=400,
+                detail="No linked email account found. Please link an email account in Settings."
+            )
+        
+        # Update last_used_at
+        from datetime import datetime
+        email_account.last_used_at = datetime.utcnow()
+        await db.commit()
+        
+        result = await send_email(
+            request.to,
+            request.subject,
+            request.body,
+            email_account=email_account,
+            db=db
         )
-    
-    # Update last_used_at
-    from datetime import datetime
-    email_account.last_used_at = datetime.utcnow()
-    await db.commit()
-    
-    return await send_email(
-        request.to,
-        request.subject,
-        request.body,
-        email_account=email_account
-    )
+        
+        # Ensure we return the proper format
+        return result
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        # Log the error and return a proper error response
+        import traceback
+        print(f"Error sending email: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send email: {str(e)}"
+        )
 
 
 @router.post("/outreach/campaign/email-only")
@@ -197,15 +215,31 @@ async def generate_linkedin_message_endpoint(
 @router.post("/outreach/linkedin/send")
 async def send_linkedin_invitation_endpoint(
     request: SendLinkedInInvitationRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """Send LinkedIn connection invitation."""
+    """Send LinkedIn connection invitation. Uses LinkedIn OAuth if available, otherwise falls back to Unipile."""
     try:
-        result = await send_linkedin_invitation(
-            request.linkedin_url,
-            request.message
+        # First convert LinkedIn URL to provider_id using Unipile
+        from app.services.unified_messenger.adapter import linkedin_url_to_provider_id
+        provider_result = await linkedin_url_to_provider_id(request.linkedin_url)
+        provider_id = provider_result.get("provider_id")
+        
+        if not provider_id:
+            raise HTTPException(status_code=404, detail="Could not convert LinkedIn URL to Provider ID")
+        
+        # Use the send_invitation function which handles OAuth fallback
+        from app.services.unified_messenger.adapter import send_invitation
+        result = await send_invitation(
+            provider_id,
+            request.message,
+            user_id=current_user.id,
+            db=db,
+            linkedin_url=request.linkedin_url
         )
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Invitation sending failed: {str(e)}")
 

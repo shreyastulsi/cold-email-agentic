@@ -9,6 +9,9 @@ from .candidate import Candidate
 from .pipeline_stage import PipelineStage
 from .resume_content import ResumeContent
 from .email_account import EmailAccount
+from .company import Company
+from .linkedin_account import LinkedInAccount
+from .draft import Draft
 
 __all__ = [
     "User",
@@ -21,5 +24,8 @@ __all__ = [
     "PipelineStage",
     "ResumeContent",
     "EmailAccount",
+    "Company",
+    "LinkedInAccount",
+    "Draft",
 ]
 
