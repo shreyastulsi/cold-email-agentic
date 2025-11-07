@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
@@ -690,7 +690,7 @@ export default function Messages() {
                   </div>
                   
                   <textarea
-                    className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                    className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
                     value={messageData.editedLinkedInMessage || ''}
                     onChange={(e) => updateMessage(index, 'editedLinkedInMessage', e.target.value)}
                     placeholder="LinkedIn message will appear here..."
@@ -728,7 +728,7 @@ export default function Messages() {
                     
                     <label className="block text-sm font-medium text-gray-300">Body</label>
                     <textarea
-                      className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                      className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
                       value={messageData.editedEmailBody || ''}
                       onChange={(e) => updateMessage(index, 'editedEmailBody', e.target.value)}
                       placeholder="Email body will appear here..."

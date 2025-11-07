@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
@@ -40,6 +42,9 @@ export default function Drafts() {
   const [sendingStatus, setSendingStatus] = useState({})
   const [editingDraft, setEditingDraft] = useState(null) // { draftId: number, part: 'email' | 'linkedin' }
   const [editValues, setEditValues] = useState({})
+  const [selectedDrafts, setSelectedDrafts] = useState(new Set()) // Set of draft IDs
+  const [expandedDrafts, setExpandedDrafts] = useState(new Set()) // Set of expanded draft IDs
+  const selectAllCheckboxRef = useRef(null)
 
   useEffect(() => {
     loadDrafts()
@@ -192,6 +197,16 @@ export default function Drafts() {
     }
   }
 
+  const allSelected = drafts.length > 0 && selectedDrafts.size === drafts.length
+  const someSelected = selectedDrafts.size > 0 && selectedDrafts.size < drafts.length
+
+  // Update indeterminate state of select all checkbox
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      selectAllCheckboxRef.current.indeterminate = someSelected
+    }
+  }, [someSelected])
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'sent':
@@ -218,6 +233,71 @@ export default function Drafts() {
     }
   }
 
+  // Checkbox management
+  const toggleDraftSelection = (draftId) => {
+    setSelectedDrafts(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(draftId)) {
+        newSet.delete(draftId)
+      } else {
+        newSet.add(draftId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedDrafts.size === drafts.length) {
+      setSelectedDrafts(new Set())
+    } else {
+      setSelectedDrafts(new Set(drafts.map(d => d.id)))
+    }
+  }
+
+  const toggleExpand = (draftId) => {
+    setExpandedDrafts(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(draftId)) {
+        newSet.delete(draftId)
+      } else {
+        newSet.add(draftId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSendToSelected = async () => {
+    if (selectedDrafts.size === 0) {
+      alert('Please select at least one draft to send')
+      return
+    }
+
+    const confirmMessage = `Are you sure you want to send ${selectedDrafts.size} draft(s)?`
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    // Send all selected drafts
+    for (const draftId of selectedDrafts) {
+      const draft = drafts.find(d => d.id === draftId)
+      if (!draft) continue
+
+      // Send email if available and not sent
+      if ((draft.draft_type === 'email' || draft.draft_type === 'both') && !draft.email_sent) {
+        await handleSendEmail(draftId)
+      }
+
+      // Send LinkedIn if available and not sent
+      if ((draft.draft_type === 'linkedin' || draft.draft_type === 'both') && !draft.linkedin_sent) {
+        await handleSendLinkedIn(draftId)
+      }
+    }
+
+    // Clear selection after sending
+    setSelectedDrafts(new Set())
+    await loadDrafts()
+  }
+
   if (loading) {
     return (
       <div className="p-8 text-center">
@@ -228,6 +308,7 @@ export default function Drafts() {
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">📝 Drafts</h1>
@@ -235,12 +316,12 @@ export default function Drafts() {
             Manage your unsent outreach messages ({drafts.length} draft{drafts.length !== 1 ? 's' : ''})
           </p>
         </div>
-        <button
+        <Button
           onClick={() => navigate('/dashboard/search')}
-          className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+          variant="outline"
         >
           ← Back to Search
-        </button>
+        </Button>
       </div>
 
       {drafts.length === 0 ? (
@@ -249,223 +330,321 @@ export default function Drafts() {
           <p className="text-gray-500 text-sm mb-4">
             Drafts you save from the Messages page will appear here
           </p>
-          <button
+          <Button
             onClick={() => navigate('/dashboard/search')}
-            className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+            variant="default"
           >
             Start Searching
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="space-y-6">
-          {drafts.map((draft) => {
-            const emailStatus = sendingStatus[draft.id]?.email
-            const linkedinStatus = sendingStatus[draft.id]?.linkedin
-            const isEditingEmail = editingDraft?.draftId === draft.id && editingDraft?.part === 'email'
-            const isEditingLinkedIn = editingDraft?.draftId === draft.id && editingDraft?.part === 'linkedin'
+        <div className="space-y-2">
+          {/* Email-like Toolbar */}
+          <div className="flex items-center gap-4 rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                ref={selectAllCheckboxRef}
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+              />
+              <span className="text-sm text-gray-300">
+                {allSelected ? 'Deselect All' : 'Select All'}
+              </span>
+            </label>
+            
+            {selectedDrafts.size > 0 && (
+              <>
+                <div className="h-6 w-px bg-gray-700/50" />
+                <span className="text-sm text-gray-400">
+                  {selectedDrafts.size} selected
+                </span>
+                <Button
+                  onClick={handleSendToSelected}
+                  variant="default"
+                  size="sm"
+                  className="ml-auto"
+                >
+                  Send to All Selected ({selectedDrafts.size})
+                </Button>
+              </>
+            )}
+          </div>
 
-            return (
-              <div key={draft.id} className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
-                {/* Draft Header */}
-                <div className="mb-6 border-b border-gray-700/50 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-white">
-                        {draft.recipient_name || 'Unknown Recruiter'}
-                      </h3>
-                      <p className="text-gray-300">
-                        {draft.company_name || 'Unknown Company'}
-                      </p>
-                      <div className="mt-2 space-y-1 text-sm text-gray-400">
-                        {draft.recipient_email && (
-                          <p>📧 Email: {draft.recipient_email}</p>
-                        )}
-                        {draft.recipient_linkedin_url && (
-                          <p>
-                            🔗 LinkedIn:{' '}
-                            <a
-                              href={draft.recipient_linkedin_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+          {/* Draft List - Email-like Interface */}
+          <div className="space-y-1">
+            {drafts.map((draft) => {
+              const emailStatus = sendingStatus[draft.id]?.email
+              const linkedinStatus = sendingStatus[draft.id]?.linkedin
+              const isEditingEmail = editingDraft?.draftId === draft.id && editingDraft?.part === 'email'
+              const isEditingLinkedIn = editingDraft?.draftId === draft.id && editingDraft?.part === 'linkedin'
+              const isSelected = selectedDrafts.has(draft.id)
+              const isExpanded = expandedDrafts.has(draft.id)
+
+              return (
+                <Collapsible
+                  key={draft.id}
+                  open={isExpanded}
+                  onOpenChange={() => toggleExpand(draft.id)}
+                >
+                  <div className={`rounded-lg border ${
+                    isSelected 
+                      ? 'border-blue-500/50 bg-blue-900/10' 
+                      : 'border-gray-700/50 bg-gray-800/50'
+                  } backdrop-blur-sm transition-colors`}>
+                    {/* Draft Header - Always Visible */}
+                    <div className="flex items-center gap-3 p-4 hover:bg-gray-700/20 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleDraftSelection(draft.id)
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                      />
+                      
+                      <CollapsibleTrigger asChild>
+                        <button className="flex-1 flex items-center gap-4 text-left">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-base font-semibold text-white truncate">
+                                {draft.recipient_name || 'Unknown Recruiter'}
+                              </h3>
+                              <span className="text-xs text-gray-400">
+                                {draft.recipient_email || 'No email'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-400 truncate">
+                              {draft.company_name || 'Unknown Company'} • {draft.job_title || 'N/A'}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <span className="text-xs">
+                              {new Date(draft.created_at).toLocaleDateString()}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {(draft.draft_type === 'email' || draft.draft_type === 'both') && (
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  draft.email_sent || emailStatus === 'sent' 
+                                    ? 'bg-green-900/50 text-green-300' 
+                                    : 'bg-blue-900/50 text-blue-300'
+                                }`}>
+                                  📧 {draft.email_sent || emailStatus === 'sent' ? 'Sent' : 'Email'}
+                                </span>
+                              )}
+                              {(draft.draft_type === 'linkedin' || draft.draft_type === 'both') && (
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  draft.linkedin_sent || linkedinStatus === 'sent' 
+                                    ? 'bg-green-900/50 text-green-300' 
+                                    : 'bg-blue-900/50 text-blue-300'
+                                }`}>
+                                  💼 {draft.linkedin_sent || linkedinStatus === 'sent' ? 'Sent' : 'LinkedIn'}
+                                </span>
+                              )}
+                            </div>
+                            <svg
+                              className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              View Profile
-                            </a>
-                          </p>
-                        )}
-                      </div>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-300">
-                        Job: {draft.job_title || 'N/A'}
+
+                    {/* Expandable Content */}
+                    <CollapsibleContent>
+                      <div className="border-t border-gray-700/50 p-6 space-y-6">
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                          {/* Email Section */}
+                          {(draft.draft_type === 'email' || draft.draft_type === 'both') && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-lg font-semibold text-white">📧 Email</h4>
+                                {(emailStatus || draft.email_sent) && (
+                                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus || (draft.email_sent ? 'sent' : ''))}`}>
+                                    {getStatusIcon(emailStatus || (draft.email_sent ? 'sent' : ''))} {emailStatus || (draft.email_sent ? 'sent' : '')}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {isEditingEmail ? (
+                                <>
+                                  <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-300">Subject</label>
+                                    <input
+                                      type="text"
+                                      className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                      value={editValues.email_subject}
+                                      onChange={(e) => setEditValues({ ...editValues, email_subject: e.target.value })}
+                                    />
+                                    <label className="block text-sm font-medium text-gray-300">Body</label>
+                                    <textarea
+                                      className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                      value={editValues.email_body}
+                                      onChange={(e) => setEditValues({ ...editValues, email_body: e.target.value })}
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => handleSaveEdit(draft.id)}
+                                      variant="default"
+                                      className="flex-1"
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      onClick={handleCancelEdit}
+                                      variant="outline"
+                                      className="flex-1"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-300 mb-1">Subject</label>
+                                      <p className="text-gray-200 text-sm">{draft.email_subject || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-300 mb-1">Body</label>
+                                      <p className="text-gray-300 text-sm whitespace-pre-wrap">{draft.email_body || 'N/A'}</p>
+                                    </div>
+                                    <br />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => handleSendEmail(draft.id)}
+                                      disabled={emailStatus === 'sending' || emailStatus === 'sent' || draft.email_sent}
+                                      variant="default"
+                                      className="flex-1"
+                                    >
+                                      {emailStatus === 'sending' ? 'Sending...' : (emailStatus === 'sent' || draft.email_sent) ? 'Sent ✓' : 'Send Email'}
+                                    </Button>
+                                    {!draft.email_sent && (
+                                      <Button
+                                        onClick={() => handleStartEdit(draft.id, 'email')}
+                                        variant="outline"
+                                      >
+                                        ✏️ Edit
+                                      </Button>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* LinkedIn Section */}
+                          {(draft.draft_type === 'linkedin' || draft.draft_type === 'both') && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
+                                {(linkedinStatus || draft.linkedin_sent) && (
+                                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus || (draft.linkedin_sent ? 'sent' : ''))}`}>
+                                    {getStatusIcon(linkedinStatus || (draft.linkedin_sent ? 'sent' : ''))} {linkedinStatus || (draft.linkedin_sent ? 'sent' : '')}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {isEditingLinkedIn ? (
+                                <>
+                                  <textarea
+                                    className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                    value={editValues.linkedin_message}
+                                    onChange={(e) => setEditValues({ ...editValues, linkedin_message: e.target.value })}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => handleSaveEdit(draft.id)}
+                                      variant="default"
+                                      className="flex-1"
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      onClick={handleCancelEdit}
+                                      variant="outline"
+                                      className="flex-1"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div>
+                                    <p className="text-gray-300 text-sm whitespace-pre-wrap">{draft.linkedin_message || 'N/A'}</p>
+                                    <br />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => handleSendLinkedIn(draft.id)}
+                                      disabled={linkedinStatus === 'sending' || linkedinStatus === 'sent' || draft.linkedin_sent}
+                                      variant="default"
+                                      className="flex-1"
+                                    >
+                                      {linkedinStatus === 'sending' ? 'Sending...' : (linkedinStatus === 'sent' || draft.linkedin_sent) ? 'Sent ✓' : 'Send LinkedIn Message'}
+                                    </Button>
+                                    {!draft.linkedin_sent && (
+                                      <Button
+                                        onClick={() => handleStartEdit(draft.id, 'linkedin')}
+                                        variant="outline"
+                                      >
+                                        ✏️ Edit
+                                      </Button>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="pt-4 border-t border-gray-700/50">
+                          <div className="flex items-center justify-between text-sm text-gray-400">
+                            <div className="flex items-center gap-4">
+                              {draft.recipient_email && (
+                                <span>📧 {draft.recipient_email}</span>
+                              )}
+                              {draft.recipient_linkedin_url && (
+                                <a
+                                  href={draft.recipient_linkedin_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:underline"
+                                >
+                                  🔗 View LinkedIn Profile
+                                </a>
+                              )}
+                            </div>
+                            <Button
+                              onClick={() => handleDeleteDraft(draft.id)}
+                              variant="destructive"
+                              size="sm"
+                            >
+                              Delete Draft
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-400">
-                        Created: {new Date(draft.created_at).toLocaleDateString()}
-                      </div>
-                      <div className="mt-1">
-                        <span className="rounded-full bg-blue-900/50 text-blue-300 px-2 py-1 text-xs">
-                          {draft.draft_type === 'both' ? 'Email + LinkedIn' : draft.draft_type === 'email' ? 'Email' : 'LinkedIn'}
-                        </span>
-                      </div>
-                    </div>
+                    </CollapsibleContent>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  {/* Email Section */}
-                  {(draft.draft_type === 'email' || draft.draft_type === 'both') && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-semibold text-white">📧 Email</h4>
-                        {(emailStatus || draft.email_sent) && (
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus || (draft.email_sent ? 'sent' : ''))}`}>
-                            {getStatusIcon(emailStatus || (draft.email_sent ? 'sent' : ''))} {emailStatus || (draft.email_sent ? 'sent' : '')}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {isEditingEmail ? (
-                        <>
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-300">Subject</label>
-                            <input
-                              type="text"
-                              className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-                              value={editValues.email_subject}
-                              onChange={(e) => setEditValues({ ...editValues, email_subject: e.target.value })}
-                            />
-                            <label className="block text-sm font-medium text-gray-300">Body</label>
-                            <textarea
-                              className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
-                              value={editValues.email_body}
-                              onChange={(e) => setEditValues({ ...editValues, email_body: e.target.value })}
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSaveEdit(draft.id)}
-                              className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="flex-1 rounded-lg bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="space-y-2">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Subject</label>
-                              <p className="text-gray-200 text-sm">{draft.email_subject || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-1">Body</label>
-                              <p className="text-gray-300 text-sm whitespace-pre-wrap">{draft.email_body || 'N/A'}</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSendEmail(draft.id)}
-                              disabled={emailStatus === 'sending' || emailStatus === 'sent' || draft.email_sent}
-                              className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                              {emailStatus === 'sending' ? 'Sending...' : (emailStatus === 'sent' || draft.email_sent) ? 'Sent ✓' : 'Send Email'}
-                            </button>
-                            {!draft.email_sent && (
-                              <button
-                                onClick={() => handleStartEdit(draft.id, 'email')}
-                                className="rounded-lg bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
-                              >
-                                ✏️
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* LinkedIn Section */}
-                  {(draft.draft_type === 'linkedin' || draft.draft_type === 'both') && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
-                        {(linkedinStatus || draft.linkedin_sent) && (
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus || (draft.linkedin_sent ? 'sent' : ''))}`}>
-                            {getStatusIcon(linkedinStatus || (draft.linkedin_sent ? 'sent' : ''))} {linkedinStatus || (draft.linkedin_sent ? 'sent' : '')}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {isEditingLinkedIn ? (
-                        <>
-                          <textarea
-                            className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
-                            value={editValues.linkedin_message}
-                            onChange={(e) => setEditValues({ ...editValues, linkedin_message: e.target.value })}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSaveEdit(draft.id)}
-                              className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="flex-1 rounded-lg bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <textarea
-                            className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
-                            value={draft.linkedin_message || ''}
-                            readOnly
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSendLinkedIn(draft.id)}
-                              disabled={linkedinStatus === 'sending' || linkedinStatus === 'sent' || draft.linkedin_sent}
-                              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                              {linkedinStatus === 'sending' ? 'Sending...' : (linkedinStatus === 'sent' || draft.linkedin_sent) ? 'Sent ✓' : 'Send LinkedIn Message'}
-                            </button>
-                            {!draft.linkedin_sent && (
-                              <button
-                                onClick={() => handleStartEdit(draft.id, 'linkedin')}
-                                className="rounded-lg bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
-                              >
-                                ✏️
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="mt-4 flex justify-end gap-2">
-                  <button
-                    onClick={() => handleDeleteDraft(draft.id)}
-                    className="rounded-lg bg-red-900/50 border border-red-700/50 px-4 py-2 text-red-300 hover:bg-red-800/50"
-                  >
-                    Delete Draft
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+                </Collapsible>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

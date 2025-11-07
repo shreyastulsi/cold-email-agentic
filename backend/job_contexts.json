@@ -1147,5 +1147,98 @@
     "requirements": [],
     "technologies": [],
     "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4315561201": {
+    "title": "Engineer, Cloud Infrastructure",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4315561201",
+    "responsibilities": [],
+    "requirements": [],
+    "technologies": [],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4320719389": {
+    "title": "Senior Software Engineer, AI/ML, YouTube",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4320719389",
+    "responsibilities": [
+      "Write and test product or system development code.",
+      "Collaborate on design and code reviews for best practices.",
+      "Debug and resolve product or system issues effectively."
+    ],
+    "requirements": [
+      "Bachelor’s degree or equivalent practical experience.",
+      "5 years programming experience in Python and C++.",
+      "3 years experience with ML infrastructure and technologies."
+    ],
+    "technologies": [
+      "Python and C++.",
+      "Machine Learning (ML) infrastructure.",
+      "Speech/audio and reinforcement learning technologies."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4320659633": {
+    "title": "Data Center Infrastructure Electrical Engineer",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4320659633",
+    "responsibilities": [
+      "Execute electrical design and calculation packages for LV systems and UPS.",
+      "Review single-line diagrams and equipment submittals for compliance.",
+      "Support commissioning and troubleshooting of electrical infrastructure."
+    ],
+    "requirements": [
+      "Bachelor's degree in Electrical or Power Engineering or equivalent experience.",
+      "10 years in mission-critical facility design and construction.",
+      "8 years in electrical design for commercial or industrial facilities."
+    ],
+    "technologies": [
+      "Power system analysis software (e.g., ETAP, SKM).",
+      "Low Voltage (LV) and Medium Voltage (MV) electrical systems.",
+      "National Electrical Code/International Electrotechnical Commission standards."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4314709465": {
+    "title": "Software Engineer Lead, Network Demand Forecasting, Google Networking",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4314709465",
+    "responsibilities": [
+      "Drive technical strategy for network forecasting and demand generation.",
+      "Lead cross-functional projects from design to launch.",
+      "Mentor engineers and promote high-quality software development."
+    ],
+    "requirements": [
+      "Bachelor's degree or equivalent practical experience.",
+      "8 years in software development; 5 years in cloud architecture.",
+      "Experience in technical leadership and distributed systems."
+    ],
+    "technologies": [
+      "General-purpose programming languages (e.g., Python, Go, Java).",
+      "Cloud infrastructure and large-scale data processing.",
+      "Statistical modeling and machine learning techniques."
+    ],
+    "employment_type": "Full-time"
+  },
+  "https://www.linkedin.com/jobs/view/4314712438": {
+    "title": "Staff Software Engineer, Labs",
+    "company": "Google",
+    "url": "https://www.linkedin.com/jobs/view/4314712438",
+    "responsibilities": [
+      "Provide technical leadership on high-impact projects.",
+      "Influence and coach a distributed team of engineers.",
+      "Manage project priorities, deadlines, and deliverables."
+    ],
+    "requirements": [
+      "Bachelor's degree or equivalent practical experience.",
+      "8 years of software development experience.",
+      "5 years of experience testing and launching software products."
+    ],
+    "technologies": [
+      "Information retrieval and distributed computing.",
+      "Large-scale system design and networking.",
+      "Artificial intelligence and natural language processing."
+    ],
+    "employment_type": "Full-time"
   }
 }

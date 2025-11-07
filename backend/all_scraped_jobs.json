@@ -1,108 +1,15 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4334131673",
-    "title": "Sr Software Dev Engineer, Machine Learning, Sponsored Products and Brands Ads Response Prediction",
+    "url": "https://www.linkedin.com/jobs/view/4315561201",
+    "title": "Engineer, Cloud Infrastructure",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "New York, United States",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$151,300.00/yr - $261,500.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Enhance scalability and efficiency of training and inference systems.\n- Develop LLM inference infrastructure for GenAI workloads.\n- Collaborate with scientists to optimize machine-learning models.\n\n**REQUIREMENTS:**\n- 5+ years of software development experience.\n- Proficient in at least one programming language.\n- Experience in system design and architecture.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks.\n- Large language models (LLMs).\n- Real-time inference systems.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Enhance scalability and efficiency of training and inference systems.\n- Develop LLM inference infrastructure for GenAI workloads.\n- Collaborate with scientists to optimize machine-learning models.\n\n**REQUIREMENTS:**\n- 5+ years of software development experience.\n- Proficient in at least one programming language.\n- Experience in system design and architecture.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks.\n- Large language models (LLMs).\n- Real-time inference systems."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4280145789",
-    "title": "Sr. Software Dev. Engineer/MLE, AGI Customization",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Boston, MA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$151,300.00/yr - $261,500.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Lead development of LLM training techniques and optimizations.\n- Collaborate with Applied Scientists on data processing and model scaling.\n- Investigate design approaches and prototype new technologies.\n\n**REQUIREMENTS:**\n- 7+ years of professional software development experience.\n- 5+ years of experience in design or architecture leadership.\n- Experience mentoring or leading an engineering team.\n\n**KEY TECHNOLOGIES:**\n- Machine Learning and AI technologies.\n- Software programming languages (e.g., Python, Java).\n- Agile/Scrum development methodologies.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Lead development of LLM training techniques and optimizations.\n- Collaborate with Applied Scientists on data processing and model scaling.\n- Investigate design approaches and prototype new technologies.\n\n**REQUIREMENTS:**\n- 7+ years of professional software development experience.\n- 5+ years of experience in design or architecture leadership.\n- Experience mentoring or leading an engineering team.\n\n**KEY TECHNOLOGIES:**\n- Machine Learning and AI technologies.\n- Software programming languages (e.g., Python, Java).\n- Agile/Scrum development methodologies."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4082078375",
-    "title": "Jr. Software Development Engineer- San Luis Obispo",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "San Luis Obispo, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$16.83/hr - $75.63/hr",
-    "description": "**RESPONSIBILITIES:**\n- Write software and collaborate with experienced engineers.\n- Contribute to impactful deliverables and technical challenges.\n- Participate in 1:1 mentoring throughout the internship.\n\n**REQUIREMENTS:**\n- Currently enrolled in a Bachelor's or Master's program.\n- Majoring in Computer Science, Software Engineering, or related field.\n- Available year-round for part-time and full-time work.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Java, Python, or C++.\n- Experience with object-oriented design. \n- Familiarity with handling ambiguous problems.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Write software and collaborate with experienced engineers.\n- Contribute to impactful deliverables and technical challenges.\n- Participate in 1:1 mentoring throughout the internship.\n\n**REQUIREMENTS:**\n- Currently enrolled in a Bachelor's or Master's program.\n- Majoring in Computer Science, Software Engineering, or related field.\n- Available year-round for part-time and full-time work.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Java, Python, or C++.\n- Experience with object-oriented design. \n- Familiarity with handling ambiguous problems."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4127179096",
-    "title": "Member of Technical Staff - Reinforcement Learning, AGI Autonomy",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "San Francisco, CA",
-    "applications": "87 applicants",
-    "salary": "$150,400.00/yr - $260,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop multimodal Large Language Models for automation insights.  \n- Collaborate with cross-functional teams to solve complex GenAI problems.  \n- Mentor junior scientists and engineers for team growth.  \n\n**REQUIREMENTS:**\n- PhD or Master's with 5+ years applied research experience.  \n- 3+ years building machine learning models for business applications.  \n- Strong programming skills in Java, C++, or Python.  \n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods and machine learning frameworks.  \n- Experience with TensorFlow or PyTorch.  \n- Knowledge of supervised fine-tuning and reinforcement learning.",
+    "location": "Reston, VA",
+    "applications": "69 applicants",
+    "salary": "$147,000.00/yr - $216,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Provide expertise on public cloud and enterprise technology.\n- Design cloud architectures and migration approaches for customers.\n- Serve as a technical advisor and troubleshoot issues.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or equivalent experience.\n- 6 years of experience in secure cloud solutions.\n- Active U.S. Government Top Secret clearance with polygraph.\n\n**KEY TECHNOLOGIES:**\n- Google Cloud Platform (GCP).\n- Containerization and orchestration technologies (e.g., GKE).\n- Infrastructure provisioning and DevOps tools.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -114,26 +21,26 @@
       },
       {
         "name": "Job function",
-        "value": "Research, Science, and Engineering"
+        "value": "Project Management, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop multimodal Large Language Models for automation insights.  \n- Collaborate with cross-functional teams to solve complex GenAI problems.  \n- Mentor junior scientists and engineers for team growth.  \n\n**REQUIREMENTS:**\n- PhD or Master's with 5+ years applied research experience.  \n- 3+ years building machine learning models for business applications.  \n- Strong programming skills in Java, C++, or Python.  \n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods and machine learning frameworks.  \n- Experience with TensorFlow or PyTorch.  \n- Knowledge of supervised fine-tuning and reinforcement learning."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Provide expertise on public cloud and enterprise technology.\n- Design cloud architectures and migration approaches for customers.\n- Serve as a technical advisor and troubleshoot issues.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or equivalent experience.\n- 6 years of experience in secure cloud solutions.\n- Active U.S. Government Top Secret clearance with polygraph.\n\n**KEY TECHNOLOGIES:**\n- Google Cloud Platform (GCP).\n- Containerization and orchestration technologies (e.g., GKE).\n- Infrastructure provisioning and DevOps tools."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4280478081",
-    "title": "Applied Scientist II - AMZ26494.1",
+    "url": "https://www.linkedin.com/jobs/view/4320719389",
+    "title": "Senior Software Engineer, AI/ML, YouTube",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
     },
-    "location": "Sunnyvale, CA",
-    "applications": "193 applicants",
-    "salary": "$211,536.00/yr - $222,200.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Design and develop data-driven models for ML and NL applications.\n- Build and deploy ML models on available data.\n- Mentor junior engineers and scientists.\n\n**REQUIREMENTS:**\n- Master's degree in Computer Science, ML, Statistics, or related field.\n- One year of relevant research or work experience.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Statistical modeling techniques (Bayesian models, deep neural networks).\n- Machine learning techniques for business and engineering applications.\n- Optimization methods for data analysis.",
+    "location": "San Bruno, CA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$166,000.00/yr - $244,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n• Write and test product or system development code.  \n• Collaborate on design and code reviews for best practices.  \n• Debug and resolve product or system issues effectively.  \n\n**REQUIREMENTS:**\n• Bachelor’s degree or equivalent practical experience.  \n• 5 years programming experience in Python and C++.  \n• 3 years experience with ML infrastructure and technologies.  \n\n**KEY TECHNOLOGIES:**\n• Python and C++.  \n• Machine Learning (ML) infrastructure.  \n• Speech/audio and reinforcement learning technologies.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -145,13 +52,106 @@
       },
       {
         "name": "Job function",
-        "value": "General Business, Management, and Strategy/Planning"
+        "value": "Information Technology and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Information Services and Technology, Information and Internet"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Design and develop data-driven models for ML and NL applications.\n- Build and deploy ML models on available data.\n- Mentor junior engineers and scientists.\n\n**REQUIREMENTS:**\n- Master's degree in Computer Science, ML, Statistics, or related field.\n- One year of relevant research or work experience.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Statistical modeling techniques (Bayesian models, deep neural networks).\n- Machine learning techniques for business and engineering applications.\n- Optimization methods for data analysis."
+    "condensed_description": "**RESPONSIBILITIES:**\n• Write and test product or system development code.  \n• Collaborate on design and code reviews for best practices.  \n• Debug and resolve product or system issues effectively.  \n\n**REQUIREMENTS:**\n• Bachelor’s degree or equivalent practical experience.  \n• 5 years programming experience in Python and C++.  \n• 3 years experience with ML infrastructure and technologies.  \n\n**KEY TECHNOLOGIES:**\n• Python and C++.  \n• Machine Learning (ML) infrastructure.  \n• Speech/audio and reinforcement learning technologies."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4320659633",
+    "title": "Data Center Infrastructure Electrical Engineer",
+    "company": {
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+    },
+    "location": "New York, NY",
+    "applications": "30 applicants",
+    "salary": "$171,000.00/yr - $254,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n• Execute electrical design and calculation packages for LV systems and UPS.  \n• Review single-line diagrams and equipment submittals for compliance.  \n• Support commissioning and troubleshooting of electrical infrastructure.  \n\n**REQUIREMENTS:**\n• Bachelor's degree in Electrical or Power Engineering or equivalent experience.  \n• 10 years in mission-critical facility design and construction.  \n• 8 years in electrical design for commercial or industrial facilities.  \n\n**KEY TECHNOLOGIES:**\n• Power system analysis software (e.g., ETAP, SKM).  \n• Low Voltage (LV) and Medium Voltage (MV) electrical systems.  \n• National Electrical Code/International Electrotechnical Commission standards.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Information Services and Technology, Information and Internet"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n• Execute electrical design and calculation packages for LV systems and UPS.  \n• Review single-line diagrams and equipment submittals for compliance.  \n• Support commissioning and troubleshooting of electrical infrastructure.  \n\n**REQUIREMENTS:**\n• Bachelor's degree in Electrical or Power Engineering or equivalent experience.  \n• 10 years in mission-critical facility design and construction.  \n• 8 years in electrical design for commercial or industrial facilities.  \n\n**KEY TECHNOLOGIES:**\n• Power system analysis software (e.g., ETAP, SKM).  \n• Low Voltage (LV) and Medium Voltage (MV) electrical systems.  \n• National Electrical Code/International Electrotechnical Commission standards."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4314709465",
+    "title": "Software Engineer Lead, Network Demand Forecasting, Google Networking",
+    "company": {
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Atlanta, GA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$197,000.00/yr - $291,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n• Drive technical strategy for network forecasting and demand generation.  \n• Lead cross-functional projects from design to launch.  \n• Mentor engineers and promote high-quality software development.  \n\n**REQUIREMENTS:**\n• Bachelor's degree or equivalent practical experience.  \n• 8 years in software development; 5 years in cloud architecture.  \n• Experience in technical leadership and distributed systems.  \n\n**KEY TECHNOLOGIES:**\n• General-purpose programming languages (e.g., Python, Go, Java).  \n• Cloud infrastructure and large-scale data processing.  \n• Statistical modeling and machine learning techniques.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Information Services and Technology, Information and Internet"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n• Drive technical strategy for network forecasting and demand generation.  \n• Lead cross-functional projects from design to launch.  \n• Mentor engineers and promote high-quality software development.  \n\n**REQUIREMENTS:**\n• Bachelor's degree or equivalent practical experience.  \n• 8 years in software development; 5 years in cloud architecture.  \n• Experience in technical leadership and distributed systems.  \n\n**KEY TECHNOLOGIES:**\n• General-purpose programming languages (e.g., Python, Go, Java).  \n• Cloud infrastructure and large-scale data processing.  \n• Statistical modeling and machine learning techniques."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4314712438",
+    "title": "Staff Software Engineer, Labs",
+    "company": {
+      "name": "Google",
+      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Mountain View, CA",
+    "applications": "25 applicants",
+    "salary": "$197,000.00/yr - $291,000.00/yr",
+    "description": "RESPONSIBILITIES:\n• Provide technical leadership on high-impact projects.  \n• Influence and coach a distributed team of engineers.  \n• Manage project priorities, deadlines, and deliverables.  \n• Design, develop, test, and enhance software solutions.  \n\nREQUIREMENTS:\n• Bachelor's degree or equivalent practical experience.  \n• 8 years of software development experience.  \n• 5 years of experience testing and launching software products.  \n• 3 years in a technical leadership role.  \n\nPREFERRED QUALIFICATIONS:\n• Master’s degree or PhD in a related field.  \n• 8 years of experience with data structures/algorithms.  \n• 3 years working on cross-functional projects.  \n\nKEY TECHNOLOGIES:\n• Information retrieval and distributed computing.  \n• Large-scale system design and networking.  \n• Artificial intelligence and natural language processing.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Information Services and Technology, Information and Internet"
+      }
+    ],
+    "condensed_description": "RESPONSIBILITIES:\n• Provide technical leadership on high-impact projects.  \n• Influence and coach a distributed team of engineers.  \n• Manage project priorities, deadlines, and deliverables.  \n• Design, develop, test, and enhance software solutions.  \n\nREQUIREMENTS:\n• Bachelor's degree or equivalent practical experience.  \n• 8 years of software development experience.  \n• 5 years of experience testing and launching software products.  \n• 3 years in a technical leadership role.  \n\nPREFERRED QUALIFICATIONS:\n• Master’s degree or PhD in a related field.  \n• 8 years of experience with data structures/algorithms.  \n• 3 years working on cross-functional projects.  \n\nKEY TECHNOLOGIES:\n• Information retrieval and distributed computing.  \n• Large-scale system design and networking.  \n• Artificial intelligence and natural language processing."
   }
 ]
