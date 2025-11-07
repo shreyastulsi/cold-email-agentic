@@ -2,3 +2,6 @@
 # Environment variables
 .env
 .env.local
+
+# Also add this to .gitignore to fix the large file warning
+backend/venv/

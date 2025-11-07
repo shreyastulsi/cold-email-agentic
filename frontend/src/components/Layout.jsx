@@ -1,9 +1,9 @@
 import { AppSidebar } from '@/components/app-sidebar'
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbList,
+    BreadcrumbPage,
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
@@ -34,7 +34,7 @@ export default function Layout({ children }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <SidebarInset className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col h-screen overflow-hidden">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4 bg-gray-700" />
@@ -48,7 +48,7 @@ export default function Layout({ children }) {
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:p-8">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:p-8 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1400px]">
             {children}
           </div>

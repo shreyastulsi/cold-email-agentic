@@ -1,19 +1,19 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4334033799",
-    "title": "Software Engineer III, Embedded Systems, Geo Hardware",
+    "url": "https://www.linkedin.com/jobs/view/4334131673",
+    "title": "Sr Software Dev Engineer, Machine Learning, Sponsored Products and Brands Ads Response Prediction",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Mountain View, CA",
+    "location": "New York, United States",
     "applications": "Be among the first 25 applicants",
-    "salary": "$141,000.00/yr - $202,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Write and review product/system development code.\n- Triage and resolve product/system issues.\n- Own software life cycle for sensor systems.\n- Collaborate with cross-functional engineering teams.\n- Develop high-performance software for advanced sensor systems.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.\n- 2 years of C++ software development experience.\n- 2 years working with embedded operating systems.\n- Experience in a Linux environment.\n- Familiarity with GNSS and sensor integration.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Embedded operating systems.\n- Linux environment.\n- GNSS technologies (e.g., GPS).\n- Serial protocols (e.g., SPI, I2C).",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Enhance scalability and efficiency of training and inference systems.\n- Develop LLM inference infrastructure for GenAI workloads.\n- Collaborate with scientists to optimize machine-learning models.\n\n**REQUIREMENTS:**\n- 5+ years of software development experience.\n- Proficient in at least one programming language.\n- Experience in system design and architecture.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks.\n- Large language models (LLMs).\n- Real-time inference systems.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -21,26 +21,88 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Write and review product/system development code.\n- Triage and resolve product/system issues.\n- Own software life cycle for sensor systems.\n- Collaborate with cross-functional engineering teams.\n- Develop high-performance software for advanced sensor systems.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.\n- 2 years of C++ software development experience.\n- 2 years working with embedded operating systems.\n- Experience in a Linux environment.\n- Familiarity with GNSS and sensor integration.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Embedded operating systems.\n- Linux environment.\n- GNSS technologies (e.g., GPS).\n- Serial protocols (e.g., SPI, I2C)."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Enhance scalability and efficiency of training and inference systems.\n- Develop LLM inference infrastructure for GenAI workloads.\n- Collaborate with scientists to optimize machine-learning models.\n\n**REQUIREMENTS:**\n- 5+ years of software development experience.\n- Proficient in at least one programming language.\n- Experience in system design and architecture.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks.\n- Large language models (LLMs).\n- Real-time inference systems."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4312175515",
-    "title": "Software Engineer, ML Infrastructure, Chrome",
+    "url": "https://www.linkedin.com/jobs/view/4280145789",
+    "title": "Sr. Software Dev. Engineer/MLE, AGI Customization",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Boston, MA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Lead development of LLM training techniques and optimizations.\n- Collaborate with Applied Scientists on data processing and model scaling.\n- Investigate design approaches and prototype new technologies.\n\n**REQUIREMENTS:**\n- 7+ years of professional software development experience.\n- 5+ years of experience in design or architecture leadership.\n- Experience mentoring or leading an engineering team.\n\n**KEY TECHNOLOGIES:**\n- Machine Learning and AI technologies.\n- Software programming languages (e.g., Python, Java).\n- Agile/Scrum development methodologies.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology, Consulting, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Lead development of LLM training techniques and optimizations.\n- Collaborate with Applied Scientists on data processing and model scaling.\n- Investigate design approaches and prototype new technologies.\n\n**REQUIREMENTS:**\n- 7+ years of professional software development experience.\n- 5+ years of experience in design or architecture leadership.\n- Experience mentoring or leading an engineering team.\n\n**KEY TECHNOLOGIES:**\n- Machine Learning and AI technologies.\n- Software programming languages (e.g., Python, Java).\n- Agile/Scrum development methodologies."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4082078375",
+    "title": "Jr. Software Development Engineer- San Luis Obispo",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "San Luis Obispo, CA",
+    "applications": "Over 200 applicants",
+    "salary": "$16.83/hr - $75.63/hr",
+    "description": "**RESPONSIBILITIES:**\n- Write software and collaborate with experienced engineers.\n- Contribute to impactful deliverables and technical challenges.\n- Participate in 1:1 mentoring throughout the internship.\n\n**REQUIREMENTS:**\n- Currently enrolled in a Bachelor's or Master's program.\n- Majoring in Computer Science, Software Engineering, or related field.\n- Available year-round for part-time and full-time work.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Java, Python, or C++.\n- Experience with object-oriented design. \n- Familiarity with handling ambiguous problems.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology, Consulting, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Write software and collaborate with experienced engineers.\n- Contribute to impactful deliverables and technical challenges.\n- Participate in 1:1 mentoring throughout the internship.\n\n**REQUIREMENTS:**\n- Currently enrolled in a Bachelor's or Master's program.\n- Majoring in Computer Science, Software Engineering, or related field.\n- Available year-round for part-time and full-time work.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Java, Python, or C++.\n- Experience with object-oriented design. \n- Familiarity with handling ambiguous problems."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4127179096",
+    "title": "Member of Technical Staff - Reinforcement Learning, AGI Autonomy",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
     "location": "San Francisco, CA",
-    "applications": "41 applicants",
-    "salary": "$141,000.00/yr - $202,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Build and maintain scalable ML infrastructure for Chrome.\n- Develop systems for model management and execution.\n- Collaborate with feature teams to integrate ML solutions.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of software development experience.\n- Experience with software development life-cycle and codebases.\n\n**KEY TECHNOLOGIES:**\n- Programming languages: C++, Java, Python, Go.\n- Machine learning tools: TensorFlow, TFLite.\n- ML infrastructure: model serving platforms, data pipelines.",
+    "applications": "87 applicants",
+    "salary": "$150,400.00/yr - $260,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop multimodal Large Language Models for automation insights.  \n- Collaborate with cross-functional teams to solve complex GenAI problems.  \n- Mentor junior scientists and engineers for team growth.  \n\n**REQUIREMENTS:**\n- PhD or Master's with 5+ years applied research experience.  \n- 3+ years building machine learning models for business applications.  \n- Strong programming skills in Java, C++, or Python.  \n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods and machine learning frameworks.  \n- Experience with TensorFlow or PyTorch.  \n- Knowledge of supervised fine-tuning and reinforcement learning.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -52,30 +114,30 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "Research, Science, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Build and maintain scalable ML infrastructure for Chrome.\n- Develop systems for model management and execution.\n- Collaborate with feature teams to integrate ML solutions.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of software development experience.\n- Experience with software development life-cycle and codebases.\n\n**KEY TECHNOLOGIES:**\n- Programming languages: C++, Java, Python, Go.\n- Machine learning tools: TensorFlow, TFLite.\n- ML infrastructure: model serving platforms, data pipelines."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop multimodal Large Language Models for automation insights.  \n- Collaborate with cross-functional teams to solve complex GenAI problems.  \n- Mentor junior scientists and engineers for team growth.  \n\n**REQUIREMENTS:**\n- PhD or Master's with 5+ years applied research experience.  \n- 3+ years building machine learning models for business applications.  \n- Strong programming skills in Java, C++, or Python.  \n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods and machine learning frameworks.  \n- Experience with TensorFlow or PyTorch.  \n- Knowledge of supervised fine-tuning and reinforcement learning."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4312187276",
-    "title": "Software Engineer III, Infrastructure, Google Cloud Platforms",
+    "url": "https://www.linkedin.com/jobs/view/4280478081",
+    "title": "Applied Scientist II - AMZ26494.1",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "San Francisco, CA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$141,000.00/yr - $202,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Write product or system development code.\n- Participate in design reviews with peers and stakeholders.\n- Review and provide feedback on code developed by others.\n- Triage and debug product or system issues.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of experience in C++ software development.\n- 2 years of experience with large-scale infrastructure or distributed systems.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Cloud networking and cloud infrastructure.\n- Performance analysis and visualization tools.",
+    "location": "Sunnyvale, CA",
+    "applications": "193 applicants",
+    "salary": "$211,536.00/yr - $222,200.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Design and develop data-driven models for ML and NL applications.\n- Build and deploy ML models on available data.\n- Mentor junior engineers and scientists.\n\n**REQUIREMENTS:**\n- Master's degree in Computer Science, ML, Statistics, or related field.\n- One year of relevant research or work experience.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Statistical modeling techniques (Bayesian models, deep neural networks).\n- Machine learning techniques for business and engineering applications.\n- Optimization methods for data analysis.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -83,75 +145,13 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "General Business, Management, and Strategy/Planning"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Write product or system development code.\n- Participate in design reviews with peers and stakeholders.\n- Review and provide feedback on code developed by others.\n- Triage and debug product or system issues.\n\n**REQUIREMENTS:**\n- Bachelor’s degree or equivalent practical experience.\n- 2 years of experience in C++ software development.\n- 2 years of experience with large-scale infrastructure or distributed systems.\n\n**KEY TECHNOLOGIES:**\n- C++ programming language.\n- Cloud networking and cloud infrastructure.\n- Performance analysis and visualization tools."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4312174486",
-    "title": "Optics and Display Test Engineer, Consumer Hardware",
-    "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Mountain View, CA",
-    "applications": "166 applicants",
-    "salary": "$122,000.00/yr - $174,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Design and develop factory test stations for optics/display/camera calibration.  \n- Collaborate with manufacturers to integrate hardware and software for production lines.  \n- Analyze build data to improve accuracy and stabilize hardware setups.  \n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.  \n- 3 years of experience in testing consumer electronic products.  \n- Experience in optics, display, or camera testing.  \n\n**KEY TECHNOLOGIES:**\n- Hardware/software debug and failure analysis.  \n- Mechanical and software test station development.  \n- Calibration of cameras, colorimeters, and optical instruments.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Design and develop factory test stations for optics/display/camera calibration.  \n- Collaborate with manufacturers to integrate hardware and software for production lines.  \n- Analyze build data to improve accuracy and stabilize hardware setups.  \n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent practical experience.  \n- 3 years of experience in testing consumer electronic products.  \n- Experience in optics, display, or camera testing.  \n\n**KEY TECHNOLOGIES:**\n- Hardware/software debug and failure analysis.  \n- Mechanical and software test station development.  \n- Calibration of cameras, colorimeters, and optical instruments."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4312143097",
-    "title": "Software Engineer, Embedded Systems, Firmware, Ambient Platform",
-    "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Mountain View, CA",
-    "applications": "167 applicants",
-    "salary": "$141,000.00/yr - $202,000.00/yr",
-    "description": "RESPONSIBILITIES:\n• Write product or system development code.  \n• Participate in design reviews with peers and stakeholders.  \n• Debug and resolve product or system issues.  \n\nREQUIREMENTS:\n• Bachelor’s degree or equivalent practical experience.  \n• 2 years of C/C++ software development experience.  \n• 2 years working with embedded operating systems.  \n\nKEY TECHNOLOGIES:\n• Embedded operating systems.  \n• C/C++ programming languages.  \n• Low-level hardware interaction.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "RESPONSIBILITIES:\n• Write product or system development code.  \n• Participate in design reviews with peers and stakeholders.  \n• Debug and resolve product or system issues.  \n\nREQUIREMENTS:\n• Bachelor’s degree or equivalent practical experience.  \n• 2 years of C/C++ software development experience.  \n• 2 years working with embedded operating systems.  \n\nKEY TECHNOLOGIES:\n• Embedded operating systems.  \n• C/C++ programming languages.  \n• Low-level hardware interaction."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Design and develop data-driven models for ML and NL applications.\n- Build and deploy ML models on available data.\n- Mentor junior engineers and scientists.\n\n**REQUIREMENTS:**\n- Master's degree in Computer Science, ML, Statistics, or related field.\n- One year of relevant research or work experience.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Statistical modeling techniques (Bayesian models, deep neural networks).\n- Machine learning techniques for business and engineering applications.\n- Optimization methods for data analysis."
   }
 ]
