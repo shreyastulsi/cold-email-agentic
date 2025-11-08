@@ -122,14 +122,16 @@ export default function Messages() {
         const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
         trackLinkedInInvite(role, company, recruiterName)
       } else {
-        throw new Error(result.message || 'Failed to send LinkedIn message')
+        const errorMsg = result.error || result.message || 'Failed to send LinkedIn message'
+        throw new Error(errorMsg)
       }
     } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to send LinkedIn message'
       setSendingStatus(prev => ({
         ...prev,
-        [index]: { ...prev[index], linkedin: 'error', error: error.message }
+        [index]: { ...prev[index], linkedin: 'error', error: errorMessage }
       }))
-      alert(`Failed to send LinkedIn message: ${error.message}`)
+      alert(`Failed to send LinkedIn message: ${errorMessage}`)
     } finally {
       setIsSending(false)
     }

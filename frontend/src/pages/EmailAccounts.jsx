@@ -186,6 +186,17 @@ export default function EmailAccounts() {
   // Toggle active status
   const handleToggleActive = async (accountId, isActive) => {
     try {
+      // If trying to enable, check if another account is already enabled
+      if (!isActive) {
+        const activeAccount = accounts.find(acc => acc.id !== accountId && acc.is_active)
+        if (activeAccount) {
+          const confirmMessage = `Another email account (${activeAccount.email || activeAccount.display_name}) is already enabled. Enabling this account will disable the other one. Continue?`
+          if (!confirm(confirmMessage)) {
+            return
+          }
+        }
+      }
+      
       await apiRequest(`/api/v1/email-accounts/${accountId}`, {
         method: 'PUT',
         body: JSON.stringify({ is_active: !isActive })
@@ -275,6 +286,11 @@ export default function EmailAccounts() {
                           Default
                         </span>
                       )}
+                      {account.is_active && (
+                        <span className="rounded-full bg-green-900/50 border border-green-700/50 px-2 py-1 text-xs font-medium text-green-300">
+                          Active
+                        </span>
+                      )}
                       {!account.is_active && (
                         <span className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2 py-1 text-xs font-medium text-gray-400">
                           Inactive
@@ -300,8 +316,8 @@ export default function EmailAccounts() {
                     onClick={() => handleToggleActive(account.id, account.is_active)}
                     className={`rounded-lg px-3 py-1.5 text-sm border ${
                       account.is_active
-                        ? 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
-                        : 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
+                        ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
+                        : 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
                     }`}
                   >
                     {account.is_active ? 'Disable' : 'Enable'}

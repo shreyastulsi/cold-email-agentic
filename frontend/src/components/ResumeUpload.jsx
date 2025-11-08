@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from './ui/button'
+import { FileUpload } from './ui/file-upload'
 
 export default function ResumeUpload() {
   const navigate = useNavigate()
@@ -9,23 +11,19 @@ export default function ResumeUpload() {
   const [error, setError] = useState(null)
   const [extractedContent, setExtractedContent] = useState(null)
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0]
-    if (selectedFile) {
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Please upload a PDF file')
-        setFile(null)
-        return
-      }
-      if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
-        setError('File size must be less than 10MB')
-        setFile(null)
-        return
-      }
+  const handleFileChange = (files) => {
+    if (files && files.length > 0) {
+      const selectedFile = files[0]
       setFile(selectedFile)
       setError(null)
       setUploadStatus(null)
     }
+  }
+
+  const handleFileError = (errorMessage) => {
+    setError(errorMessage)
+    setFile(null)
+    setUploadStatus(null)
   }
 
   const handleUpload = async () => {
@@ -73,9 +71,6 @@ export default function ResumeUpload() {
       const result = await response.json()
       setUploadStatus('success')
       setFile(null)
-      // Reset file input
-      const fileInput = document.querySelector('input[type="file"]')
-      if (fileInput) fileInput.value = ''
       
       // If content was extracted, redirect to resume editor page
       if (result.content_extracted) {
@@ -108,34 +103,16 @@ export default function ResumeUpload() {
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          {/* <label className="block text-sm font-medium text-gray-300 mb-2">
             Upload Your Resume (PDF)
-          </label>
-          <div className="flex items-center space-x-4">
-            <label className="flex-1 cursor-pointer">
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-                disabled={uploading}
-              />
-              <div className="flex items-center justify-between rounded-lg border-2 border-dashed border-gray-700/50 p-4 hover:border-blue-500 transition-colors bg-gray-900/30">
-                <span className="text-sm text-gray-300">
-                  {file ? file.name : 'Choose a PDF file'}
-                </span>
-                <span className="text-sm text-blue-400 hover:text-blue-300">
-                  Browse
-                </span>
-              </div>
-            </label>
-          </div>
-          
-          {file && (
-            <div className="mt-2 text-xs text-gray-400">
-              File: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-            </div>
-          )}
+          </label> */}
+          <FileUpload
+            key={uploadStatus === 'success' ? 'upload-success' : 'upload-ready'}
+            onChange={handleFileChange}
+            onError={handleFileError}
+            accept="application/pdf"
+            maxSize={10 * 1024 * 1024}
+          />
         </div>
 
         {error && (
@@ -154,13 +131,16 @@ export default function ResumeUpload() {
           </div>
         )}
 
-        <button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {uploading ? 'Uploading...' : 'Upload Resume'}
-        </button>
+        {file && (
+          <Button
+            onClick={handleUpload}
+            disabled={!file || uploading}
+            variant="default"
+            className="w-full"
+          >
+            {uploading ? 'Uploading...' : 'Upload Resume'}
+          </Button>
+        )}
 
         <div className="rounded-lg bg-yellow-900/50 border border-yellow-700/50 p-3 mt-4">
           <p className="text-xs text-yellow-300 font-medium mb-1">⚠️ Note:</p>

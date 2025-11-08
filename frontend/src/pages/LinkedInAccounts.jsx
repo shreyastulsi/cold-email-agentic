@@ -69,7 +69,7 @@ export default function LinkedInAccounts() {
 
   // Delete account
   const handleDelete = async (accountId) => {
-    if (!confirm('Are you sure you want to disconnect this LinkedIn account?')) {
+    if (!confirm('Are you sure you want to delete this LinkedIn account?')) {
       return
     }
     
@@ -80,6 +80,30 @@ export default function LinkedInAccounts() {
       loadAccounts()
     } catch (err) {
       setError(err.message || 'Failed to delete LinkedIn account')
+    }
+  }
+
+  // Toggle active status
+  const handleToggleActive = async (accountId, isActive) => {
+    try {
+      // If trying to enable, check if another account is already enabled
+      if (!isActive) {
+        const activeAccount = accounts.find(acc => acc.id !== accountId && acc.is_active)
+        if (activeAccount) {
+          const confirmMessage = `Another LinkedIn account (${activeAccount.display_name || 'LinkedIn Account'}) is already enabled. Enabling this account will disable the other one. Continue?`
+          if (!confirm(confirmMessage)) {
+            return
+          }
+        }
+      }
+      
+      await apiRequest(`/api/v1/linkedin-accounts/${accountId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_active: !isActive })
+      })
+      loadAccounts()
+    } catch (err) {
+      setError(err.message || 'Failed to update LinkedIn account')
     }
   }
 
@@ -138,9 +162,26 @@ export default function LinkedInAccounts() {
                           </span>
                         </div>
                         <div>
-                          <h3 className="font-semibold">
-                            {account.display_name || 'LinkedIn Account'}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">
+                              {account.display_name || 'LinkedIn Account'}
+                            </h3>
+                            {account.is_default && (
+                              <span className="rounded-full bg-blue-900/50 border border-blue-700/50 px-2 py-1 text-xs font-medium text-blue-300">
+                                Default
+                              </span>
+                            )}
+                            {account.is_active && (
+                              <span className="rounded-full bg-green-900/50 border border-green-700/50 px-2 py-1 text-xs font-medium text-green-300">
+                                Active
+                              </span>
+                            )}
+                            {!account.is_active && (
+                              <span className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2 py-1 text-xs font-medium text-gray-400">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
                           {account.linkedin_profile_url && (
                             <a
                               href={account.linkedin_profile_url}
@@ -151,23 +192,25 @@ export default function LinkedInAccounts() {
                               View Profile
                             </a>
                           )}
-                          {account.is_default && (
-                            <span className="ml-2 text-xs bg-blue-600 px-2 py-1 rounded">Default</span>
-                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {account.is_active ? (
-                        <span className="text-xs text-green-400">Active</span>
-                      ) : (
-                        <span className="text-xs text-gray-400">Inactive</span>
-                      )}
+                      <button
+                        onClick={() => handleToggleActive(account.id, account.is_active)}
+                        className={`rounded-lg px-3 py-1.5 text-sm border ${
+                          account.is_active
+                            ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
+                            : 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
+                        }`}
+                      >
+                        {account.is_active ? 'Disable' : 'Enable'}
+                      </button>
                       <button
                         onClick={() => handleDelete(account.id)}
-                        className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded text-white"
+                        className="rounded-lg bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600"
                       >
-                        Disconnect
+                        Delete
                       </button>
                     </div>
                   </div>

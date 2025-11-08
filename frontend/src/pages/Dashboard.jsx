@@ -36,11 +36,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Reset Button */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Outreach Summary</h1>
-        <button
+    <div className="p-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="space-y-6">
+          {/* Header with Reset Button */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-white">Outreach Summary</h1>
+        {/* <button
           onClick={handleReset}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             showResetConfirm
@@ -49,7 +51,7 @@ export default function Dashboard() {
           }`}
         >
           {showResetConfirm ? 'Click again to confirm reset' : 'Reset All Stats'}
-        </button>
+        </button> */}
       </div>
 
       {/* KPI Cards */}
@@ -191,6 +193,8 @@ export default function Dashboard() {
           </table>
         </div>
       </WobbleCard>
+        </div>
+      </div>
     </div>
   )
 }

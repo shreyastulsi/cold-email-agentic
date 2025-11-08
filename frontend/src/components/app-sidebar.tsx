@@ -1,9 +1,9 @@
 import {
-  FileText,
-  LayoutDashboard,
-  Search as SearchIcon,
-  Settings as SettingsIcon,
-  FileEdit
+    FileEdit,
+    FileText,
+    LayoutDashboard,
+    Search as SearchIcon,
+    Settings as SettingsIcon
 } from "lucide-react"
 import * as React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -12,15 +12,15 @@ import { Logo } from "@/components/logo"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+    useSidebar,
 } from "@/components/ui/sidebar"
 import { getCurrentUser } from "@/utils/supabase"
 
@@ -30,7 +30,6 @@ const navMain = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
-    isActive: true,
   },
   {
     title: "Search Jobs",
@@ -51,20 +50,6 @@ const navMain = [
         title: "Settings",
         url: "/dashboard/settings",
         icon: SettingsIcon,
-        items: [
-          {
-            title: "General",
-            url: "/dashboard/settings",
-          },
-          {
-            title: "Email Accounts",
-            url: "/dashboard/settings/email-accounts",
-          },
-          {
-            title: "LinkedIn Accounts",
-            url: "/dashboard/settings/linkedin-accounts",
-          },
-        ],
       },
 ]
 
@@ -89,11 +74,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [])
 
   // Update active state based on current route
-  const navMainWithActive = navMain.map(item => ({
-    ...item,
-    isActive: location.pathname === item.url || 
-              (item.items && item.items.some(subItem => location.pathname === subItem.url)),
-  }))
+  const navMainWithActive = navMain.map(item => {
+    // For Dashboard, only match exact path (not sub-routes)
+    if (item.url === '/dashboard') {
+      return {
+        ...item,
+        isActive: location.pathname === '/dashboard' || location.pathname === '/dashboard/',
+      }
+    }
+    // For other items, match exact path or sub-paths
+    return {
+      ...item,
+      isActive: location.pathname === item.url || 
+                location.pathname.startsWith(item.url + '/') ||
+                (item.items && item.items.some(subItem => location.pathname === subItem.url)),
+    }
+  })
 
   return (
     <Sidebar 

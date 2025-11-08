@@ -87,3 +87,35 @@ export async function getCurrentUser() {
   return user
 }
 
+/**
+ * Update user password
+ */
+export async function updatePassword(newPassword) {
+  if (!supabase) {
+    throw new Error('Supabase not configured')
+  }
+  
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  })
+  
+  if (error) throw error
+  return data
+}
+
+/**
+ * Reset password - sends password reset email
+ */
+export async function resetPassword(email) {
+  if (!supabase) {
+    throw new Error('Supabase not configured')
+  }
+  
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`
+  })
+  
+  if (error) throw error
+  return data
+}
+

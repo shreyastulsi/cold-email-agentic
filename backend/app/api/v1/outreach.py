@@ -219,17 +219,53 @@ async def send_linkedin_invitation_endpoint(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """Send LinkedIn connection invitation. Uses LinkedIn OAuth if available, otherwise falls back to Unipile."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
-        # First convert LinkedIn URL to provider_id using Unipile
+        # First, get the user's active Unipile account ID (needed for URL conversion)
+        from app.db.models.linkedin_account import LinkedInAccount
+        from sqlalchemy import select
+        from app.core.config import settings
+        
+        unipile_account_id = None
+        result = await db.execute(
+            select(LinkedInAccount)
+            .where(LinkedInAccount.owner_id == current_user.id)
+            .where(LinkedInAccount.is_active == True)
+            .where(LinkedInAccount.unipile_account_id.isnot(None))
+            .order_by(LinkedInAccount.is_default.desc(), LinkedInAccount.created_at.desc())
+            .limit(1)
+        )
+        linkedin_account = result.scalar_one_or_none()
+        
+        if linkedin_account and linkedin_account.unipile_account_id:
+            unipile_account_id = linkedin_account.unipile_account_id
+            logger.info(f"Using user's Unipile account for URL conversion: {unipile_account_id}")
+        else:
+            # Fall back to default
+            unipile_account_id = settings.unipile_account_id
+            logger.info(f"Using default Unipile account for URL conversion: {unipile_account_id}")
+        
+        # Convert LinkedIn URL to provider_id using Unipile
         from app.services.unified_messenger.adapter import linkedin_url_to_provider_id
-        provider_result = await linkedin_url_to_provider_id(request.linkedin_url)
+        logger.info(f"Converting LinkedIn URL to provider_id: {request.linkedin_url}")
+        provider_result = await linkedin_url_to_provider_id(request.linkedin_url, account_id=unipile_account_id)
         provider_id = provider_result.get("provider_id")
         
         if not provider_id:
-            raise HTTPException(status_code=404, detail="Could not convert LinkedIn URL to Provider ID")
+            error_msg = provider_result.get("error", "Could not convert LinkedIn URL to Provider ID")
+            logger.error(f"Failed to convert LinkedIn URL to provider_id: {request.linkedin_url}. Error: {error_msg}")
+            raise HTTPException(
+                status_code=404, 
+                detail=f"{error_msg}. Please check the LinkedIn URL is valid and try again."
+            )
+        
+        logger.info(f"Successfully converted to provider_id: {provider_id}")
         
         # Use the send_invitation function which handles OAuth fallback
         from app.services.unified_messenger.adapter import send_invitation
+        logger.info(f"Sending LinkedIn invitation to provider_id: {provider_id} for user: {current_user.id}")
         result = await send_invitation(
             provider_id,
             request.message,
@@ -237,9 +273,28 @@ async def send_linkedin_invitation_endpoint(
             db=db,
             linkedin_url=request.linkedin_url
         )
+        
+        # Check if the result indicates failure
+        if not result.get("success", False):
+            error_msg = result.get("error", "Unknown error")
+            logger.error(f"Failed to send LinkedIn invitation: {error_msg}")
+            # Return proper error response
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
+        
+        logger.info(f"Successfully sent LinkedIn invitation")
         return result
+        
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Invitation sending failed: {str(e)}")
+        logger.error(f"Unexpected error sending LinkedIn invitation: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Invitation sending failed: {str(e)}"
+        )
 

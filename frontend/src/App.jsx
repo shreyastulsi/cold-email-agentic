@@ -5,18 +5,17 @@ import ProtectedRoute from './components/ProtectedRoute'
 import CampaignDetail from './pages/CampaignDetail'
 import Dashboard from './pages/Dashboard'
 import Drafts from './pages/Drafts'
-import EmailAccounts from './pages/EmailAccounts'
-import LinkedInAccounts from './pages/LinkedInAccounts'
 import Loading from './pages/Loading'
 import Login from './pages/Login'
 import Messages from './pages/Messages'
 import NotFound from './pages/NotFound'
 import OAuthCallback from './pages/OAuthCallback'
+import ResetPassword from './pages/ResetPassword'
 import ResumeEditor from './pages/ResumeEditor'
 import Search from './pages/Search'
 import Settings from './pages/Settings'
-import UnipileAuthSuccess from './pages/UnipileAuthSuccess'
 import UnipileAuthFailure from './pages/UnipileAuthFailure'
+import UnipileAuthSuccess from './pages/UnipileAuthSuccess'
 
 function App() {
   return (
@@ -26,6 +25,7 @@ function App() {
         <Route path="/" element={<HeroSection />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/loading" element={<Loading />} />
         
         {/* OAuth callback - protected but no layout */}
@@ -76,8 +76,6 @@ function App() {
                   <Route path="resume" element={<ResumeEditor />} />
                   <Route path="campaigns/:id" element={<CampaignDetail />} />
                   <Route path="settings" element={<Settings />} />
-                  <Route path="settings/email-accounts" element={<EmailAccounts />} />
-                  <Route path="settings/linkedin-accounts" element={<LinkedInAccounts />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

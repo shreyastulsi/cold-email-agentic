@@ -24,10 +24,10 @@ export default function UnipileAuthSuccess() {
         const accounts = result.accounts || []
         
         if (accounts.length > 0) {
-          // Account found! Redirect to accounts page
+          // Account found! Redirect to settings page with LinkedIn tab active
           setStatus('success')
           setTimeout(() => {
-            navigate('/dashboard/settings/linkedin-accounts')
+            navigate('/dashboard/settings?tab=linkedin')
           }, 1500)
         } else {
           // Account not found yet, keep polling
@@ -42,9 +42,9 @@ export default function UnipileAuthSuccess() {
         }
       } catch (err) {
         console.error('Error syncing/checking account:', err)
-        // On error, still redirect after delay
+        // On error, still redirect after delay with LinkedIn tab active
         setTimeout(() => {
-          navigate('/dashboard/settings/linkedin-accounts')
+          navigate('/dashboard/settings?tab=linkedin')
         }, 3000)
       }
     }
@@ -91,7 +91,7 @@ export default function UnipileAuthSuccess() {
               Your LinkedIn account has been connected successfully.
             </p>
             <p className="text-sm text-gray-500">
-              Redirecting to LinkedIn accounts page...
+              Redirecting to settings page...
             </p>
           </>
         )}
@@ -126,10 +126,10 @@ export default function UnipileAuthSuccess() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/dashboard/settings/linkedin-accounts')}
+              onClick={() => navigate('/dashboard/settings?tab=linkedin')}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
             >
-              Go to LinkedIn Accounts
+              Go to Settings
             </button>
           </>
         )}

@@ -3,15 +3,16 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/logo'
 import { Button } from '../components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { getCurrentUser, signIn, signUp } from '../utils/supabase'
+import { getCurrentUser, resetPassword, signIn, signUp } from '../utils/supabase'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -23,6 +24,11 @@ export default function Login() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMessage, setResetMessage] = useState(null)
+  const [resetError, setResetError] = useState(null)
 
   // Check if user is already logged in
   useEffect(() => {
@@ -93,6 +99,28 @@ export default function Login() {
     }
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setResetError(null)
+    setResetMessage(null)
+    setResetLoading(true)
+
+    try {
+      await resetPassword(resetEmail)
+      setResetMessage('Password reset email sent! Please check your inbox and follow the instructions to reset your password.')
+      setResetEmail('')
+      // Close modal after 3 seconds
+      setTimeout(() => {
+        setShowForgotPassword(false)
+        setResetMessage(null)
+      }, 3000)
+    } catch (err) {
+      setResetError(err.message || 'Failed to send password reset email')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray to-gray flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md flex flex-col gap-6">
@@ -143,8 +171,20 @@ export default function Login() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForgotPassword(true)
+                          setResetEmail(email)
+                        }}
+                        className="text-xs text-muted-foreground hover:text-primary underline underline-offset-4"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
                   </div>
                   <Input
                     id="password"
@@ -213,6 +253,96 @@ export default function Login() {
           and <a href="#">Privacy Policy</a>.
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md">
+            <Card>
+              <CardHeader className="text-center">
+                <CardAction>
+                  <button
+                    onClick={() => {
+                      setShowForgotPassword(false)
+                      setResetEmail('')
+                      setResetError(null)
+                      setResetMessage(null)
+                    }}
+                    className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="sr-only">Close</span>
+                  </button>
+                </CardAction>
+                <CardTitle className="text-xl">Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email address and we'll send you a link to reset your password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {resetError && (
+                  <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-3 text-sm text-red-800 dark:text-red-200">
+                    {resetError}
+                  </div>
+                )}
+
+                {resetMessage && (
+                  <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+                    {resetMessage}
+                  </div>
+                )}
+
+                <form onSubmit={handleForgotPassword}>
+                  <div className="grid gap-6">
+                    <div className="grid gap-2">
+                      <Label htmlFor="resetEmail">Email</Label>
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                        disabled={resetLoading}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={resetLoading}>
+                      {resetLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Sending...
+                        </span>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </Button>
+                  </div>
+                  <div className="mt-6 text-center text-sm">
+                    Remember your password?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false)
+                        setResetEmail('')
+                        setResetError(null)
+                        setResetMessage(null)
+                      }}
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
+                      Sign in
+                    </button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

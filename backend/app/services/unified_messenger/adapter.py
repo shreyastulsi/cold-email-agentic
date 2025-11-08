@@ -18,12 +18,13 @@ async def emit_verbose_log(message: str, level: str = "info", emoji: str = ""):
         await verbose_logger.log(message, level, emoji)
 
 
-async def linkedin_url_to_provider_id(url: str) -> Dict[str, Any]:
+async def linkedin_url_to_provider_id(url: str, account_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Convert LinkedIn URL to Provider ID.
     
     Args:
         url: LinkedIn profile URL
+        account_id: Optional Unipile account ID to use for the lookup
         
     Returns:
         Dict with provider_id and user_meta
@@ -35,7 +36,8 @@ async def linkedin_url_to_provider_id(url: str) -> Dict[str, Any]:
     provider_id, user_info = await loop.run_in_executor(
         None,
         messenger.get_provider_id_from_linkedin_url,
-        url
+        url,
+        account_id
     )
     
     if provider_id:
@@ -46,7 +48,8 @@ async def linkedin_url_to_provider_id(url: str) -> Dict[str, Any]:
     else:
         return {
             "provider_id": None,
-            "user_meta": None
+            "user_meta": None,
+            "error": "Failed to convert LinkedIn URL to provider_id. The URL may be invalid or the user may not be accessible."
         }
 
 
@@ -167,37 +170,65 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
         from sqlalchemy import select
         from datetime import datetime
         
+        # Validate provider_id first
+        if not provider_id:
+            return {
+                "success": False,
+                "error": "Provider ID is required but was not provided. Please check the LinkedIn URL is valid.",
+                "method": "unipile"
+            }
+        
         # Determine which Unipile account ID to use
         unipile_account_id = None
         linkedin_account = None
         
         # If user_id and db are provided, try to get user's connected LinkedIn account
         if user_id and db:
-            # Get user's active LinkedIn account with Unipile account ID
+            # First, try to get active account with Unipile account ID (prioritize default)
             result = await db.execute(
                 select(LinkedInAccount)
                 .where(LinkedInAccount.owner_id == user_id)
                 .where(LinkedInAccount.is_active == True)
                 .where(LinkedInAccount.unipile_account_id.isnot(None))
-                .where(LinkedInAccount.is_default == True)
+                .order_by(LinkedInAccount.is_default.desc(), LinkedInAccount.created_at.desc())
                 .limit(1)
             )
             linkedin_account = result.scalar_one_or_none()
             
-            # If no default, get any active account with Unipile account ID
-            if not linkedin_account:
+            if linkedin_account and linkedin_account.unipile_account_id:
+                unipile_account_id = linkedin_account.unipile_account_id
+                print(f"✅ Using user's active LinkedIn account (ID: {linkedin_account.id}, Unipile: {unipile_account_id})")
+            else:
+                # Check if user has any LinkedIn accounts (to provide better error message)
                 result = await db.execute(
                     select(LinkedInAccount)
                     .where(LinkedInAccount.owner_id == user_id)
-                    .where(LinkedInAccount.is_active == True)
-                    .where(LinkedInAccount.unipile_account_id.isnot(None))
                     .limit(1)
                 )
-                linkedin_account = result.scalar_one_or_none()
-            
-            if linkedin_account and linkedin_account.unipile_account_id:
-                unipile_account_id = linkedin_account.unipile_account_id
-                print(f"✅ Using user's Unipile account: {unipile_account_id}")
+                any_account = result.scalar_one_or_none()
+                
+                if any_account:
+                    if not any_account.is_active:
+                        print(f"⚠️  User has LinkedIn account but it's not active (ID: {any_account.id})")
+                        return {
+                            "success": False,
+                            "error": "Your LinkedIn account is not active. Please enable it in Settings > LinkedIn Accounts.",
+                            "method": "unipile"
+                        }
+                    elif not any_account.unipile_account_id:
+                        print(f"⚠️  User has LinkedIn account but no Unipile account ID (ID: {any_account.id})")
+                        return {
+                            "success": False,
+                            "error": "Your LinkedIn account is not properly connected to Unipile. Please reconnect your LinkedIn account in Settings > LinkedIn Accounts.",
+                            "method": "unipile"
+                        }
+                else:
+                    print(f"⚠️  User has no LinkedIn accounts")
+                    return {
+                        "success": False,
+                        "error": "No LinkedIn account connected. Please connect your LinkedIn account in Settings > LinkedIn Accounts.",
+                        "method": "unipile"
+                    }
         
         # Fall back to default Unipile account ID if no user account found
         if not unipile_account_id:
@@ -205,10 +236,10 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
             if not unipile_account_id:
                 return {
                     "success": False,
-                    "error": "No Unipile account configured. Please connect your LinkedIn account or configure UNIPILE_ACCOUNT_ID.",
+                    "error": "No Unipile account configured. Please connect your LinkedIn account in Settings > LinkedIn Accounts.",
                     "method": "unipile"
                 }
-            print(f"📧 Using default Unipile account: {unipile_account_id}")
+            print(f"📧 Using default Unipile account from env: {unipile_account_id}")
         
         # Use Unipile API to send invitation
         messenger = get_messenger()
@@ -228,6 +259,7 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
                 linkedin_account.last_used_at = datetime.utcnow()
                 await db.commit()
             
+            print(f"✅ LinkedIn invitation sent successfully via Unipile")
             return {
                 "success": True,
                 "result": result,
@@ -235,10 +267,16 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
                 "account_id": unipile_account_id
             }
         else:
+            error_msg = result if isinstance(result, str) else str(result)
+            print(f"❌ Failed to send LinkedIn invitation via Unipile: {error_msg}")
+            # Try to extract more details from the error
+            if isinstance(result, dict):
+                error_msg = result.get("error", result.get("message", str(result)))
             return {
                 "success": False,
-                "error": result if isinstance(result, str) else str(result),
-                "method": "unipile"
+                "error": error_msg,
+                "method": "unipile",
+                "account_id": unipile_account_id
             }
         
     except Exception as e:

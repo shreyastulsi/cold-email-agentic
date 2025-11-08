@@ -182,6 +182,16 @@ async def update_email_account(
             .values(is_default=False)
         )
     
+    # If enabling this account, disable all other accounts (only one can be active at a time)
+    if request.is_active is True:
+        await db.execute(
+            update(EmailAccount)
+            .where(EmailAccount.owner_id == current_user.id)
+            .where(EmailAccount.id != account_id)
+            .values(is_active=False)
+        )
+        logger.info(f"Disabled other email accounts for user {current_user.id} when enabling account {account_id}")
+    
     # Update fields
     update_data = {
         "updated_at": datetime.utcnow()

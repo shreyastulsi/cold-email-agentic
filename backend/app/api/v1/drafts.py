@@ -256,6 +256,9 @@ async def send_draft(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """Send a draft (email and/or LinkedIn)."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     result = await db.execute(
         select(Draft)
         .where(Draft.id == draft_id)
@@ -265,6 +268,8 @@ async def send_draft(
     
     if not draft:
         raise HTTPException(status_code=404, detail="Draft not found")
+    
+    logger.info(f"Sending draft {draft_id}: send_email={request.send_email}, send_linkedin={request.send_linkedin}")
     
     # Check if the specific part being sent is already sent
     if request.send_email and draft.email_sent:
@@ -325,17 +330,66 @@ async def send_draft(
             }
     
     # Send LinkedIn if requested and draft has LinkedIn content
+    if request.send_linkedin:
+        if not draft.linkedin_message:
+            logger.warning(f"Draft {draft_id} requested LinkedIn send but has no linkedin_message")
+        if not draft.recipient_linkedin_url:
+            logger.warning(f"Draft {draft_id} requested LinkedIn send but has no recipient_linkedin_url")
+    
     if request.send_linkedin and draft.linkedin_message and draft.recipient_linkedin_url:
         try:
-            linkedin_result = await send_invitation(
-                provider_id=None,  # Not needed for direct OAuth
-                text=draft.linkedin_message,
-                user_id=current_user.id,
-                db=db,
-                linkedin_url=draft.recipient_linkedin_url
+            # First, get the user's active Unipile account ID (needed for URL conversion)
+            from app.db.models.linkedin_account import LinkedInAccount
+            from app.core.config import settings
+            from app.services.unified_messenger.adapter import linkedin_url_to_provider_id
+            
+            unipile_account_id = None
+            result = await db.execute(
+                select(LinkedInAccount)
+                .where(LinkedInAccount.owner_id == current_user.id)
+                .where(LinkedInAccount.is_active == True)
+                .where(LinkedInAccount.unipile_account_id.isnot(None))
+                .order_by(LinkedInAccount.is_default.desc(), LinkedInAccount.created_at.desc())
+                .limit(1)
             )
-            results["linkedin"] = linkedin_result
+            linkedin_account = result.scalar_one_or_none()
+            
+            if linkedin_account and linkedin_account.unipile_account_id:
+                unipile_account_id = linkedin_account.unipile_account_id
+                logger.info(f"Using user's Unipile account for URL conversion: {unipile_account_id}")
+            else:
+                # Fall back to default
+                unipile_account_id = settings.unipile_account_id
+                logger.info(f"Using default Unipile account for URL conversion: {unipile_account_id}")
+            
+            # Convert LinkedIn URL to provider_id
+            logger.info(f"Converting LinkedIn URL to provider_id: {draft.recipient_linkedin_url}")
+            provider_result = await linkedin_url_to_provider_id(draft.recipient_linkedin_url, account_id=unipile_account_id)
+            provider_id = provider_result.get("provider_id")
+            
+            if not provider_id:
+                error_msg = provider_result.get("error", "Could not convert LinkedIn URL to Provider ID")
+                logger.error(f"Failed to convert LinkedIn URL to provider_id: {draft.recipient_linkedin_url}. Error: {error_msg}")
+                results["linkedin"] = {
+                    "success": False,
+                    "error": f"{error_msg}. Please check the LinkedIn URL is valid and try again."
+                }
+            else:
+                logger.info(f"Successfully converted to provider_id: {provider_id}")
+                
+                # Now send the invitation with the provider_id
+                linkedin_result = await send_invitation(
+                    provider_id=provider_id,
+                    text=draft.linkedin_message,
+                    user_id=current_user.id,
+                    db=db,
+                    linkedin_url=draft.recipient_linkedin_url
+                )
+                results["linkedin"] = linkedin_result
         except Exception as e:
+            import traceback
+            logger.error(f"Error sending LinkedIn message from draft: {str(e)}")
+            logger.error(traceback.format_exc())
             results["linkedin"] = {
                 "success": False,
                 "error": str(e)

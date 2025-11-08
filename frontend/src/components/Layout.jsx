@@ -17,7 +17,6 @@ const getPageTitle = (pathname) => {
     '/dashboard/drafts': 'Drafts',
     '/dashboard/resume': 'Resume',
     '/dashboard/settings': 'Settings',
-    '/dashboard/settings/email-accounts': 'Email Accounts',
   }
   
   // Check for dynamic routes (e.g., /dashboard/campaigns/:id)

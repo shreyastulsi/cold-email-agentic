@@ -85,24 +85,38 @@ class UnifiedMessenger:
         identifier = linkedin_url.rstrip('/').split('/')[-1]
         return identifier
 
-    def get_provider_id_from_linkedin_url(self, linkedin_url):
+    def get_provider_id_from_linkedin_url(self, linkedin_url, account_id=None):
         """
         Convert LinkedIn profile URL to Provider ID using Unipile's users endpoint.
+        
+        Args:
+            linkedin_url: LinkedIn profile URL
+            account_id: Optional Unipile account ID to use (defaults to self.account_id)
         """
         identifier = self.extract_linkedin_identifier(linkedin_url)
+        
+        # Use provided account_id or fall back to default
+        unipile_account_id = account_id if account_id else self.account_id
         
         print(f"🔍 Converting LinkedIn URL to Provider ID...")
         print(f"📝 URL: {linkedin_url}")
         print(f"🆔 Identifier: {identifier}")
+        print(f"📧 Using Unipile account: {unipile_account_id}")
         print("-" * 50)
+        
+        if not unipile_account_id:
+            print(f"❌ No Unipile account ID available")
+            return None, None
         
         try:
             # Use the users endpoint with the identifier
             response = requests.get(
                 f"{self.base_url}/users/{identifier}",
                 headers=self.headers,
-                params={'account_id': self.account_id}
+                params={'account_id': unipile_account_id}
             )
+            
+            print(f"📊 Status Code: {response.status_code}")
             
             if response.status_code == 200:
                 result = response.json()
@@ -110,19 +124,25 @@ class UnifiedMessenger:
                 name = f"{result.get('first_name', '')} {result.get('last_name', '')}".strip()
                 network_distance = result.get('network_distance', 'Unknown')
                 
-                print(f"✅ Successfully converted!")
-                print(f"👤 Name: {name}")
-                print(f"🆔 Provider ID: {provider_id}")
-                print(f"🔗 Network Distance: {network_distance}")
-                
-                return provider_id, result
+                if provider_id:
+                    print(f"✅ Successfully converted!")
+                    print(f"👤 Name: {name}")
+                    print(f"🆔 Provider ID: {provider_id}")
+                    print(f"🔗 Network Distance: {network_distance}")
+                    return provider_id, result
+                else:
+                    print(f"❌ Provider ID not found in response")
+                    print(f"📄 Response: {response.text}")
+                    return None, None
             else:
-                print(f"❌ Failed to convert URL")
+                print(f"❌ Failed to convert URL (Status {response.status_code})")
                 print(f"📄 Response: {response.text}")
                 return None, None
                 
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"❌ Error converting URL: {e}")
+            import traceback
+            traceback.print_exc()
             return None, None
 
     def find_existing_chat_by_name(self, search_name):

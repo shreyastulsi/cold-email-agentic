@@ -3,7 +3,9 @@ import { AnimatePresence } from 'framer-motion'
 import { motion } from 'motion/react'
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { LoaderOne } from '../components/ui/loader'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
@@ -192,6 +194,9 @@ export default function Search() {
   const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
   const [isSavingAll, setIsSavingAll] = useState(false)
   const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
+  const [expandedMessages, setExpandedMessages] = useState(new Set()) // Set of expanded message indices
+  const [editingMessage, setEditingMessage] = useState(null) // { index: number, part: 'email' | 'linkedin' }
+  const [editValues, setEditValues] = useState({}) // Temporary edit values
 
   // Connect to verbose logger stream for thinking indicator
   useEffect(() => {
@@ -916,6 +921,116 @@ export default function Search() {
     setMappedRecruiters(newRecruiters)
   }
 
+  // Back button handlers
+  const handleBackToCompanies = () => {
+    // Reset to initial search state
+    setJobResults(null)
+    setMappedJobs([])
+    setMapping([])
+    setMappedRecruiters([])
+    setGeneratedMessages([])
+    setCurrentStep(0)
+    setJobSearchTrigger(null)
+    setSendingStatus({})
+    setSavingStatus({})
+    savedDraftsRef.current.clear()
+    // Clear localStorage
+    localStorage.removeItem('outreachMessages')
+  }
+
+  const handleBackToJobs = () => {
+    // Go back to job selection, clear mapping and messages
+    setMapping([])
+    setMappedRecruiters([])
+    setGeneratedMessages([])
+    setCurrentStep(1)
+    setSendingStatus({})
+    setSavingStatus({})
+    savedDraftsRef.current.clear()
+    // Clear localStorage
+    localStorage.removeItem('outreachMessages')
+    // Reset mapped jobs to empty array but keep job results
+    if (jobResults?.jobs) {
+      setMappedJobs(Array(jobResults.jobs.length).fill(null))
+    }
+  }
+
+  const handleBackToMapping = () => {
+    // Go back to mapping view, clear messages
+    setGeneratedMessages([])
+    setCurrentStep(3)
+    setSendingStatus({})
+    setSavingStatus({})
+    savedDraftsRef.current.clear()
+    setExpandedMessages(new Set())
+    setEditingMessage(null)
+    setEditValues({})
+    // Clear localStorage
+    localStorage.removeItem('outreachMessages')
+  }
+
+  const toggleExpand = (index) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  const handleStartEdit = (index, part) => {
+    // Don't allow editing parts that have already been sent
+    const messageData = generatedMessages[index]
+    if (!messageData) return
+    
+    const emailStatus = sendingStatus[index]?.email
+    const linkedinStatus = sendingStatus[index]?.linkedin
+    
+    if (part === 'email' && emailStatus === 'sent') {
+      alert('Email has already been sent. Cannot edit.')
+      return
+    }
+    if (part === 'linkedin' && linkedinStatus === 'sent') {
+      alert('LinkedIn message has already been sent. Cannot edit.')
+      return
+    }
+    
+    setEditingMessage({ index, part })
+    if (part === 'email') {
+      setEditValues({
+        email_subject: messageData.editedEmailSubject || messageData.email?.subject || '',
+        email_body: messageData.editedEmailBody || messageData.email?.body || messageData.email?.content || ''
+      })
+    } else if (part === 'linkedin') {
+      setEditValues({
+        linkedin_message: messageData.editedLinkedInMessage || messageData.linkedinMessage || ''
+      })
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null)
+    setEditValues({})
+  }
+
+  const handleSaveEdit = (index) => {
+    const messageData = generatedMessages[index]
+    if (!messageData) return
+    
+    if (editingMessage?.part === 'email') {
+      updateMessage(index, 'editedEmailSubject', editValues.email_subject || '')
+      updateMessage(index, 'editedEmailBody', editValues.email_body || '')
+    } else if (editingMessage?.part === 'linkedin') {
+      updateMessage(index, 'editedLinkedInMessage', editValues.linkedin_message || '')
+    }
+    
+    setEditingMessage(null)
+    setEditValues({})
+  }
+
   return (
     <div className="space-y-6 min-h-screen pb-20">
       {/* Progressive Step Indicator */}
@@ -1093,7 +1208,7 @@ export default function Search() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
         >
             {/* Jobs List Card */}
-            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white">Jobs</CardTitle>
@@ -1146,6 +1261,19 @@ export default function Search() {
                     )
                   })}
                         </div>
+                {/* Back button at bottom right */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleBackToCompanies}
+                    className="text-sm rounded-lg bg-gray-700 px-3 py-1.5 text-white hover:bg-gray-600 transition-colors flex items-center gap-1"
+                    title="Back to company search"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back
+                  </button>
+                </div>
               </CardContent>
             </Card>
 
@@ -1290,6 +1418,19 @@ export default function Search() {
                       </motion.div>
                       ))}
                     </div>
+                    {/* Back button at bottom right */}
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={handleBackToJobs}
+                        className="text-sm rounded-lg bg-gray-700 px-3 py-1.5 text-white hover:bg-gray-600 transition-colors flex items-center gap-1"
+                        title="Back to job selection"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back
+                      </button>
+                    </div>
                 </CardContent>
               </Card>
 
@@ -1369,9 +1510,9 @@ export default function Search() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
-            className="max-w-6xl mx-auto"
+            className="max-w-5xl mx-auto"
           >
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6">
               <div>
                 <h1 className="text-3xl font-bold text-white">📨 Review & Send Messages</h1>
                 <p className="mt-2 text-gray-300">
@@ -1381,167 +1522,314 @@ export default function Search() {
                   💾 Save drafts manually or they will be automatically saved when you leave this page
                 </p>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate('/dashboard/drafts')}
-                  className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
-                >
-                  📝 View Drafts
-                </button>
-                <button
-                  onClick={() => {
-                    setGeneratedMessages([])
-                    setCurrentStep(3)
-                    setSendingStatus({})
-                  }}
-                  className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
-                >
-                  ← Back to Mapping
-                </button>
-              </div>
             </div>
 
-            <div className="space-y-6">
+            {/* Message List - Email-like Interface */}
+            <div className="space-y-1">
               {generatedMessages.map((messageData, index) => {
                 const recruiter = messageData.recruiter || {}
                 const mapItem = messageData.mapItem || {}
                 const linkedinStatus = sendingStatus[index]?.linkedin
                 const emailStatus = sendingStatus[index]?.email
+                const isExpanded = expandedMessages.has(index)
 
                 return (
-                  <div key={index} className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
-                    {/* Recruiter Info */}
-                    <div className="mb-6 border-b border-gray-700/50 pb-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-xl font-semibold text-white">
-                            {recruiter.name || mapItem.recruiter_name || 'Unknown Recruiter'}
-                          </h3>
-                          <p className="text-gray-300">
-                            {mapItem.job_company || recruiter.company || mapItem.recruiter_company || 'Unknown Company'}
-                          </p>
-                          <div className="mt-2 space-y-1 text-sm text-gray-400">
-                            {recruiter.extracted_email && (
-                              <p>📧 Email: {recruiter.extracted_email}</p>
-                            )}
-                            {mapItem.recruiter_profile_url && (
-                              <p>
-                                🔗 LinkedIn:{' '}
-                                <a
-                                  href={mapItem.recruiter_profile_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  View Profile
-                                </a>
+                  <Collapsible
+                    key={index}
+                    open={isExpanded}
+                    onOpenChange={() => toggleExpand(index)}
+                  >
+                    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm transition-colors">
+                      {/* Message Header - Always Visible */}
+                      <div className="flex items-center gap-3 p-4 hover:bg-gray-700/20 transition-colors">
+                        <CollapsibleTrigger asChild>
+                          <button className="flex-1 flex items-center gap-4 text-left">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-base font-semibold text-white truncate">
+                                  {recruiter.name || mapItem.recruiter_name || 'Unknown Recruiter'}
+                                </h3>
+                                <span className="text-xs text-gray-400">
+                                  {recruiter.extracted_email || recruiter.email || 'No email'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-400 truncate">
+                                {mapItem.job_company || recruiter.company || mapItem.recruiter_company || 'Unknown Company'} • {mapItem.job_title || 'N/A'}
                               </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-gray-300">
-                            Job: {mapItem.job_title || 'N/A'}
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            {mapItem.job_company || 'N/A'}
-                          </div>
-                          <div className="mt-2">
-                            <button
-                              onClick={() => handleSaveDraft(index)}
-                              disabled={savingStatus[index] === 'saving' || (sendingStatus[index]?.linkedin === 'sent' && sendingStatus[index]?.email === 'sent')}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                                savingStatus[index] === 'saved' 
-                                  ? 'bg-green-900/50 text-green-300 border border-green-700/50'
-                                  : savingStatus[index] === 'saving'
-                                  ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50'
-                                  : savingStatus[index] === 'error'
-                                  ? 'bg-red-900/50 text-red-300 border border-red-700/50'
-                                  : 'bg-gray-700/50 text-gray-300 border border-gray-600/50 hover:bg-gray-600/50'
-                              } disabled:cursor-not-allowed`}
-                            >
-                              {savingStatus[index] === 'saving' ? '💾 Saving...' :
-                               savingStatus[index] === 'saved' ? '✅ Saved' :
-                               savingStatus[index] === 'error' ? '❌ Error' :
-                               savedDraftsRef.current.has(index) ? '✅ Saved' : '💾 Save Draft'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      {/* LinkedIn Message Section */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
-                          {linkedinStatus && (
-                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus)}`}>
-                              {getStatusIcon(linkedinStatus)} {linkedinStatus}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <textarea
-                          className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
-                          value={messageData.editedLinkedInMessage || ''}
-                          onChange={(e) => updateMessage(index, 'editedLinkedInMessage', e.target.value)}
-                          placeholder="LinkedIn message will appear here..."
-                        />
-                        
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleSendLinkedIn(index)}
-                            disabled={isSending || linkedinStatus === 'sending' || linkedinStatus === 'sent'}
-                            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                          >
-                            {linkedinStatus === 'sending' ? 'Sending...' : linkedinStatus === 'sent' ? 'Sent ✓' : 'Send LinkedIn Message'}
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm text-gray-400">
+                              <div className="flex items-center gap-2">
+                                {recruiter.extracted_email || recruiter.email ? (
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    emailStatus === 'sent' 
+                                      ? 'bg-green-900/50 text-green-300' 
+                                      : emailStatus === 'sending'
+                                      ? 'bg-yellow-900/50 text-yellow-300'
+                                      : emailStatus === 'error'
+                                      ? 'bg-red-900/50 text-red-300'
+                                      : 'bg-blue-900/50 text-blue-300'
+                                  }`}>
+                                    📧 {emailStatus === 'sent' ? 'Sent' : emailStatus === 'sending' ? 'Sending' : emailStatus === 'error' ? 'Error' : 'Email'}
+                                  </span>
+                                ) : null}
+                                {mapItem.recruiter_profile_url && (
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    linkedinStatus === 'sent' 
+                                      ? 'bg-green-900/50 text-green-300' 
+                                      : linkedinStatus === 'sending'
+                                      ? 'bg-yellow-900/50 text-yellow-300'
+                                      : linkedinStatus === 'error'
+                                      ? 'bg-red-900/50 text-red-300'
+                                      : 'bg-blue-900/50 text-blue-300'
+                                  }`}>
+                                    💼 {linkedinStatus === 'sent' ? 'Sent' : linkedinStatus === 'sending' ? 'Sending' : linkedinStatus === 'error' ? 'Error' : 'LinkedIn'}
+                                  </span>
+                                )}
+                              </div>
+                              <svg
+                                className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
                           </button>
-                        </div>
+                        </CollapsibleTrigger>
                       </div>
 
-                      {/* Email Section */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-lg font-semibold text-white">📧 Email</h4>
-                          {emailStatus && (
-                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus)}`}>
-                              {getStatusIcon(emailStatus)} {emailStatus}
-                            </span>
-                          )}
+                      {/* Expandable Content */}
+                      <CollapsibleContent>
+                        <div className="border-t border-gray-700/50 p-6 space-y-6">
+                          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            {/* Email Section */}
+                            {(recruiter.extracted_email || recruiter.email) && (() => {
+                              const isEditingEmail = editingMessage?.index === index && editingMessage?.part === 'email'
+                              const emailSubject = messageData.editedEmailSubject || messageData.email?.subject || ''
+                              const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content || ''
+                              
+                              return (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-lg font-semibold text-white">📧 Email</h4>
+                                    {emailStatus && (
+                                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(emailStatus)}`}>
+                                        {getStatusIcon(emailStatus)} {emailStatus}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {isEditingEmail ? (
+                                    <>
+                                      <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-300">Subject</label>
+                                        <input
+                                          type="text"
+                                          className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                                          value={editValues.email_subject || ''}
+                                          onChange={(e) => setEditValues({ ...editValues, email_subject: e.target.value })}
+                                        />
+                                        <label className="block text-sm font-medium text-gray-300">Body</label>
+                                        <textarea
+                                          className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                          value={editValues.email_body || ''}
+                                          onChange={(e) => setEditValues({ ...editValues, email_body: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={() => handleSaveEdit(index)}
+                                          variant="default"
+                                          className="flex-1"
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          onClick={handleCancelEdit}
+                                          variant="outline"
+                                          className="flex-1"
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="space-y-2">
+                                        <div>
+                                          <label className="block text-sm font-medium text-gray-300 mb-1">Subject</label>
+                                          <p className="text-gray-200 text-sm">{emailSubject || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                          <label className="block text-sm font-medium text-gray-300 mb-1">Body</label>
+                                          <p className="text-gray-300 text-sm whitespace-pre-wrap">{emailBody || 'N/A'}</p>
+                                        </div>
+                                        <br />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={() => handleSendEmail(index)}
+                                          disabled={isSending || emailStatus === 'sending' || emailStatus === 'sent'}
+                                          variant="default"
+                                          className="flex-1"
+                                        >
+                                          {emailStatus === 'sending' ? 'Sending...' : emailStatus === 'sent' ? 'Sent ✓' : 'Send Email'}
+                                        </Button>
+                                        {emailStatus !== 'sent' && (
+                                          <Button
+                                            onClick={() => handleStartEdit(index, 'email')}
+                                            variant="outline"
+                                          >
+                                            Edit ✏️
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )
+                            })()}
+
+                            {/* LinkedIn Section */}
+                            {mapItem.recruiter_profile_url && (() => {
+                              const isEditingLinkedIn = editingMessage?.index === index && editingMessage?.part === 'linkedin'
+                              const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage || ''
+                              
+                              return (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-lg font-semibold text-white">💼 LinkedIn Message</h4>
+                                    {linkedinStatus && (
+                                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(linkedinStatus)}`}>
+                                        {getStatusIcon(linkedinStatus)} {linkedinStatus}
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {isEditingLinkedIn ? (
+                                    <>
+                                      <textarea
+                                        className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                        value={editValues.linkedin_message || ''}
+                                        onChange={(e) => setEditValues({ ...editValues, linkedin_message: e.target.value })}
+                                      />
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={() => handleSaveEdit(index)}
+                                          variant="default"
+                                          className="flex-1"
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          onClick={handleCancelEdit}
+                                          variant="outline"
+                                          className="flex-1"
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div>
+                                        <p className="text-gray-300 text-sm whitespace-pre-wrap">{linkedinMessage || 'N/A'}</p>
+                                        <br />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={() => handleSendLinkedIn(index)}
+                                          disabled={isSending || linkedinStatus === 'sending' || linkedinStatus === 'sent'}
+                                          variant="default"
+                                          className="flex-1"
+                                        >
+                                          {linkedinStatus === 'sending' ? 'Sending...' : linkedinStatus === 'sent' ? 'Sent ✓' : 'Send LinkedIn Message'}
+                                        </Button>
+                                        {linkedinStatus !== 'sent' && (
+                                          <Button
+                                            onClick={() => handleStartEdit(index, 'linkedin')}
+                                            variant="outline"
+                                          >
+                                            Edit ✏️
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )
+                            })()}
+                          </div>
+
+                          {/* Additional Info */}
+                          <div className="pt-4 border-t border-gray-700/50">
+                            <div className="flex items-center justify-between text-sm text-gray-400">
+                              <div className="flex items-center gap-4">
+                                {recruiter.extracted_email && (
+                                  <span>📧 {recruiter.extracted_email}</span>
+                                )}
+                                {mapItem.recruiter_profile_url && (
+                                  <a
+                                    href={mapItem.recruiter_profile_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:underline"
+                                  >
+                                    🔗 View LinkedIn Profile
+                                  </a>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={() => handleSaveDraft(index)}
+                                  disabled={savingStatus[index] === 'saving' || (emailStatus === 'sent' && linkedinStatus === 'sent')}
+                                  variant={savingStatus[index] === 'saved' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={
+                                    savingStatus[index] === 'saved' 
+                                      ? 'bg-green-900/50 text-green-300 border-green-700/50' 
+                                      : savingStatus[index] === 'saving'
+                                      ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50'
+                                      : savingStatus[index] === 'error'
+                                      ? 'bg-red-900/50 text-red-300 border-red-700/50'
+                                      : ''
+                                  }
+                                >
+                                  {savingStatus[index] === 'saving' ? '💾 Saving...' :
+                                   savingStatus[index] === 'saved' ? '✅ Saved' :
+                                   savingStatus[index] === 'error' ? '❌ Error' :
+                                   savedDraftsRef.current.has(index) ? '✅ Saved' : '💾 Save Draft'}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-300">Subject</label>
-                          <input
-                            type="text"
-                            className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-                            value={messageData.editedEmailSubject || ''}
-                            onChange={(e) => updateMessage(index, 'editedEmailSubject', e.target.value)}
-                            placeholder="Email subject..."
-                          />
-                          
-                          <label className="block text-sm font-medium text-gray-300">Body</label>
-                          <textarea
-                            className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none"
-                            value={messageData.editedEmailBody || ''}
-                            onChange={(e) => updateMessage(index, 'editedEmailBody', e.target.value)}
-                            placeholder="Email body will appear here..."
-                          />
-                        </div>
-                        
-                        <button
-                          onClick={() => handleSendEmail(index)}
-                          disabled={isSending || emailStatus === 'sending' || emailStatus === 'sent'}
-                          className="w-full rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {emailStatus === 'sending' ? 'Sending...' : emailStatus === 'sent' ? 'Sent ✓' : 'Send Email'}
-                        </button>
-                      </div>
+                      </CollapsibleContent>
                     </div>
-                  </div>
+                  </Collapsible>
                 )
               })}
+            </div>
+
+            {/* Back button at bottom right */}
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                onClick={() => navigate('/dashboard/drafts')}
+                variant="outline"
+              >
+                📝 View Drafts
+              </Button>
+              <Button
+                onClick={handleBackToMapping}
+                variant="outline"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Mapping
+              </Button>
             </div>
 
             {/* Summary Actions */}
@@ -1552,14 +1840,14 @@ export default function Search() {
                   <p className="text-sm text-gray-300">Save all drafts or send all messages at once.</p>
                 </div>
                 <div className="flex gap-3">
-                  <button
+                  <Button
                     onClick={handleSaveAllDrafts}
                     disabled={isSavingAll}
-                    className="rounded-lg bg-gray-700 px-6 py-2 text-white hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    variant="outline"
                   >
                     {isSavingAll ? '💾 Saving...' : '💾 Save All Drafts'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       generatedMessages.forEach((_, index) => {
                         if (!sendingStatus[index]?.linkedin) {
@@ -1568,11 +1856,11 @@ export default function Search() {
                       })
                     }}
                     disabled={isSending || Object.values(sendingStatus).some(s => s?.linkedin === 'sending')}
-                    className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    variant="default"
                   >
                     Send All LinkedIn Messages
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       generatedMessages.forEach((_, index) => {
                         if (!sendingStatus[index]?.email) {
@@ -1581,10 +1869,11 @@ export default function Search() {
                       })
                     }}
                     disabled={isSending || Object.values(sendingStatus).some(s => s?.email === 'sending')}
-                    className="rounded-lg bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     Send All Emails
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

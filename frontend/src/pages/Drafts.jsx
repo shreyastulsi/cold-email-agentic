@@ -154,6 +154,71 @@ export default function Drafts() {
     }
   }
 
+  const handleSendBoth = async (draftId) => {
+    const draft = drafts.find(d => d.id === draftId)
+    if (!draft) return
+
+    // Check if both are available
+    const canSendEmail = (draft.draft_type === 'email' || draft.draft_type === 'both') && !draft.email_sent
+    const canSendLinkedIn = (draft.draft_type === 'linkedin' || draft.draft_type === 'both') && !draft.linkedin_sent
+
+    if (!canSendEmail && !canSendLinkedIn) {
+      alert('Both email and LinkedIn have already been sent for this draft')
+      return
+    }
+
+    setSendingStatus(prev => ({
+      ...prev,
+      [draftId]: { ...prev[draftId], email: canSendEmail ? 'sending' : prev[draftId]?.email, linkedin: canSendLinkedIn ? 'sending' : prev[draftId]?.linkedin }
+    }))
+
+    try {
+      const result = await sendDraft(draftId, canSendEmail, canSendLinkedIn)
+      if (result.success) {
+        setSendingStatus(prev => ({
+          ...prev,
+          [draftId]: { 
+            ...prev[draftId], 
+            email: canSendEmail ? 'sent' : prev[draftId]?.email,
+            linkedin: canSendLinkedIn ? 'sent' : prev[draftId]?.linkedin
+          }
+        }))
+
+        // Track sent messages
+        if (canSendEmail) {
+          trackEmailSent(
+            draft.job_title || 'Unknown Role',
+            draft.company_name || 'Unknown Company',
+            draft.recipient_name || 'Unknown Recruiter'
+          )
+        }
+        if (canSendLinkedIn) {
+          trackLinkedInInvite(
+            draft.job_title || 'Unknown Role',
+            draft.company_name || 'Unknown Company',
+            draft.recipient_name || 'Unknown Recruiter'
+          )
+        }
+
+        // Reload drafts to update status
+        await loadDrafts()
+      } else {
+        throw new Error(result.error || 'Failed to send messages')
+      }
+    } catch (error) {
+      setSendingStatus(prev => ({
+        ...prev,
+        [draftId]: { 
+          ...prev[draftId], 
+          email: canSendEmail ? 'error' : prev[draftId]?.email,
+          linkedin: canSendLinkedIn ? 'error' : prev[draftId]?.linkedin,
+          error: error.message 
+        }
+      }))
+      alert(`Failed to send messages: ${error.message}`)
+    }
+  }
+
   const handleStartEdit = (draftId, part) => {
     // Don't allow editing parts that have already been sent
     const draft = drafts.find(d => d.id === draftId)
@@ -298,6 +363,31 @@ export default function Drafts() {
     await loadDrafts()
   }
 
+  const handleDeleteSelected = async () => {
+    if (selectedDrafts.size === 0) {
+      alert('Please select at least one draft to delete')
+      return
+    }
+
+    const confirmMessage = `Are you sure you want to delete ${selectedDrafts.size} draft(s)? This action cannot be undone.`
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    // Delete all selected drafts
+    const deletePromises = Array.from(selectedDrafts).map(draftId => deleteDraft(draftId))
+    
+    try {
+      await Promise.all(deletePromises)
+      // Clear selection after deleting
+      setSelectedDrafts(new Set())
+      await loadDrafts()
+    } catch (error) {
+      alert(`Failed to delete some drafts: ${error.message}`)
+      await loadDrafts()
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-8 text-center">
@@ -308,8 +398,9 @@ export default function Drafts() {
 
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">📝 Drafts</h1>
           <p className="mt-2 text-gray-300">
@@ -360,14 +451,22 @@ export default function Drafts() {
                 <span className="text-sm text-gray-400">
                   {selectedDrafts.size} selected
                 </span>
-                <Button
-                  onClick={handleSendToSelected}
-                  variant="default"
-                  size="sm"
-                  className="ml-auto"
-                >
-                  Send to All Selected ({selectedDrafts.size})
-                </Button>
+                <div className="ml-auto flex gap-2">
+                  <Button
+                    onClick={handleSendToSelected}
+                    variant="default"
+                    size="sm"
+                  >
+                    Send to All Selected ({selectedDrafts.size})
+                  </Button>
+                  <Button
+                    onClick={handleDeleteSelected}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Delete All Selected ({selectedDrafts.size})
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -536,7 +635,7 @@ export default function Drafts() {
                                         onClick={() => handleStartEdit(draft.id, 'email')}
                                         variant="outline"
                                       >
-                                        ✏️ Edit
+                                        Edit ✏️
                                       </Button>
                                     )}
                                   </div>
@@ -601,7 +700,7 @@ export default function Drafts() {
                                         onClick={() => handleStartEdit(draft.id, 'linkedin')}
                                         variant="outline"
                                       >
-                                        ✏️ Edit
+                                        Edit ✏️
                                       </Button>
                                     )}
                                   </div>
@@ -629,13 +728,30 @@ export default function Drafts() {
                                 </a>
                               )}
                             </div>
-                            <Button
-                              onClick={() => handleDeleteDraft(draft.id)}
-                              variant="destructive"
-                              size="sm"
-                            >
-                              Delete Draft
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              {draft.draft_type === 'both' && (!draft.email_sent || !draft.linkedin_sent) && (
+                                <Button
+                                  onClick={() => handleSendBoth(draft.id)}
+                                  disabled={
+                                    (sendingStatus[draft.id]?.email === 'sending' || sendingStatus[draft.id]?.linkedin === 'sending') ||
+                                    (draft.email_sent && draft.linkedin_sent)
+                                  }
+                                  variant="default"
+                                  size="sm"
+                                >
+                                  {(sendingStatus[draft.id]?.email === 'sending' || sendingStatus[draft.id]?.linkedin === 'sending') 
+                                    ? 'Sending...' 
+                                    : 'Send Email and Message'}
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() => handleDeleteDraft(draft.id)}
+                                variant="destructive"
+                                size="sm"
+                              >
+                                Delete Draft
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -647,6 +763,7 @@ export default function Drafts() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

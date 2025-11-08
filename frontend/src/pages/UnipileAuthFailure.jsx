@@ -15,7 +15,7 @@ export default function UnipileAuthFailure() {
   }, [searchParams])
 
   const handleRetry = () => {
-    navigate('/dashboard/settings/linkedin-accounts')
+    navigate('/dashboard/settings')
   }
 
   return (

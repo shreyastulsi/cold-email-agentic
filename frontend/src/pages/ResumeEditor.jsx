@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../components/ui/button'
+import { FileUpload } from '../components/ui/file-upload'
 import { apiRequest } from '../utils/api'
 
 export default function ResumeEditor() {
@@ -12,6 +14,7 @@ export default function ResumeEditor() {
   const [error, setError] = useState(null)
   const [lastSaved, setLastSaved] = useState(null)
   const [hasChanges, setHasChanges] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   
   // Upload state
   const [file, setFile] = useState(null)
@@ -50,23 +53,19 @@ export default function ResumeEditor() {
     }
   }
   
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0]
-    if (selectedFile) {
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Please upload a PDF file')
-        setFile(null)
-        return
-      }
-      if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
-        setError('File size must be less than 10MB')
-        setFile(null)
-        return
-      }
+  const handleFileChange = (files) => {
+    if (files && files.length > 0) {
+      const selectedFile = files[0]
       setFile(selectedFile)
       setError(null)
       setUploadStatus(null)
     }
+  }
+
+  const handleFileError = (errorMessage) => {
+    setError(errorMessage)
+    setFile(null)
+    setUploadStatus(null)
   }
   
   const handleUpload = async () => {
@@ -114,9 +113,6 @@ export default function ResumeEditor() {
       const result = await response.json()
       setUploadStatus('success')
       setFile(null)
-      // Reset file input
-      const fileInput = document.querySelector('input[type="file"]')
-      if (fileInput) fileInput.value = ''
       
       // Reload resume content after upload
       if (result.content_extracted) {
@@ -149,6 +145,7 @@ export default function ResumeEditor() {
       
       setOriginalContent(content)
       setHasChanges(false)
+      setIsEditing(false)
       setLastSaved(result.updated_at || new Date().toISOString())
       
       // Show success message briefly
@@ -166,11 +163,57 @@ export default function ResumeEditor() {
     }
   }
 
-  const handleReset = () => {
-    if (window.confirm('Are you sure you want to discard all changes and revert to the last saved version?')) {
-      setContent(originalContent)
-      setHasChanges(false)
+  const handleEdit = () => {
+    setIsEditing(true)
+  }
+
+  const handleCancelEdit = () => {
+    if (hasChanges) {
+      if (window.confirm('You have unsaved changes. Discard changes and exit edit mode?')) {
+        setContent(originalContent)
+        setHasChanges(false)
+        setIsEditing(false)
+      }
+    } else {
+      setIsEditing(false)
     }
+  }
+
+  // Parse markdown-style formatting (like **bold**) and render as HTML
+  const renderFormattedText = (text) => {
+    if (!text) return 'N/A'
+    
+    // Trim trailing whitespace and split by lines
+    const trimmedText = text.trimEnd()
+    const lines = trimmedText.split('\n')
+    
+    // Filter out empty lines at the end
+    let lastNonEmptyIndex = lines.length - 1
+    while (lastNonEmptyIndex >= 0 && lines[lastNonEmptyIndex].trim() === '') {
+      lastNonEmptyIndex--
+    }
+    const processedLines = lines.slice(0, lastNonEmptyIndex + 1)
+    
+    return processedLines.map((line, lineIndex) => {
+      // Process bold markers **text** in each line
+      const parts = line.split(/(\*\*[^*]+\*\*)/g)
+      const processedLine = parts.map((part, partIndex) => {
+        if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+          // Remove the ** markers and make it bold
+          const boldText = part.slice(2, -2)
+          return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-white">{boldText}</strong>
+        }
+        return <span key={`${lineIndex}-${partIndex}`}>{part}</span>
+      })
+      
+      // Return line with line break (except for the last line)
+      return (
+        <span key={lineIndex}>
+          {processedLine}
+          {lineIndex < processedLines.length - 1 && <br />}
+        </span>
+      )
+    })
   }
 
   const handleDelete = async () => {
@@ -232,34 +275,16 @@ export default function ResumeEditor() {
           <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                {/* <label className="block text-sm font-medium text-gray-300 mb-2">
                   Upload Your Resume (PDF)
-                </label>
-                <div className="flex items-center space-x-4">
-                  <label className="flex-1 cursor-pointer">
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                    <div className="flex items-center justify-between rounded-lg border-2 border-dashed border-gray-700/50 p-4 hover:border-blue-500 transition-colors bg-gray-900/30">
-                      <span className="text-sm text-gray-300">
-                        {file ? file.name : 'Choose a PDF file'}
-                      </span>
-                      <span className="text-sm text-blue-400 hover:text-blue-300">
-                        Browse
-                      </span>
-                    </div>
-                  </label>
-                </div>
-                
-                {file && (
-                  <div className="mt-2 text-xs text-gray-400">
-                    File: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                  </div>
-                )}
+                </label> */}
+                <FileUpload
+                  key={uploadStatus === 'success' ? 'upload-success' : 'upload-ready'}
+                  onChange={handleFileChange}
+                  onError={handleFileError}
+                  accept="application/pdf"
+                  maxSize={10 * 1024 * 1024}
+                />
               </div>
 
               {error && (
@@ -278,13 +303,16 @@ export default function ResumeEditor() {
                 </div>
               )}
 
-              <button
-                onClick={handleUpload}
-                disabled={!file || uploading}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {uploading ? 'Uploading...' : 'Upload Resume'}
-              </button>
+              {file && (
+                <Button
+                  onClick={handleUpload}
+                  disabled={!file || uploading}
+                  variant="default"
+                  className="w-full"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Resume'}
+                </Button>
+              )}
 
               <div className="rounded-lg bg-yellow-900/50 border border-yellow-700/50 p-3 mt-4">
                 <p className="text-xs text-yellow-300 font-medium mb-1">⚠️ Note:</p>
@@ -293,7 +321,7 @@ export default function ResumeEditor() {
                 </p>
               </div>
               
-              <div className="text-xs text-gray-400 mt-4">
+              <div className="text-sm text-gray-400 mt-4">
                 <p className="text-gray-300">💡 Your resume will be used to:</p>
                 <ul className="list-disc list-inside mt-1 space-y-1 ml-2 text-gray-400">
                   <li>Extract 7-8 key bullets using AI</li>
@@ -326,15 +354,15 @@ export default function ResumeEditor() {
             )}
           </div>
           <div className="flex gap-3">
-            <button
+            {/* <Button
               onClick={() => navigate('/dashboard/search')}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              variant="default"
             >
               Go to Search →
-            </button>
+            </Button> */}
             <button
               onClick={() => setShowUpload(true)}
-              className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
             >
               Upload New Resume
             </button>
@@ -348,88 +376,31 @@ export default function ResumeEditor() {
           </div>
         )}
 
-        {/* Save/Reset/Delete Buttons */}
-        <div className="mb-4 flex items-center justify-between bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 shadow-lg">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving || !content}
-              className={`rounded-lg px-6 py-2 text-white font-medium transition-colors ${
-                hasChanges && !isSaving && content
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {isSaving ? 'Saving...' : hasChanges ? '💾 Save Changes' : '✅ Saved'}
-            </button>
-            {hasChanges && content && (
-              <button
-                onClick={handleReset}
-                className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
-              >
-                Reset
-              </button>
-            )}
-            {content && (
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? 'Deleting...' : '🗑️ Delete Resume'}
-              </button>
-            )}
-            {hasChanges && (
-              <span className="text-sm text-orange-400">⚠️ You have unsaved changes</span>
-            )}
-          </div>
-          <div className="text-sm text-gray-400">
-            {content.length} characters
-          </div>
-        </div>
-
         {/* Upload Section (when showUpload is true) */}
         {showUpload && (
           <div className="mb-6 rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-4">
+            {/* <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Upload New Resume</h2>
-              <button
+              <Button
                 onClick={() => setShowUpload(false)}
-                className="text-sm text-gray-400 hover:text-gray-300"
+                variant="ghost"
+                size="sm"
               >
                 Cancel
-              </button>
-            </div>
+              </Button>
+            </div> */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                {/* <label className="block text-sm font-medium text-gray-300 mb-2">
                   Upload Your Resume (PDF)
-                </label>
-                <div className="flex items-center space-x-4">
-                  <label className="flex-1 cursor-pointer">
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                    <div className="flex items-center justify-between rounded-lg border-2 border-dashed border-gray-700/50 p-4 hover:border-blue-500 transition-colors bg-gray-900/30">
-                      <span className="text-sm text-gray-300">
-                        {file ? file.name : 'Choose a PDF file'}
-                      </span>
-                      <span className="text-sm text-blue-400 hover:text-blue-300">
-                        Browse
-                      </span>
-                    </div>
-                  </label>
-                </div>
-                
-                {file && (
-                  <div className="mt-2 text-xs text-gray-400">
-                    File: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                  </div>
-                )}
+                </label> */}
+                <FileUpload
+                  key={uploadStatus === 'success' ? 'upload-success' : 'upload-ready'}
+                  onChange={handleFileChange}
+                  onError={handleFileError}
+                  accept="application/pdf"
+                  maxSize={10 * 1024 * 1024}
+                />
               </div>
 
               {uploadStatus === 'success' && (
@@ -438,32 +409,34 @@ export default function ResumeEditor() {
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={handleUpload}
-                  disabled={!file || uploading}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploading ? 'Uploading...' : 'Upload Resume'}
-                </button>
-                <button
+              <div className="flex gap-3 justify-end">
+                {file && (
+                  <Button
+                    onClick={handleUpload}
+                    disabled={!file || uploading}
+                    variant="default"
+                  >
+                    {uploading ? 'Uploading...' : 'Upload Resume'}
+                  </Button>
+                )}
+                <Button
                   onClick={() => {
                     setShowUpload(false)
                     setFile(null)
                     setError(null)
                     setUploadStatus(null)
                   }}
-                  className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-4 py-2 text-gray-200 hover:bg-gray-700/50"
+                  variant="outline"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         )}
 
         {/* Editor */}
-        <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 shadow-lg">
+        <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 shadow-lg relative">
           <div className="border-b border-gray-700/50 px-6 py-4">
             <h2 className="text-lg font-semibold text-white">Extracted Resume Key Bullets</h2>
             <p className="text-sm text-gray-400 mt-1">
@@ -471,27 +444,73 @@ export default function ResumeEditor() {
             </p>
           </div>
           {content ? (
-            <div className="p-6">
-              <textarea
-                className="w-full min-h-[600px] rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none resize-y"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Upload a resume PDF to extract key bullets. The extracted bullets will appear here for editing."
-                spellCheck={false}
-              />
+            <div className={`p-6 ${isEditing ? 'space-y-3' : 'space-y-0'}`}>
+              {isEditing ? (
+                <>
+                  <textarea
+                    className="w-full min-h-[600px] rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-base focus:border-blue-500 focus:outline-none resize-y"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Upload a resume PDF to extract key bullets. The extracted bullets will appear here for editing."
+                    spellCheck={false}
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      onClick={handleCancelEdit}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={!hasChanges || isSaving}
+                      variant="default"
+                    >
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-gray-300 text-base leading-relaxed pb-0 mb-0">
+                    {renderFormattedText(content)}
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleEdit}
+                      variant="outline"
+                    >
+                      Edit ✏️
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="p-6 text-center text-gray-400">
               <p className="mb-4">No resume content found.</p>
-              <button
+              <Button
                 onClick={() => setShowUpload(true)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                variant="default"
               >
                 Upload Resume PDF
-              </button>
+              </Button>
             </div>
           )}
         </div>
+
+        {/* Delete Button */}
+        {!isEditing && content && (
+          <div className="mt-4 flex items-center justify-end">
+            <Button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              variant="destructive"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Resume 🗑️'}
+            </Button>
+          </div>
+        )}
 
         {/* Info Box */}
         <div className="mt-6 rounded-lg bg-blue-900/50 border border-blue-700/50 p-4">
