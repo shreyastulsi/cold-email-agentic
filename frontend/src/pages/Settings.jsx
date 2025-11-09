@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import Auth from '../components/Auth'
 import { Button } from '../components/ui/button'
@@ -7,6 +8,7 @@ import { apiRequest } from '../utils/api'
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState('email') // 'email', 'linkedin', 'auth'
+  const queryClient = useQueryClient()
 
   // Read tab from URL query params on mount
   useEffect(() => {
@@ -45,6 +47,7 @@ export default function Settings() {
     try {
       const result = await apiRequest('/api/v1/email-accounts')
       setEmailAccounts(result.accounts || [])
+      queryClient.invalidateQueries({ queryKey: ['onboardingStatus'] })
     } catch (err) {
       setEmailError(err.message || 'Failed to load email accounts')
     } finally {
@@ -74,6 +77,7 @@ export default function Settings() {
     try {
       const result = await apiRequest('/api/v1/linkedin-accounts')
       setLinkedInAccounts(result.accounts || [])
+      queryClient.invalidateQueries({ queryKey: ['onboardingStatus'] })
     } catch (err) {
       setLinkedInError(err.message || 'Failed to load LinkedIn accounts')
     } finally {
@@ -81,39 +85,13 @@ export default function Settings() {
     }
   }
 
-  // Cleanup duplicate LinkedIn accounts
-  const cleanupDuplicateLinkedIn = async () => {
-    try {
-      const result = await apiRequest('/api/v1/linkedin-accounts/cleanup-duplicates', {
-        method: 'POST'
-      })
-      if (result.removed > 0) {
-        console.log(`Cleaned up ${result.removed} duplicate LinkedIn account(s)`)
-        loadLinkedInAccounts()
-      }
-    } catch (err) {
-      console.warn('Failed to cleanup duplicates:', err)
-    }
-  }
-
   useEffect(() => {
     if (activeTab === 'email') {
       loadEmailAccounts()
-      cleanupDuplicateEmails()
+      // Only cleanup duplicates if explicitly needed (not on every load)
     } else if (activeTab === 'linkedin') {
       loadLinkedInAccounts()
-      cleanupDuplicateLinkedIn()
-    }
-  }, [activeTab])
-
-  // Refresh LinkedIn accounts when page becomes visible
-  useEffect(() => {
-    if (activeTab === 'linkedin') {
-      const handleFocus = () => {
-        loadLinkedInAccounts()
-      }
-      window.addEventListener('focus', handleFocus)
-      return () => window.removeEventListener('focus', handleFocus)
+      // Note: Duplicate cleanup is now handled server-side in the sync endpoint
     }
   }, [activeTab])
 
@@ -281,12 +259,16 @@ export default function Settings() {
     }
     
     try {
+      setLinkedInError(null)
       await apiRequest(`/api/v1/linkedin-accounts/${accountId}`, {
         method: 'DELETE'
       })
-      loadLinkedInAccounts()
+      // Reload accounts after successful deletion
+      await loadLinkedInAccounts()
     } catch (err) {
-      setLinkedInError(err.message || 'Failed to delete LinkedIn account')
+      const errorMessage = err.message || 'Failed to delete LinkedIn account'
+      setLinkedInError(errorMessage)
+      console.error('Delete error:', err)
     }
   }
 

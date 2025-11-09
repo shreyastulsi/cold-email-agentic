@@ -2,13 +2,17 @@ import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence } from 'framer-motion'
 import { motion } from 'motion/react'
 import React, { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { AlertCircle } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { LoaderOne } from '../components/ui/loader'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
+import SearchMapping from './SearchMapping'
+import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
+import { ChevronDown } from 'lucide-react'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -20,6 +24,97 @@ const steps = [
   'Outreach'
 ]
 
+const CollapsibleSection = ({ title, description, defaultOpen = false, children }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="rounded-lg border border-gray-700/50 bg-gray-900/40">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
+        <div>
+          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          {description && <p className="text-xs text-gray-400">{description}</p>}
+        </div>
+        <CollapsibleTrigger asChild>
+          <button className="inline-flex items-center gap-2 rounded-md border border-gray-600/60 px-3 py-1 text-xs font-medium text-gray-300 hover:border-gray-500 hover:text-white transition-colors">
+            {isOpen ? 'Close' : 'Expand'}
+            <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="px-4 pb-4 pt-3 space-y-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+const JOB_TYPE_OPTIONS = [
+  { value: 'full_time', label: 'Full Time' },
+  { value: 'internship', label: 'Internship' },
+  { value: 'part_time', label: 'Part Time' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'temporary', label: 'Temporary' },
+  { value: 'volunteer', label: 'Volunteer' },
+  { value: 'other', label: 'Other' }
+]
+
+const JOB_TITLE_OPTIONS = [
+  'Software Engineer',
+  'Data Scientist',
+  'Machine Learning Engineer',
+  'Product Manager',
+  'Software Engineer Intern',
+  'Full Stack Engineer'
+]
+
+const LOCATION_OPTIONS = [
+  { value: 'San Francisco, CA', label: 'San Francisco, CA' },
+  { value: 'Seattle, WA', label: 'Seattle, WA' },
+  { value: 'Palo Alto, CA', label: 'Palo Alto, CA' },
+  { value: 'San Jose, CA', label: 'San Jose, CA' },
+  { value: 'Austin, TX', label: 'Austin, TX' },
+  { value: 'Nashville, TN', label: 'Nashville, TN' },
+  { value: 'Bellevue, WA', label: 'Bellevue, WA' },
+  { value: 'New York, NY', label: 'New York, NY' },
+  { value: 'Chicago, IL', label: 'Chicago, IL' },
+  { value: 'Atlanta, GA', label: 'Atlanta, GA' },
+  { value: 'Houston, TX', label: 'Houston, TX' },
+  { value: 'Sunnyvale, CA', label: 'Sunnyvale, CA' },
+  { value: 'Redmond, WA', label: 'Redmond, WA' }
+]
+
+const EXPERIENCE_LEVEL_OPTIONS = [
+  { value: 'internship', label: 'Internship' },
+  { value: 'entry level', label: 'Entry Level' },
+  { value: 'associate', label: 'Associate' },
+  { value: 'mid-senior level', label: 'Mid-Senior Level' },
+  { value: 'director', label: 'Director' },
+  { value: 'executive', label: 'Executive' }
+]
+
+const QUICK_COMPANIES = [
+  'Amazon',
+  'Apple',
+  'Alphabet',
+  'Microsoft',
+  'Meta',
+  'Netflix',
+  'Tesla',
+  'Nvidia',
+  'Intel',
+  'AMD',
+  'Salesforce',
+  'Adobe',
+  'Uber',
+  'Airbnb',
+  'DoorDash',
+  'Snowflake',
+  'Stripe',
+  'Palantir',
+  'ServiceNow',
+  'Shopify'
+]
+
 // API functions
 async function searchCompany(name) {
   return apiRequest('/api/v1/search/company', {
@@ -28,15 +123,60 @@ async function searchCompany(name) {
   })
 }
 
-async function searchJobs(companyIds, jobTitles, jobType = 'full_time') {
-  return apiRequest('/api/v1/search/jobs', {
-    method: 'POST',
-    body: JSON.stringify({
+const DEFAULT_LOCATION_ID = '102571732'
+
+async function searchJobs(companyIds, jobTitles, jobTypes = ['full_time'], options = {}) {
+  const payload = {
       company_ids: companyIds,
       job_titles: jobTitles,
-      job_type: jobType,
-      location_id: '102571732'
-    })
+  }
+
+  if (Array.isArray(jobTypes) && jobTypes.length > 0) {
+    payload.job_types = jobTypes
+  } else {
+    payload.job_types = ['full_time']
+  }
+
+  if (Object.prototype.hasOwnProperty.call(options, 'locationId')) {
+    if (options.locationId) {
+      payload.location_id = options.locationId
+    }
+  } else {
+    payload.location_id = DEFAULT_LOCATION_ID
+  }
+
+  if (options.location && options.location.trim()) {
+    payload.location = options.location.trim()
+  }
+
+  if (options.locations && Array.isArray(options.locations) && options.locations.length > 0) {
+    payload.locations = options.locations
+  }
+
+  if (options.experienceLevels && Array.isArray(options.experienceLevels) && options.experienceLevels.length > 0) {
+    payload.experience_levels = options.experienceLevels
+  } else if (options.experienceLevel && options.experienceLevel !== 'any') {
+    payload.experience_levels = [options.experienceLevel]
+  }
+
+  const salaryMin = options.salaryMin
+  const salaryMax = options.salaryMax
+  if (salaryMin !== undefined && salaryMin !== null && salaryMin !== '') {
+    const parsedMin = Number(salaryMin)
+    if (!Number.isNaN(parsedMin)) {
+      payload.salary_min = parsedMin
+    }
+  }
+  if (salaryMax !== undefined && salaryMax !== null && salaryMax !== '') {
+    const parsedMax = Number(salaryMax)
+    if (!Number.isNaN(parsedMax)) {
+      payload.salary_max = parsedMax
+    }
+  }
+
+  return apiRequest('/api/v1/search/jobs', {
+    method: 'POST',
+    body: JSON.stringify(payload)
   })
 }
 
@@ -91,34 +231,41 @@ async function generateLinkedInMessage(recruiter, jobTitle, companyName) {
   })
 }
 
-async function generateEmail(jobTitles, jobType, recruiter) {
+async function generateEmail(jobTitles, jobType, recruiter, jobUrl) {
   return apiRequest('/api/v1/outreach/email/generate', {
     method: 'POST',
     body: JSON.stringify({
       job_titles: jobTitles,
       job_type: jobType,
-      recruiter: recruiter
+      recruiter: recruiter,
+      job_url: jobUrl,
     })
   })
 }
 
-async function sendLinkedInInvitation(linkedinUrl, message) {
+async function sendLinkedInInvitation(linkedinUrl, message, metadata = {}) {
   return apiRequest('/api/v1/outreach/linkedin/send', {
     method: 'POST',
     body: JSON.stringify({
       linkedin_url: linkedinUrl,
-      message: message
+      message: message,
+      recipient_name: metadata.recruiterName,
+      company_name: metadata.companyName,
+      job_title: metadata.jobTitle
     })
   })
 }
 
-async function sendEmail(to, subject, body) {
+async function sendEmail(to, subject, body, metadata = {}) {
   return apiRequest('/api/v1/outreach/email/send', {
     method: 'POST',
     body: JSON.stringify({
       to: to,
       subject: subject,
-      body: body
+      body: body,
+      recipient_name: metadata.recruiterName,
+      company_name: metadata.companyName,
+      job_title: metadata.jobTitle
     })
   })
 }
@@ -169,13 +316,21 @@ function ThinkingIndicator({ logs, isActive }) {
 }
 
 export default function Search() {
+  const location = useLocation()
   const navigate = useNavigate()
+  const { data: onboardingStatus, isLoading: onboardingStatusLoading } = useOnboardingStatus()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedCompanies, setSelectedCompanies] = useState([]) // Array of company objects {name, id}
+  const [quickCompanyStatus, setQuickCompanyStatus] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTrigger, setSearchTrigger] = useState(null)
-  const [jobTitle, setJobTitle] = useState('')
-  const [jobType, setJobType] = useState('full_time')
+  const [selectedJobTitles, setSelectedJobTitles] = useState(new Set())
+  const [customJobTitle, setCustomJobTitle] = useState('')
+  const [jobTypes, setJobTypes] = useState(new Set(['full_time']))
+  const [selectedLocations, setSelectedLocations] = useState(new Set())
+  const [experienceLevels, setExperienceLevels] = useState(new Set())
+  const [salaryMin, setSalaryMin] = useState('')
+  const [salaryMax, setSalaryMax] = useState('')
   const [jobSearchTrigger, setJobSearchTrigger] = useState(null)
   const [isFiltering, setIsFiltering] = useState(false)
   const [jobResults, setJobResults] = useState(null)
@@ -189,6 +344,7 @@ export default function Search() {
   const [draggedJob, setDraggedJob] = useState(null)
   const [draggedOverIndex, setDraggedOverIndex] = useState(null)
   const [generatedMessages, setGeneratedMessages] = useState([])
+  const isMappingView = location.pathname.endsWith('/mapping')
   const [sendingStatus, setSendingStatus] = useState({})
   const [isSending, setIsSending] = useState(false)
   const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
@@ -197,9 +353,24 @@ export default function Search() {
   const [expandedMessages, setExpandedMessages] = useState(new Set()) // Set of expanded message indices
   const [editingMessage, setEditingMessage] = useState(null) // { index: number, part: 'email' | 'linkedin' }
   const [editValues, setEditValues] = useState({}) // Temporary edit values
+  const [jobContexts, setJobContexts] = useState({}) // { index: jobContext }
+  const [loadingJobContexts, setLoadingJobContexts] = useState(new Set()) // Set of message indices loading context
+  const [expandedJobContexts, setExpandedJobContexts] = useState(new Set()) // Set of expanded job context indices
+  const onboardingReady = onboardingStatus?.isReadyForSearch ?? false
+  const missingResume = onboardingStatus ? !onboardingStatus.hasResume : false
+  const missingChannels = onboardingStatus ? !onboardingStatus.hasEmail && !onboardingStatus.hasLinkedIn : false
+
+  useEffect(() => {
+    if (!onboardingReady) return
+    if (isMappingView && (!mapping || mapping.length === 0)) {
+      navigate('/dashboard/search', { replace: true })
+    }
+  }, [isMappingView, mapping, navigate, onboardingReady])
 
   // Connect to verbose logger stream for thinking indicator
   useEffect(() => {
+    if (!onboardingReady) return
+
     let isMounted = true
     const connectSSE = async () => {
       try {
@@ -300,7 +471,7 @@ export default function Search() {
         eventSourceRef.current = null
       }
     }
-  }, [])
+  }, [onboardingReady])
 
   // Search companies query
   const { data: searchResults, isLoading: isSearching } = useQuery({
@@ -315,26 +486,36 @@ export default function Search() {
     queryKey: ['searchJobs', jobSearchTrigger],
     queryFn: async () => {
       if (!jobSearchTrigger) throw new Error('Job search trigger not set')
-      const { companyIds, title, type } = jobSearchTrigger
-      const result = await searchJobs(companyIds, [title], type)
+      const { companyIds, titles, types, locations: selectedLocs, experienceLevels: expLevels, salaryMin: minSalary, salaryMax: maxSalary } = jobSearchTrigger
+      const options = {
+        locations: selectedLocs,
+        experienceLevels: expLevels,
+        salaryMin: minSalary,
+        salaryMax: maxSalary
+      }
+      if (!selectedLocs || selectedLocs.length === 0) {
+        options.locationId = DEFAULT_LOCATION_ID
+      }
+      const result = await searchJobs(companyIds, titles, types, options)
       // Limit to 5 jobs total from unipile
       if (result?.jobs && result.jobs.length > 5) {
         return { ...result, jobs: result.jobs.slice(0, 5) }
       }
       return result
     },
-    enabled: !!(jobSearchTrigger && jobSearchTrigger.companyIds && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.title),
+    enabled: !!(jobSearchTrigger && jobSearchTrigger.companyIds && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.titles && jobSearchTrigger.titles.length > 0),
     retry: false
   })
 
   // Update step based on progress
   useEffect(() => {
+    if (!onboardingReady) return
     if (selectedCompanies.length > 0) setCurrentStep(0)
     if (jobResults) setCurrentStep(1)
     if (mappedJobs.length > 0) setCurrentStep(1)
     if (mapping.length > 0) setCurrentStep(3)
     if (generatedMessages.length > 0) setCurrentStep(4)
-  }, [selectedCompanies, jobResults, mappedJobs, mapping, generatedMessages])
+  }, [selectedCompanies, jobResults, mappedJobs, mapping, generatedMessages, onboardingReady])
 
   // Handle company selection
   const handleSelectCompany = () => {
@@ -356,20 +537,95 @@ export default function Search() {
     setSelectedCompanies(selectedCompanies.filter(c => c.id !== companyId))
   }
 
+  const handleToggleQuickCompany = async (companyName) => {
+    const normalized = companyName.toLowerCase()
+    const existing = selectedCompanies.find(
+      (c) => c.name.toLowerCase() === normalized
+    )
+
+    if (existing) {
+      setSelectedCompanies((prev) =>
+        prev.filter((company) => company.id !== existing.id)
+      )
+      return
+    }
+
+    setQuickCompanyStatus((prev) => ({ ...prev, [companyName]: 'loading' }))
+    try {
+      const result = await searchCompany(companyName)
+      if (result?.company_id) {
+        const displayName =
+          result.company?.name || result.company?.title || companyName
+        const companyId = result.company_id
+
+        setSelectedCompanies((prev) => {
+          if (prev.some((company) => company.id === companyId)) {
+            return prev
+          }
+          return [...prev, { name: displayName, id: companyId }]
+        })
+      } else {
+        alert(`Could not find ${companyName}. Try searching manually.`)
+      }
+    } catch (error) {
+      console.error(`Error selecting ${companyName}:`, error)
+      alert(`Failed to add ${companyName}. Check logs for details.`)
+    } finally {
+      setQuickCompanyStatus((prev) => {
+        const { [companyName]: _, ...rest } = prev
+        return rest
+      })
+    }
+  }
+
+  const handleAddCustomJobTitle = () => {
+    const normalized = customJobTitle.trim()
+    if (!normalized) return
+    setSelectedJobTitles(prev => {
+      const next = new Set(prev)
+      next.add(normalized)
+      return next
+    })
+    setCustomJobTitle('')
+  }
+
   // Handle job search
   const handleSearchJobs = () => {
     const companyIds = selectedCompanies.map(c => c.id)
-    if (companyIds.length > 0 && jobTitle.trim()) {
+    const jobTitleArray = Array.from(selectedJobTitles).filter(Boolean)
+    if (companyIds.length > 0 && jobTitleArray.length > 0) {
+      const minSalary = salaryMin !== '' ? Number(salaryMin) : null
+      const maxSalary = salaryMax !== '' ? Number(salaryMax) : null
+
+      let safeMinSalary = Number.isFinite(minSalary) ? minSalary : null
+      let safeMaxSalary = Number.isFinite(maxSalary) ? maxSalary : null
+
+      if (safeMinSalary !== null && safeMaxSalary !== null && safeMinSalary > safeMaxSalary) {
+        const temp = safeMinSalary
+        safeMinSalary = safeMaxSalary
+        safeMaxSalary = temp
+      }
+
+      const selectedJobTypes = Array.from(jobTypes).filter(Boolean)
+      const finalJobTypes = selectedJobTypes.length > 0 ? selectedJobTypes : ['full_time']
+      const locationList = Array.from(selectedLocations).filter(Boolean)
+      const experienceList = Array.from(experienceLevels).filter(Boolean)
+
       setJobSearchTrigger({
         companyIds: companyIds,
-        title: jobTitle.trim(),
-        type: jobType
+        titles: jobTitleArray,
+        types: finalJobTypes,
+        locations: locationList,
+        experienceLevels: experienceList,
+        salaryMin: safeMinSalary,
+        salaryMax: safeMaxSalary
       })
     }
   }
 
   // Update job results
   useEffect(() => {
+    if (!onboardingReady) return
     if (jobsData?.jobs) {
       setJobResults(jobsData)
       setCurrentStep(1)
@@ -377,7 +633,7 @@ export default function Search() {
       const jobCount = jobsData.jobs.length
       setMappedJobs(Array(jobCount).fill(null))
     }
-  }, [jobsData])
+  }, [jobsData, onboardingReady])
 
   // Handle filter jobs
   const handleFilterJobs = async () => {
@@ -512,13 +768,99 @@ export default function Search() {
       const mapResult = await mapJobsToRecruiters(jobsToMap, recruiterResult.recruiters, jobsToMap.length)
       
       if (mapResult.mapping && mapResult.mapping.length > 0) {
-        setMapping(mapResult.mapping)
-        setMappedRecruiters(mapResult.selected_recruiters || mapResult.mapping.map(m => ({
-            name: m.recruiter_name,
-            company: m.recruiter_company,
-          profile_url: m.recruiter_profile_url
-        })))
+        const normalizeRecruiter = (recruiter) => {
+          if (!recruiter) return null
+          const name =
+            recruiter.name ||
+            recruiter.full_name ||
+            recruiter.recruiter_name ||
+            recruiter.display_name ||
+            recruiter.profile_name ||
+            ''
+          const company =
+            recruiter.company ||
+            recruiter.company_name ||
+            recruiter.organization ||
+            recruiter.companyName ||
+            recruiter.employer ||
+            ''
+          const profileUrl =
+            recruiter.profile_url ||
+            recruiter.linkedin_url ||
+            recruiter.linkedin ||
+            recruiter.url ||
+            recruiter.profileUrl ||
+            ''
+
+          return {
+            ...recruiter,
+            name,
+            company,
+            profile_url: profileUrl
+          }
+        }
+
+        const recruitersListRaw =
+          (Array.isArray(mapResult.selected_recruiters) && mapResult.selected_recruiters.length > 0
+            ? mapResult.selected_recruiters
+            : mapResult.mapping?.map(m => ({
+                name: m.recruiter_name,
+                company: m.recruiter_company,
+                profile_url: m.recruiter_profile_url
+              }))) || []
+
+        const recruitersList = recruitersListRaw
+          .map(normalizeRecruiter)
+          .filter(Boolean)
+
+        const recruiterByProfile = new Map()
+        const recruiterByName = new Map()
+        recruitersList.forEach((rec) => {
+          const profileKey = (rec?.profile_url || rec?.linkedin_url || rec?.url || '').trim().toLowerCase()
+          const nameKey = (rec?.name || rec?.full_name || rec?.display_name || '').trim().toLowerCase()
+          if (profileKey) recruiterByProfile.set(profileKey, rec)
+          if (nameKey) recruiterByName.set(nameKey, rec)
+        })
+
+        const enrichedMapping = (mapResult.mapping || []).map((item) => {
+          const profileKey = (item?.recruiter_profile_url || '').trim().toLowerCase()
+          const nameKey = (item?.recruiter_name || '').trim().toLowerCase()
+          const recruiterInfo =
+            (profileKey && recruiterByProfile.get(profileKey)) ||
+            (nameKey && recruiterByName.get(nameKey)) ||
+            {}
+
+          return {
+            ...item,
+            recruiter_name:
+              item?.recruiter_name ||
+              recruiterInfo?.name ||
+              recruiterInfo?.full_name ||
+              recruiterInfo?.display_name ||
+              '',
+            recruiter_company:
+              item?.recruiter_company ||
+              recruiterInfo?.company ||
+              recruiterInfo?.company_name ||
+              recruiterInfo?.organization ||
+              recruiterInfo?.employer ||
+              '',
+            recruiter_profile_url:
+              item?.recruiter_profile_url ||
+              recruiterInfo?.profile_url ||
+              recruiterInfo?.linkedin_url ||
+              recruiterInfo?.url ||
+              ''
+          }
+        })
+
+        setMapping(enrichedMapping)
+        setMappedRecruiters(recruitersList)
         setCurrentStep(3)
+
+        navigate('/dashboard/search/mapping')
+      } else {
+        alert('No mappings were created. Try selecting different jobs.')
       }
     } catch (error) {
       console.error('Error mapping to recruiters:', error)
@@ -535,6 +877,9 @@ export default function Search() {
     setIsGeneratingMessages(true)
     setThinkingLogs([])
 
+      const selectedJobTypeArray = Array.from(jobTypes)
+      const primaryJobType = selectedJobTypeArray.length > 0 ? selectedJobTypeArray[0] : 'full_time'
+
     try {
       // Extract emails
       const emailResult = await extractEmails(mappedRecruiters)
@@ -548,18 +893,29 @@ export default function Search() {
             (r.name || r.profile_url) === mapItem.recruiter_name || 
             r.profile_url === mapItem.recruiter_profile_url
           ) || {}
-          
-            const linkedinResult = await generateLinkedInMessage(
+        const jobUrl = mapItem.job_url || mapItem.jobUrl || mapItem.url || mapItem.job?.url || mapItem.job_link || null
+        const companyName = mapItem.job_company || mapItem.company || mapItem.company_name || jobResults?.jobs?.[i]?.company?.name || jobResults?.jobs?.[i]?.company_name || recruiter.company || recruiter.company_name || recruiter.org_name || 'Your company'
+
+        if (jobUrl && recruiter && typeof recruiter === 'object') {
+          recruiter.job_url = recruiter.job_url || jobUrl
+        }
+        if (recruiter && typeof recruiter === 'object') {
+          recruiter.company = recruiter.company || recruiter.company_name || companyName
+          recruiter.company_name = recruiter.company
+        }
+        
+        const linkedinResult = await generateLinkedInMessage(
           recruiter,
               mapItem.job_title || 'Position',
-          mapItem.job_company || 'Company'
+          companyName
             )
             
-            const emailResult_gen = await generateEmail(
-              [mapItem.job_title || 'Position'],
-              jobType,
-          recruiter
-            )
+        const emailResult_gen = await generateEmail(
+          [mapItem.job_title || 'Position'],
+          primaryJobType,
+          recruiter,
+          jobUrl
+        )
         
         // Handle LinkedIn message - could be string or object with message property
         const linkedinMsg = typeof linkedinResult === 'string' 
@@ -624,17 +980,23 @@ export default function Search() {
     setIsSending(true)
 
     try {
-      const result = await sendLinkedInInvitation(linkedinUrl, message)
+      // Gather metadata for tracking
+      const role = messageData.mapItem?.job_title || 'Unknown Role'
+      const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+      const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+      
+      const result = await sendLinkedInInvitation(linkedinUrl, message, {
+        recruiterName: recruiterName,
+        companyName: company,
+        jobTitle: role
+      })
       if (result.success) {
         setSendingStatus(prev => ({
           ...prev,
           [index]: { ...prev[index], linkedin: 'sent' }
         }))
         
-        // Track in dashboard stats
-        const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
-        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        // Track in dashboard stats (trigger refresh event)
         trackLinkedInInvite(role, company, recruiterName)
       } else {
         throw new Error(result.message || 'Failed to send LinkedIn message')
@@ -670,17 +1032,23 @@ export default function Search() {
     setIsSending(true)
 
     try {
-      const result = await sendEmail(email, subject, body)
+      // Gather metadata for tracking
+      const role = messageData.mapItem?.job_title || 'Unknown Role'
+      const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+      const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+      
+      const result = await sendEmail(email, subject, body, {
+        recruiterName: recruiterName,
+        companyName: company,
+        jobTitle: role
+      })
       if (result && result.success) {
         setSendingStatus(prev => ({
           ...prev,
           [index]: { ...prev[index], email: 'sent' }
         }))
         
-        // Track in dashboard stats
-        const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
-        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        // Track in dashboard stats (trigger refresh event)
         trackEmailSent(role, company, recruiterName)
       } else {
         // Handle both error formats: string or object with message
@@ -898,6 +1266,51 @@ export default function Search() {
     }
   }
 
+  const fetchJobContext = async (index, jobUrl) => {
+    if (!jobUrl || jobContexts[index] || loadingJobContexts.has(index)) {
+      return // Already have it or currently loading
+    }
+
+    setLoadingJobContexts(prev => new Set(prev).add(index))
+
+    try {
+      const result = await apiRequest(`/api/v1/job-context?job_url=${encodeURIComponent(jobUrl)}`, {
+        method: 'GET'
+      })
+
+      if (result.success && result.context) {
+        setJobContexts(prev => ({
+          ...prev,
+          [index]: result.context
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching job context:', error)
+    } finally {
+      setLoadingJobContexts(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }
+  }
+
+  const toggleJobContext = (index, jobUrl) => {
+    setExpandedJobContexts(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+        // Fetch job context when expanding
+        if (jobUrl) {
+          fetchJobContext(index, jobUrl)
+        }
+      }
+      return newSet
+    })
+  }
+
   // Rearrange jobs and recruiters
   const handleRearrangeJob = (fromIndex, toIndex) => {
     const newMappedJobs = [...mappedJobs]
@@ -1031,6 +1444,107 @@ export default function Search() {
     setEditValues({})
   }
 
+  const handleClearFilters = () => {
+    setSelectedCompanies([])
+    setQuickCompanyStatus({})
+    setSearchQuery('')
+    setSearchTrigger(null)
+    setSelectedJobTitles(new Set())
+    setCustomJobTitle('')
+    setJobTypes(new Set(['full_time']))
+    setSelectedLocations(new Set())
+    setExperienceLevels(new Set())
+    setSalaryMin('')
+    setSalaryMax('')
+    setJobSearchTrigger(null)
+    setJobResults(null)
+    setMappedJobs([])
+    setMapping([])
+    setMappedRecruiters([])
+    setGeneratedMessages([])
+    setCurrentStep(0)
+    setIsFiltering(false)
+    setIsMappingToRecruiters(false)
+    setIsGeneratingMessages(false)
+    setThinkingLogs([])
+    savedDraftsRef.current.clear()
+  }
+
+  const hasActiveFilters =
+    selectedCompanies.length > 0 ||
+    searchQuery.trim() !== '' ||
+    selectedJobTitles.size > 0 ||
+    jobTypes.size > 1 ||
+    (jobTypes.size === 1 && !jobTypes.has('full_time')) ||
+    selectedLocations.size > 0 ||
+    experienceLevels.size > 0 ||
+    salaryMin !== '' ||
+    salaryMax !== ''
+
+  if (onboardingStatusLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <LoaderOne />
+      </div>
+    )
+  }
+
+  if (!onboardingReady) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center space-y-6 text-center">
+        <AlertCircle className="h-12 w-12 text-amber-400" />
+        <h2 className="text-2xl font-semibold text-white">Complete Your Setup</h2>
+        <p className="text-sm text-gray-300">
+          Upload a resume and connect at least one outreach channel before using job search.
+        </p>
+        <div className="space-y-1 text-sm text-gray-300">
+          {missingResume && <p>• Upload your resume in the Resume section.</p>}
+          {missingChannels && <p>• Connect your email or LinkedIn account in Settings.</p>}
+        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          {missingResume && (
+            <Button variant="secondary" onClick={() => navigate('/dashboard/resume')}>
+              Go to Resume
+            </Button>
+          )}
+          {missingChannels && (
+            <Button onClick={() => navigate('/dashboard/settings')}>
+              Connect Accounts
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (isMappingView) {
+    const jobsForMapping = jobResults?.jobs || mappedJobs.filter(Boolean)
+
+    return (
+      <SearchMapping
+        mapping={mapping}
+        recruiters={mappedRecruiters}
+        jobs={jobsForMapping}
+        onBack={() => {
+          setMapping([])
+          setMappedRecruiters([])
+          if (jobResults?.jobs) {
+            setMappedJobs(Array(jobResults.jobs.length).fill(null))
+          } else {
+            setMappedJobs([])
+          }
+          navigate('/dashboard/search')
+        }}
+        onGenerate={async () => {
+          if (isGeneratingMessages || mapping.length === 0) return
+          await handleGenerateMessages()
+          navigate('/dashboard/search')
+        }}
+        isGenerating={isGeneratingMessages}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6 min-h-screen pb-20">
       {/* Progressive Step Indicator */}
@@ -1068,114 +1582,473 @@ export default function Search() {
       </AnimatePresence>
 
       {/* Initial Search Card - Keep visible during search */}
-      {!jobResults && mapping.length === 0 && generatedMessages.length === 0 && (
+      {(!jobResults && mapping.length === 0 && generatedMessages.length === 0) && (
         <div className="max-w-2xl mx-auto">
           <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between gap-3">
               <CardTitle className="text-white">Search for Jobs</CardTitle>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleClearFilters}
+                disabled={!hasActiveFilters}
+              >
+                Clear
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Company Search */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Company Name</label>
-                <div className="flex space-x-2">
-              <input
-                type="text"
-                    placeholder="Enter company name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    setSearchTrigger(searchQuery.trim())
-                  }
-                }}
-                    className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                onClick={() => {
-                  if (searchQuery.trim()) {
-                    setSearchTrigger(searchQuery.trim())
-                  }
-                }}
-                disabled={isSearching || !searchQuery.trim()}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              <CollapsibleSection
+                title="Popular Companies"
+                description="Quick add companies from cache. Use search to add more."
               >
-                    {isSearching ? '...' : 'Search'}
-              </button>
-            </div>
-                {searchResults?.company_id && (
-                  <div className="mt-2 p-3 rounded-lg bg-gray-900/50 border border-gray-700/50">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white">{searchResults.company.name}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {QUICK_COMPANIES.map((company) => {
+                    const normalized = company.toLowerCase()
+                    const isSelected = selectedCompanies.some(
+                      (c) => c.name.toLowerCase() === normalized
+                    )
+                    const isLoading = quickCompanyStatus[company] === 'loading'
+                    return (
+                      <label
+                        key={company}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          isSelected
+                            ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                            : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                          checked={isSelected}
+                          disabled={isLoading}
+                          onChange={() => handleToggleQuickCompany(company)}
+                        />
+                        <span>{company}</span>
+                        {isLoading && (
+                          <span className="ml-auto text-xs text-gray-400 animate-pulse">
+                            Loading...
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title="Company Search"
+                description="Look up additional companies to add to your mapping pool."
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter company name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && searchQuery.trim()) {
+                          setSearchTrigger(searchQuery.trim())
+                        }
+                      }}
+                      className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                    />
                     <button
+                      onClick={() => {
+                        if (searchQuery.trim()) {
+                          setSearchTrigger(searchQuery.trim())
+                        }
+                      }}
+                      disabled={isSearching || !searchQuery.trim()}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSearching ? '...' : 'Search'}
+                    </button>
+                  </div>
+                  {searchResults?.company_id && (
+                    <div className="p-3 rounded-lg bg-gray-900/50 border border-gray-700/50 flex items-center justify-between">
+                      <span className="text-white">{searchResults.company.name}</span>
+                      <button
                         onClick={handleSelectCompany}
                         className="text-sm text-blue-400 hover:text-blue-300"
                       >
-                        {selectedCompanies.find(c => c.id === searchResults.company_id) ? '✓ Selected' : '+ Add'}
-                    </button>
-              </div>
-                </div>
-                )}
-                {selectedCompanies.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {selectedCompanies.map((company) => (
-                      <div key={company.id} className="flex items-center justify-between p-2 rounded-lg bg-blue-900/50 border border-blue-700/50">
-                        <span className="text-blue-300 text-sm">{company.name}</span>
-                      <button
-                          onClick={() => handleRemoveCompany(company.id)}
-                          className="text-sm text-red-400 hover:text-red-300"
-                      >
-                          ×
+                        {selectedCompanies.find(c => c.id === searchResults.company_id) ? '✓ Selected' : 'Add Company'}
                       </button>
                     </div>
-                    ))}
+                  )}
+                </div>
+              </CollapsibleSection>
+              {selectedCompanies.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedCompanies.map((company) => (
+                    <span key={company.id} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                      {company.name}
+                      <button
+                        onClick={() => handleRemoveCompany(company.id)}
+                        className="text-blue-300 hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               )}
-        </div>
 
-              {/* Job Title */}
               {selectedCompanies.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Job Title</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Software Engineer"
-                      value={jobTitle}
-                      onChange={(e) => setJobTitle(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && jobTitle.trim() && selectedCompanies.length > 0) {
-                        handleSearchJobs()
-                      }
-                    }}
-                    className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-                  />
-                    </div>
-                  )}
-
-              {/* Job Type */}
-              {selectedCompanies.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Job Type</label>
-                    <select
-                      value={jobType}
-                      onChange={(e) => setJobType(e.target.value)}
-                    className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-4 py-2 focus:border-blue-500 focus:outline-none"
-                    >
-                      <option value="full_time">Full Time</option>
-                      <option value="internship">Internship</option>
-                    </select>
+                <CollapsibleSection
+                  title="Job Titles"
+                  description="Select or add titles you want to target."
+                  defaultOpen
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {JOB_TITLE_OPTIONS.map((title) => {
+                      const normalized = title.toLowerCase()
+                      const isChecked = Array.from(selectedJobTitles).some(
+                        (t) => t.toLowerCase() === normalized
+                      )
+                      return (
+                        <label
+                          key={title}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                            isChecked
+                              ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                              : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                            checked={isChecked}
+                            onChange={() => {
+                              setSelectedJobTitles(prev => {
+                                const next = new Set(prev)
+                                if (isChecked) {
+                                  next.forEach(value => {
+                                    if (value.toLowerCase() === normalized) {
+                                      next.delete(value)
+                                    }
+                                  })
+                                } else {
+                                  next.add(title)
+                                }
+                                return next
+                              })
+                            }}
+                          />
+                          <span>{title}</span>
+                        </label>
+                      )
+                    })}
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-400">Add custom job title</label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={customJobTitle}
+                        onChange={(e) => setCustomJobTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddCustomJobTitle()
+                          }
+                        }}
+                        placeholder="e.g., Machine Learning Engineer"
+                        className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAddCustomJobTitle}
+                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+              {selectedJobTitles.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(selectedJobTitles).map((title) => (
+                    <span key={title} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                      {title}
+                      <button
+                        onClick={() =>
+                          setSelectedJobTitles(prev => {
+                            const next = new Set(prev)
+                            next.delete(title)
+                            return next
+                          })
+                        }
+                        className="text-blue-300 hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
               )}
 
-              {/* Search Button */}
-              {selectedCompanies.length > 0 && jobTitle.trim() && (
-                  <button
+              {selectedCompanies.length > 0 && (
+                <CollapsibleSection
+                  title="Job Types"
+                  description="Pick all employment types you want to consider."
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {JOB_TYPE_OPTIONS.map(option => {
+                      const isChecked = jobTypes.has(option.value)
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                            isChecked
+                              ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                              : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                            checked={isChecked}
+                            onChange={() => {
+                              setJobTypes(prev => {
+                                const next = new Set(prev)
+                                if (next.has(option.value)) {
+                                  next.delete(option.value)
+                                } else {
+                                  next.add(option.value)
+                                }
+                                return next
+                              })
+                            }}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </CollapsibleSection>
+              )}
+              {selectedCompanies.length > 0 && jobTypes.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(jobTypes).map((type) => {
+                    const label = JOB_TYPE_OPTIONS.find(o => o.value === type)?.label || type
+                    return (
+                      <span key={type} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                        {label}
+                        <button
+                          onClick={() =>
+                            setJobTypes(prev => {
+                              const next = new Set(prev)
+                              next.delete(type)
+                              return next
+                            })
+                          }
+                          className="text-blue-300 hover:text-blue-100"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {selectedCompanies.length > 0 && (
+                <CollapsibleSection
+                  title="Location & Experience Filters"
+                  description="Refine where and at what level you'd like to work."
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 mb-2">Locations</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {LOCATION_OPTIONS.map(option => {
+                          const isChecked = selectedLocations.has(option.value)
+                          return (
+                            <label
+                              key={option.value}
+                              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                isChecked
+                                  ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                                  : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setSelectedLocations(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(option.value)) {
+                                      next.delete(option.value)
+                                    } else {
+                                      next.add(option.value)
+                                    }
+                                    return next
+                                  })
+                                }}
+                              />
+                              <span>{option.label}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 mb-2">Experience Levels</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {EXPERIENCE_LEVEL_OPTIONS.map(option => {
+                          const isChecked = experienceLevels.has(option.value)
+                          return (
+                            <label
+                              key={option.value}
+                              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                isChecked
+                                  ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                                  : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setExperienceLevels(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(option.value)) {
+                                      next.delete(option.value)
+                                    } else {
+                                      next.add(option.value)
+                                    }
+                                    return next
+                                  })
+                                }}
+                              />
+                              <span>{option.label}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+              {selectedCompanies.length > 0 && selectedLocations.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(selectedLocations).map((loc) => (
+                    <span key={loc} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                      {loc}
+                      <button
+                        onClick={() =>
+                          setSelectedLocations(prev => {
+                            const next = new Set(prev)
+                            next.delete(loc)
+                            return next
+                          })
+                        }
+                        className="text-blue-300 hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {selectedCompanies.length > 0 && experienceLevels.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(experienceLevels).map((level) => {
+                    const label = EXPERIENCE_LEVEL_OPTIONS.find(o => o.value === level)?.label || level
+                    return (
+                      <span key={level} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                        {label}
+                        <button
+                          onClick={() =>
+                            setExperienceLevels(prev => {
+                              const next = new Set(prev)
+                              next.delete(level)
+                              return next
+                            })
+                          }
+                          className="text-blue-300 hover:text-blue-100"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {selectedCompanies.length > 0 && (
+                <CollapsibleSection
+                  title="Salary Range"
+                  description="Optional: provide salary expectations to influence matching."
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Minimum Salary ($)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={salaryMin}
+                        onChange={(e) => setSalaryMin(e.target.value)}
+                        className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-3 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="e.g., 100000"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Maximum Salary ($)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={salaryMax}
+                        onChange={(e) => setSalaryMax(e.target.value)}
+                        className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-3 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="e.g., 200000"
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+              {selectedCompanies.length > 0 && (salaryMin !== '' || salaryMax !== '') && (
+                <div className="flex flex-wrap gap-2">
+                  {salaryMin !== '' && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                      Min ${salaryMin}
+                      <button
+                        onClick={() => setSalaryMin('')}
+                        className="text-blue-300 hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {salaryMax !== '' && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
+                      Max ${salaryMax}
+                      <button
+                        onClick={() => setSalaryMax('')}
+                        className="text-blue-300 hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {selectedCompanies.length > 0 && selectedJobTitles.size > 0 && (
+                <button
                   onClick={handleSearchJobs}
-                  disabled={isSearchingJobs || selectedCompanies.length === 0 || !jobTitle.trim()}
+                  disabled={isSearchingJobs || selectedCompanies.length === 0 || selectedJobTitles.size === 0}
                   className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {isSearchingJobs ? 'Searching...' : 'Search for Jobs'}
-                  </button>
+                </button>
               )}
             </CardContent>
           </Card>
@@ -1199,7 +2072,7 @@ export default function Search() {
       )}
 
       {/* Job Results and Mapping View */}
-      {jobResults && mapping.length === 0 && !isMappingToRecruiters && generatedMessages.length === 0 && (
+      {jobResults && !isMappingToRecruiters && generatedMessages.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1236,6 +2109,7 @@ export default function Search() {
                         const companyName = typeof job.company === 'string' 
                           ? job.company 
                       : (job.company?.name || job.company_name || 'Unknown')
+                    const jobUrl = job.job_url || job.url || job.link || job.jobUrl || job.jobLink
                     const isMapped = mappedJobs.some(m => m && m.url === job.url)
                         
                         return (
@@ -1252,6 +2126,19 @@ export default function Search() {
                           >
                             <div className="font-medium text-sm text-white">{job.title || 'Untitled'}</div>
                             <div className="text-xs text-gray-300 mt-1">{companyName}</div>
+                            {jobUrl && (
+                              <a
+                                href={jobUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-flex items-center gap-1"
+                              >
+                                View job posting
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7v7M10 14l11-11M21 21H3" />
+                                </svg>
+                              </a>
+                            )}
                             {job.location && (
                               <div className="text-xs text-gray-400 mt-1">
                             {typeof job.location === 'string' ? job.location : job.location?.name || ''}
@@ -1364,7 +2251,7 @@ export default function Search() {
       )}
 
       {/* Mapping Results View */}
-      {mapping.length > 0 && !isMappingToRecruiters && generatedMessages.length === 0 && (
+      {mapping.length > 0 && !isMappingToRecruiters && generatedMessages.length === 0 && isMappingView && (
         <AnimatePresence>
           <motion.div
             key="results"
@@ -1762,6 +2649,82 @@ export default function Search() {
                               )
                             })()}
                           </div>
+
+                          {/* Job Context Section */}
+                          {(mapItem.job_url || recruiter.job_url) && (
+                            <div className="mt-6 pt-6 border-t border-gray-700/50">
+                              <Collapsible
+                                open={expandedJobContexts.has(index)}
+                                onOpenChange={() => toggleJobContext(index, mapItem.job_url || recruiter.job_url)}
+                              >
+                                <CollapsibleTrigger asChild>
+                                  <button className="flex items-center justify-between w-full text-left hover:bg-gray-700/20 p-3 rounded-lg transition-colors">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-base font-semibold text-white">📋 Job Context</span>
+                                      <span className="text-xs text-gray-400">
+                                        (Requirements, Technologies, Responsibilities)
+                                      </span>
+                                    </div>
+                                    <svg
+                                      className={`w-4 h-4 text-gray-400 transition-transform ${expandedJobContexts.has(index) ? 'rotate-180' : ''}`}
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="p-4 space-y-4">
+                                    {loadingJobContexts.has(index) ? (
+                                      <p className="text-gray-400 text-sm">Loading job context...</p>
+                                    ) : jobContexts[index] ? (
+                                      <>
+                                        {jobContexts[index].requirements?.length > 0 && (
+                                          <div>
+                                            <h5 className="text-sm font-semibold text-white mb-2">✅ Requirements</h5>
+                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                              {jobContexts[index].requirements.map((req, idx) => (
+                                                <li key={idx}>{req}</li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                        {jobContexts[index].technologies?.length > 0 && (
+                                          <div>
+                                            <h5 className="text-sm font-semibold text-white mb-2">💻 Technologies</h5>
+                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                              {jobContexts[index].technologies.map((tech, idx) => (
+                                                <li key={idx}>{tech}</li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                        {jobContexts[index].responsibilities?.length > 0 && (
+                                          <div>
+                                            <h5 className="text-sm font-semibold text-white mb-2">🎯 Responsibilities</h5>
+                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                              {jobContexts[index].responsibilities.map((resp, idx) => (
+                                                <li key={idx}>{resp}</li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                        {(!jobContexts[index].requirements || jobContexts[index].requirements.length === 0) &&
+                                         (!jobContexts[index].technologies || jobContexts[index].technologies.length === 0) &&
+                                         (!jobContexts[index].responsibilities || jobContexts[index].responsibilities.length === 0) && (
+                                          <p className="text-gray-400 text-sm">No job context available for this position.</p>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <p className="text-gray-400 text-sm">Click to load job context</p>
+                                    )}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            </div>
+                          )}
 
                           {/* Additional Info */}
                           <div className="pt-4 border-t border-gray-700/50">

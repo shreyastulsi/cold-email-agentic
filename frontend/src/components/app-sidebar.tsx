@@ -22,6 +22,7 @@ import {
     SidebarRail,
     useSidebar,
 } from "@/components/ui/sidebar"
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus"
 import { getCurrentUser } from "@/utils/supabase"
 
 // Navigation data for the application
@@ -58,6 +59,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation()
   const navigate = useNavigate()
   const { state } = useSidebar()
+  const { data: onboardingStatus, isLoading: onboardingLoading } = useOnboardingStatus()
+
+  const hasResume = onboardingStatus?.hasResume ?? false
+  const hasEmail = onboardingStatus?.hasEmail ?? false
+  const hasLinkedIn = onboardingStatus?.hasLinkedIn ?? false
+  const isReadyForSearch = onboardingStatus?.isReadyForSearch ?? false
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -85,10 +92,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // For other items, match exact path or sub-paths
     return {
       ...item,
-      isActive: location.pathname === item.url || 
-                location.pathname.startsWith(item.url + '/') ||
-                (item.items && item.items.some(subItem => location.pathname === subItem.url)),
+      isActive:
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + '/') ||
+        (item.items && item.items.some(subItem => location.pathname === subItem.url)),
     }
+  })
+
+  const navWithStatus = navMainWithActive.map((item) => {
+    const enriched = { ...item }
+
+    if (item.url === '/dashboard/resume') {
+      if (!onboardingLoading && !hasResume) {
+        enriched.indicator = 'warning'
+        enriched.indicatorTooltip = 'Resume required'
+      }
+    }
+
+    if (item.url === '/dashboard/settings') {
+      if (!onboardingLoading && !hasEmail && !hasLinkedIn) {
+        enriched.indicator = 'warning'
+        enriched.indicatorTooltip = 'Connect email or LinkedIn'
+      }
+    }
+
+    if (item.url === '/dashboard/search') {
+      const disabled = onboardingLoading ? true : !isReadyForSearch
+      enriched.disabled = disabled
+      if (disabled) {
+        enriched.disabledReason = onboardingLoading
+          ? 'Checking onboarding status...'
+          : 'Upload a resume and connect email or LinkedIn to use search'
+        enriched.indicator = 'warning'
+        enriched.indicatorTooltip = enriched.disabledReason
+      }
+    }
+
+    return enriched
   })
 
   return (
@@ -117,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMainWithActive} />
+        <NavMain items={navWithStatus} />
       </SidebarContent>
       <SidebarFooter>
         {user && <NavUser user={user} />}

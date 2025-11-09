@@ -70,7 +70,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route index element={<Dashboard />} />
-                  <Route path="search" element={<Search />} />
+                  <Route path="search/*" element={<Search />} />
                   <Route path="messages" element={<Messages />} />
                   <Route path="drafts" element={<Drafts />} />
                   <Route path="resume" element={<ResumeEditor />} />

@@ -1,26 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
 // API functions
-async function sendLinkedInInvitation(linkedinUrl, message) {
+async function sendLinkedInInvitation(linkedinUrl, message, metadata = {}) {
   return apiRequest('/api/v1/outreach/linkedin/send', {
     method: 'POST',
     body: JSON.stringify({
       linkedin_url: linkedinUrl,
-      message: message
+      message: message,
+      recipient_name: metadata.recruiterName,
+      company_name: metadata.companyName,
+      job_title: metadata.jobTitle
     })
   })
 }
 
-async function sendEmail(to, subject, body) {
+async function sendEmail(to, subject, body, metadata = {}) {
   return apiRequest('/api/v1/outreach/email/send', {
     method: 'POST',
     body: JSON.stringify({
       to: to,
       subject: subject,
-      body: body
+      body: body,
+      recipient_name: metadata.recruiterName,
+      company_name: metadata.companyName,
+      job_title: metadata.jobTitle
     })
   })
 }
@@ -40,6 +47,9 @@ export default function Messages() {
   const [isSending, setIsSending] = useState(false)
   const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
   const [isSavingAll, setIsSavingAll] = useState(false)
+  const [jobContexts, setJobContexts] = useState({}) // { index: jobContext }
+  const [loadingJobContexts, setLoadingJobContexts] = useState(new Set()) // Set of message indices loading context
+  const [expandedJobContexts, setExpandedJobContexts] = useState(new Set()) // Set of expanded job context indices
   const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
   const messagesRef = useRef(messages)
   const sendingStatusRef = useRef(sendingStatus)
@@ -109,17 +119,23 @@ export default function Messages() {
     setIsSending(true)
 
     try {
-      const result = await sendLinkedInInvitation(linkedinUrl, message)
+      // Gather metadata for tracking
+      const role = messageData.mapItem?.job_title || 'Unknown Role'
+      const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+      const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+      
+      const result = await sendLinkedInInvitation(linkedinUrl, message, {
+        recruiterName: recruiterName,
+        companyName: company,
+        jobTitle: role
+      })
       if (result.success) {
         setSendingStatus(prev => ({
           ...prev,
           [index]: { ...prev[index], linkedin: 'sent' }
         }))
         
-        // Track in dashboard stats
-        const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
-        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        // Track in dashboard stats (trigger refresh event)
         trackLinkedInInvite(role, company, recruiterName)
       } else {
         const errorMsg = result.error || result.message || 'Failed to send LinkedIn message'
@@ -156,17 +172,23 @@ export default function Messages() {
     setIsSending(true)
 
     try {
-      const result = await sendEmail(email, subject, body)
+      // Gather metadata for tracking
+      const role = messageData.mapItem?.job_title || 'Unknown Role'
+      const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
+      const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+      
+      const result = await sendEmail(email, subject, body, {
+        recruiterName: recruiterName,
+        companyName: company,
+        jobTitle: role
+      })
       if (result && result.success) {
         setSendingStatus(prev => ({
           ...prev,
           [index]: { ...prev[index], email: 'sent' }
         }))
         
-        // Track in dashboard stats
-        const role = messageData.mapItem?.job_title || 'Unknown Role'
-        const company = messageData.mapItem?.job_company || messageData.recruiter?.company || messageData.mapItem?.recruiter_company || 'Unknown Company'
-        const recruiterName = messageData.recruiter?.name || messageData.mapItem?.recruiter_name || 'Unknown Recruiter'
+        // Track in dashboard stats (trigger refresh event)
         trackEmailSent(role, company, recruiterName)
       } else {
         // Handle both error formats: string or object with message
@@ -574,6 +596,51 @@ export default function Messages() {
     }
   }
 
+  const fetchJobContext = async (index, jobUrl) => {
+    if (!jobUrl || jobContexts[index] || loadingJobContexts.has(index)) {
+      return // Already have it or currently loading
+    }
+
+    setLoadingJobContexts(prev => new Set(prev).add(index))
+
+    try {
+      const result = await apiRequest(`/api/v1/job-context?job_url=${encodeURIComponent(jobUrl)}`, {
+        method: 'GET'
+      })
+
+      if (result.success && result.context) {
+        setJobContexts(prev => ({
+          ...prev,
+          [index]: result.context
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching job context:', error)
+    } finally {
+      setLoadingJobContexts(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }
+  }
+
+  const toggleJobContext = (index, jobUrl) => {
+    setExpandedJobContexts(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+        // Fetch job context when expanding
+        if (jobUrl) {
+          fetchJobContext(index, jobUrl)
+        }
+      }
+      return newSet
+    })
+  }
+
   if (messages.length === 0) {
     return (
       <div className="p-8 text-center">
@@ -746,6 +813,82 @@ export default function Messages() {
                   </button>
                 </div>
               </div>
+
+              {/* Job Context Section */}
+              {(mapItem.job_url || recruiter.job_url) && (
+                <div className="mt-6 pt-6 border-t border-gray-700/50">
+                  <Collapsible
+                    open={expandedJobContexts.has(index)}
+                    onOpenChange={() => toggleJobContext(index, mapItem.job_url || recruiter.job_url)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center justify-between w-full text-left hover:bg-gray-700/20 p-3 rounded-lg transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-semibold text-white">📋 Job Context</span>
+                          <span className="text-xs text-gray-400">
+                            (Requirements, Technologies, Responsibilities)
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-4 h-4 text-gray-400 transition-transform ${expandedJobContexts.has(index) ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="p-4 space-y-4">
+                        {loadingJobContexts.has(index) ? (
+                          <p className="text-gray-400 text-sm">Loading job context...</p>
+                        ) : jobContexts[index] ? (
+                          <>
+                            {jobContexts[index].requirements?.length > 0 && (
+                              <div>
+                                <h5 className="text-sm font-semibold text-white mb-2">✅ Requirements</h5>
+                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                  {jobContexts[index].requirements.map((req, idx) => (
+                                    <li key={idx}>{req}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {jobContexts[index].technologies?.length > 0 && (
+                              <div>
+                                <h5 className="text-sm font-semibold text-white mb-2">💻 Technologies</h5>
+                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                  {jobContexts[index].technologies.map((tech, idx) => (
+                                    <li key={idx}>{tech}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {jobContexts[index].responsibilities?.length > 0 && (
+                              <div>
+                                <h5 className="text-sm font-semibold text-white mb-2">🎯 Responsibilities</h5>
+                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                  {jobContexts[index].responsibilities.map((resp, idx) => (
+                                    <li key={idx}>{resp}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {(!jobContexts[index].requirements || jobContexts[index].requirements.length === 0) &&
+                             (!jobContexts[index].technologies || jobContexts[index].technologies.length === 0) &&
+                             (!jobContexts[index].responsibilities || jobContexts[index].responsibilities.length === 0) && (
+                              <p className="text-gray-400 text-sm">No job context available for this position.</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-gray-400 text-sm">Click to load job context</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
             </div>
           )
         })}

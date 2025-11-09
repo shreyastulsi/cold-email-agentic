@@ -44,6 +44,8 @@ export default function Drafts() {
   const [editValues, setEditValues] = useState({})
   const [selectedDrafts, setSelectedDrafts] = useState(new Set()) // Set of draft IDs
   const [expandedDrafts, setExpandedDrafts] = useState(new Set()) // Set of expanded draft IDs
+  const [jobContexts, setJobContexts] = useState({}) // { draftId: jobContext }
+  const [loadingJobContexts, setLoadingJobContexts] = useState(new Set()) // Set of draft IDs loading context
   const selectAllCheckboxRef = useRef(null)
 
   useEffect(() => {
@@ -319,13 +321,49 @@ export default function Drafts() {
     }
   }
 
+  const fetchJobContext = async (draftId, jobUrl) => {
+    if (!jobUrl || jobContexts[draftId] || loadingJobContexts.has(draftId)) {
+      return // Already have it or currently loading
+    }
+
+    setLoadingJobContexts(prev => new Set(prev).add(draftId))
+
+    try {
+      const result = await apiRequest(`/api/v1/job-context?job_url=${encodeURIComponent(jobUrl)}`, {
+        method: 'GET'
+      })
+
+      if (result.success && result.context) {
+        setJobContexts(prev => ({
+          ...prev,
+          [draftId]: result.context
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching job context:', error)
+    } finally {
+      setLoadingJobContexts(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(draftId)
+        return newSet
+      })
+    }
+  }
+
   const toggleExpand = (draftId) => {
+    const draft = drafts.find(d => d.id === draftId)
+    const jobUrl = draft?.recruiter_info?.job_url
+
     setExpandedDrafts(prev => {
       const newSet = new Set(prev)
       if (newSet.has(draftId)) {
         newSet.delete(draftId)
       } else {
         newSet.add(draftId)
+        // Fetch job context when expanding
+        if (jobUrl) {
+          fetchJobContext(draftId, jobUrl)
+        }
       }
       return newSet
     })
@@ -709,6 +747,79 @@ export default function Drafts() {
                             </div>
                           )}
                         </div>
+
+                        {/* Job Context Section */}
+                        {draft.recruiter_info?.job_url && (
+                          <div className="pt-4 border-t border-gray-700/50">
+                            <Collapsible>
+                              <CollapsibleTrigger asChild>
+                                <button className="flex items-center justify-between w-full text-left hover:bg-gray-700/20 p-3 rounded-lg transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base font-semibold text-white">📋 Job Context</span>
+                                    <span className="text-xs text-gray-400">
+                                      (Requirements, Technologies, Responsibilities)
+                                    </span>
+                                  </div>
+                                  <svg
+                                    className="w-4 h-4 text-gray-400 transition-transform"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="p-4 space-y-4">
+                                  {loadingJobContexts.has(draft.id) ? (
+                                    <p className="text-gray-400 text-sm">Loading job context...</p>
+                                  ) : jobContexts[draft.id] ? (
+                                    <>
+                                      {jobContexts[draft.id].requirements?.length > 0 && (
+                                        <div>
+                                          <h5 className="text-sm font-semibold text-white mb-2">✅ Requirements</h5>
+                                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                            {jobContexts[draft.id].requirements.map((req, idx) => (
+                                              <li key={idx}>{req}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {jobContexts[draft.id].technologies?.length > 0 && (
+                                        <div>
+                                          <h5 className="text-sm font-semibold text-white mb-2">💻 Technologies</h5>
+                                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                            {jobContexts[draft.id].technologies.map((tech, idx) => (
+                                              <li key={idx}>{tech}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {jobContexts[draft.id].responsibilities?.length > 0 && (
+                                        <div>
+                                          <h5 className="text-sm font-semibold text-white mb-2">🎯 Responsibilities</h5>
+                                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                                            {jobContexts[draft.id].responsibilities.map((resp, idx) => (
+                                              <li key={idx}>{resp}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {(!jobContexts[draft.id].requirements || jobContexts[draft.id].requirements.length === 0) &&
+                                       (!jobContexts[draft.id].technologies || jobContexts[draft.id].technologies.length === 0) &&
+                                       (!jobContexts[draft.id].responsibilities || jobContexts[draft.id].responsibilities.length === 0) && (
+                                        <p className="text-gray-400 text-sm">No job context available for this position.</p>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <p className="text-gray-400 text-sm">Click to load job context</p>
+                                  )}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        )}
 
                         {/* Additional Info */}
                         <div className="pt-4 border-t border-gray-700/50">

@@ -30,7 +30,7 @@ export default function LinkedInAccounts() {
       })
       if (result.removed > 0) {
         console.log(`Cleaned up ${result.removed} duplicate LinkedIn account(s)`)
-        loadAccounts() // Reload after cleanup
+        loadAccounts()
       }
     } catch (err) {
       console.warn('Failed to cleanup duplicates:', err)
@@ -39,12 +39,8 @@ export default function LinkedInAccounts() {
 
   useEffect(() => {
     loadAccounts()
-    // Cleanup duplicates automatically on load
     cleanupDuplicates()
-  }, [])
 
-  // Refresh accounts when page becomes visible (e.g., after redirect from auth)
-  useEffect(() => {
     const handleFocus = () => {
       loadAccounts()
     }
@@ -74,12 +70,20 @@ export default function LinkedInAccounts() {
     }
     
     try {
+      setError(null)
       await apiRequest(`/api/v1/linkedin-accounts/${accountId}`, {
         method: 'DELETE'
       })
-      loadAccounts()
+      // Reload accounts after successful deletion
+      await loadAccounts()
     } catch (err) {
-      setError(err.message || 'Failed to delete LinkedIn account')
+      const errorMessage = err.message || 'Failed to delete LinkedIn account'
+      setError(errorMessage)
+      console.error('Delete error:', err)
+      // Show error for a few seconds
+      setTimeout(() => {
+        setError(null)
+      }, 5000)
     }
   }
 

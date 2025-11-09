@@ -26,6 +26,10 @@ export function NavMain({
     url: string
     icon?: LucideIcon
     isActive?: boolean
+    indicator?: "warning" | "info"
+    indicatorTooltip?: string
+    disabled?: boolean
+    disabledReason?: string
     items?: {
       title: string
       url: string
@@ -73,12 +77,55 @@ export function NavMain({
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title} isActive={item.isActive}>
-                <Link to={item.url}>
-                  {item.icon && <item.icon className="size-5" />}
-                  <span className="text-base">{item.title}</span>
-                </Link>
+              {(() => {
+                const isDisabled = Boolean(item.disabled)
+                const indicator =
+                  item.indicator && (
+                    <span
+                      className={`ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full text-[10px] font-bold leading-none ${
+                        item.indicator === "warning"
+                          ? "bg-amber-400 text-gray-900"
+                          : "bg-sky-400 text-gray-900"
+                      }`}
+                    >
+                      !
+                    </span>
+                  )
+
+                const buttonContent = isDisabled ? (
+                  <div className="flex w-full items-center gap-2">
+                    {item.icon && <item.icon className="size-5 shrink-0" />}
+                    <span className="text-base font-medium text-gray-400">
+                      {item.title}
+                    </span>
+                    {indicator}
+                  </div>
+                ) : (
+                  <Link to={item.url} className="flex w-full items-center gap-2">
+                    {item.icon && <item.icon className="size-5 shrink-0" />}
+                    <span className="text-base">{item.title}</span>
+                    {indicator}
+                  </Link>
+                )
+
+                return (
+              <SidebarMenuButton
+                  asChild={!isDisabled}
+                tooltip={
+                    isDisabled
+                      ? item.disabledReason || item.title
+                      : item.indicatorTooltip || item.title
+                }
+                  isActive={!isDisabled && item.isActive}
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
+                  className={isDisabled ? "cursor-not-allowed opacity-70" : undefined}
+                  {...(isDisabled ? { type: "button" } : {})}
+              >
+                  {buttonContent}
               </SidebarMenuButton>
+                )
+              })()}
             </SidebarMenuItem>
           )
         ))}

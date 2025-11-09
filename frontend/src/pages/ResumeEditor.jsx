@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { FileUpload } from '../components/ui/file-upload'
@@ -6,6 +7,7 @@ import { apiRequest } from '../utils/api'
 
 export default function ResumeEditor() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [content, setContent] = useState('')
   const [originalContent, setOriginalContent] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -113,6 +115,7 @@ export default function ResumeEditor() {
       const result = await response.json()
       setUploadStatus('success')
       setFile(null)
+      queryClient.invalidateQueries({ queryKey: ['onboardingStatus'] })
       
       // Reload resume content after upload
       if (result.content_extracted) {
@@ -147,6 +150,7 @@ export default function ResumeEditor() {
       setHasChanges(false)
       setIsEditing(false)
       setLastSaved(result.updated_at || new Date().toISOString())
+      queryClient.invalidateQueries({ queryKey: ['onboardingStatus'] })
       
       // Show success message briefly
       const successMsg = document.createElement('div')
@@ -233,6 +237,7 @@ export default function ResumeEditor() {
       setHasChanges(false)
       setLastSaved(null)
       setShowUpload(true) // Show upload UI after deletion
+      queryClient.invalidateQueries({ queryKey: ['onboardingStatus'] })
       
       // Show success message briefly
       const successMsg = document.createElement('div')
