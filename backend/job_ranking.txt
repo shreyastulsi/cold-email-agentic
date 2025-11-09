@@ -1,12 +1,12 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on the candidate profile and job descriptions, here are the top 2 most relevant jobs ranked by their relevance:
+Based on Shreyas Tulsi's candidate profile, the top two most relevant jobs are:
 
-1. **[Job #2] Senior Software Engineer, AI/ML at Google**
-   - This position requires programming experience in Python and C++, both of which are key skills in the candidate's profile. The focus on machine learning infrastructure aligns well with the candidate's experience as an AI Researcher, contributing to the development of AI-related projects.
+1. **[Job #1] Machine Learning Software Development Engineer at AMD**
+   - This role directly aligns with Shreyas' experience in artificial intelligence and machine learning research, as well as his proficiency in Python and PyTorch. The focus on optimizing deep learning frameworks and GPU operations matches his skill set and academic background.
 
-2. **[Job #4] Software Engineer Lead, Network Demand Forecasting at Google**
-   - This role involves software development with a focus on Python and cloud architecture, areas in which the candidate has experience. Additionally, the leadership aspect of the role aligns with the candidate's experience in leading interns, making it a good fit for their profile.
+2. **[Job #5] GPU Product Manager for Gaming and AI at AMD**
+   - This position is relevant due to Shreyas' strong foundation in computer science and his involvement in AI projects. The requirement for a technical understanding of GPU architectures and experience in product management aligns well with his background in software development and research.
 
-These rankings take into account the candidate's education, skills, and relevant experiences that align with the responsibilities and requirements of each job.
+These rankings reflect the strong alignment of the job responsibilities and requirements with Shreyas' education, skills, and experience.

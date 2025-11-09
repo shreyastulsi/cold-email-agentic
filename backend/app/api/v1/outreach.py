@@ -30,12 +30,16 @@ class GenerateEmailRequest(BaseModel):
     job_titles: List[str]
     job_type: str
     recruiter: dict
+    job_url: Optional[str] = None
 
 
 class SendEmailRequest(BaseModel):
     to: str
     subject: str
     body: str
+    recipient_name: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
 
 
 class EmailOnlyCampaignRequest(BaseModel):
@@ -74,7 +78,8 @@ async def generate_email_endpoint(
         request.job_titles,
         request.job_type,
         request.recruiter,
-        resume_content
+        resume_content,
+        request.job_url,
     )
 
 
@@ -124,6 +129,35 @@ async def send_email_endpoint(
             email_account=email_account,
             db=db
         )
+        
+        # If successful, create permanent history record and increment stats
+        if result.get("success"):
+            from app.db.models.outreach_history import OutreachHistory
+            from datetime import datetime
+            
+            # Create permanent history record
+            history = OutreachHistory(
+                user_id=current_user.id,
+                recipient_name=request.recipient_name,
+                recipient_email=request.to,
+                job_title=request.job_title,
+                company_name=request.company_name,
+                channel="email",
+                email_subject=request.subject,
+                email_body=request.body,
+                sent_at=datetime.utcnow()
+            )
+            db.add(history)
+            await db.commit()
+            
+            # Increment stats
+            from app.services.user_settings_service import increment_emails_sent
+            try:
+                await increment_emails_sent(current_user.id, db)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to increment email stats: {e}")
         
         # Ensure we return the proper format
         return result
@@ -184,6 +218,9 @@ class GenerateLinkedInMessageRequest(BaseModel):
 class SendLinkedInInvitationRequest(BaseModel):
     linkedin_url: str
     message: str
+    recipient_name: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
 
 
 @router.post("/outreach/linkedin/generate")
@@ -285,6 +322,33 @@ async def send_linkedin_invitation_endpoint(
             )
         
         logger.info(f"Successfully sent LinkedIn invitation")
+        
+        # If successful, create permanent history record and increment stats
+        if result.get("success"):
+            from app.db.models.outreach_history import OutreachHistory
+            from datetime import datetime
+            
+            # Create permanent history record
+            history = OutreachHistory(
+                user_id=current_user.id,
+                recipient_name=request.recipient_name,
+                recipient_linkedin_url=request.linkedin_url,
+                job_title=request.job_title,
+                company_name=request.company_name,
+                channel="linkedin",
+                linkedin_message=request.message,
+                sent_at=datetime.utcnow()
+            )
+            db.add(history)
+            await db.commit()
+            
+            # Increment stats
+            from app.services.user_settings_service import increment_linkedin_invites
+            try:
+                await increment_linkedin_invites(current_user.id, db)
+            except Exception as e:
+                logger.warning(f"Failed to increment LinkedIn stats: {e}")
+        
         return result
         
     except HTTPException:

@@ -11,7 +11,11 @@ from .resume_content import ResumeContent
 from .email_account import EmailAccount
 from .company import Company
 from .linkedin_account import LinkedInAccount
+from .job_context import JobContext
 from .draft import Draft
+from .user_settings import UserSettings
+from .user_stats import UserStats
+from .outreach_history import OutreachHistory
 
 __all__ = [
     "User",
@@ -26,6 +30,10 @@ __all__ = [
     "EmailAccount",
     "Company",
     "LinkedInAccount",
+    "JobContext",
     "Draft",
+    "UserSettings",
+    "UserStats",
+    "OutreachHistory",
 ]
 

@@ -24,8 +24,14 @@ class CompanySearchRequest(BaseModel):
 class JobsSearchRequest(BaseModel):
     company_ids: List[str]
     job_titles: List[str]
-    job_type: str  # "full_time" or "internship"
+    job_types: Optional[List[str]] = None  # e.g. ["full_time", "internship"]
     location_id: Optional[str] = "102571732"
+    locations: Optional[List[str]] = None
+    location: Optional[str] = None  # Free-text fallback for filtering (deprecated)
+    experience_levels: Optional[List[str]] = None  # e.g. ["entry level", "associate"]
+    experience_level: Optional[str] = None  # Deprecated single value
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
 
 
 class RecruitersSearchRequest(BaseModel):
@@ -63,12 +69,19 @@ async def search_jobs_endpoint(
 ) -> dict:
     """Search for jobs."""
     try:
+        print(f"🔎 /search/jobs request payload: {request.dict()}")
         jobs = await search_jobs(
             request.company_ids,
             request.job_titles,
-            request.job_type,
-            request.location_id
+            request.job_types,
+            location_id=request.location_id,
+            locations=request.locations,
+            location=request.location,
+            experience_levels=request.experience_levels or ([request.experience_level] if request.experience_level else None),
+            salary_min=request.salary_min,
+            salary_max=request.salary_max
         )
+        print(f"🔎 /search/jobs returning {len(jobs) if jobs else 0} job(s)")
         return {"jobs": jobs}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Job search failed: {str(e)}")

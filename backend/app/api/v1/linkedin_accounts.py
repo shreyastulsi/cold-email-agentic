@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, text
+from sqlalchemy import select, update, delete
 from datetime import datetime, timedelta
 import os
 import logging
@@ -13,8 +13,13 @@ from dotenv import load_dotenv
 from app.api.deps import get_current_user
 from app.db.models.user import User
 from app.db.models.linkedin_account import LinkedInAccount
+from app.db.models.user_settings import UserSettings
 from app.db.base import get_db
 from app.core.config import settings
+from app.services.user_settings_service import (
+    get_or_create_user_settings,
+    set_active_linkedin_account
+)
 
 # Ensure .env is loaded when this module is imported
 BACKEND_DIR = Path(__file__).parent.parent.parent.parent
@@ -44,31 +49,65 @@ async def list_linkedin_accounts(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """List all LinkedIn accounts for the current user."""
+    """List the active LinkedIn account for the current user (only one account shown based on user_settings)."""
     try:
-        # First, verify table exists with a raw query
-        from sqlalchemy import text
-        try:
-            check_result = await db.execute(text("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = 'linkedin_accounts'
-                )
-            """))
-            table_exists = check_result.scalar()
-            if not table_exists:
-                logger.error("linkedin_accounts table does not exist in database")
-                return {"accounts": [], "error": "Table not found. Please run migrations."}
-        except Exception as check_error:
-            logger.error(f"Error checking table existence: {check_error}")
+        # Get user settings to find active LinkedIn account
+        user_settings = await get_or_create_user_settings(current_user.id, db)
         
-        result = await db.execute(
-            select(LinkedInAccount)
-            .where(LinkedInAccount.owner_id == current_user.id)
-            .order_by(LinkedInAccount.is_default.desc(), LinkedInAccount.created_at.desc())
-        )
-        accounts = result.scalars().all()
+        accounts = []
+        
+        # If user has an active LinkedIn account set, return only that one
+        if user_settings.active_linkedin_account_id:
+            result = await db.execute(
+                select(LinkedInAccount)
+                .where(LinkedInAccount.id == user_settings.active_linkedin_account_id)
+                .where(LinkedInAccount.owner_id == current_user.id)
+            )
+            active_account = result.scalar_one_or_none()
+            
+            if active_account:
+                accounts = [active_account]
+            else:
+                # Active account ID doesn't exist or doesn't belong to user - clear it
+                logger.warning(f"Active LinkedIn account {user_settings.active_linkedin_account_id} not found for user {current_user.id}, clearing it")
+                user_settings.active_linkedin_account_id = None
+                await db.commit()
+        
+        # If no active account set, check if user has any LinkedIn accounts and set the first one as active
+        # BUT: if user just deleted their account, they might not want another one automatically selected
+        # So we'll only auto-select if there are accounts AND no active one is set
+        if not accounts:
+            result = await db.execute(
+                select(LinkedInAccount)
+                .where(LinkedInAccount.owner_id == current_user.id)
+                .order_by(LinkedInAccount.created_at.desc())
+            )
+            all_accounts = result.scalars().all()
+            
+            # Only auto-select if there's exactly one account (clean state)
+            # If there are multiple, something went wrong - don't auto-select
+            if len(all_accounts) == 1:
+                # Only one account - set it as active
+                first_account = all_accounts[0]
+                user_settings.active_linkedin_account_id = first_account.id
+                await db.commit()
+                accounts = [first_account]
+            elif len(all_accounts) > 1:
+                # Multiple accounts - this shouldn't happen, but clean it up
+                logger.warning(f"User {current_user.id} has {len(all_accounts)} LinkedIn accounts, should only have one. Keeping most recent.")
+                # Keep the most recent one, delete the rest
+                first_account = all_accounts[0]
+                accounts_to_delete = [acc.id for acc in all_accounts[1:]]
+                if accounts_to_delete:
+                    await db.execute(
+                        delete(LinkedInAccount)
+                        .where(LinkedInAccount.id.in_(accounts_to_delete))
+                        .where(LinkedInAccount.owner_id == current_user.id)
+                    )
+                user_settings.active_linkedin_account_id = first_account.id
+                await db.commit()
+                accounts = [first_account]
+            # If no accounts, return empty list (user deleted all accounts)
         
         return {
             "accounts": [
@@ -78,8 +117,8 @@ async def list_linkedin_accounts(
                     "profile_id": acc.profile_id,
                     "display_name": acc.display_name,
                     "unipile_account_id": acc.unipile_account_id,
-                    "is_active": acc.is_active,
-                    "is_default": acc.is_default,
+                    "is_active": True,  # Always true since it's the active account
+                    "is_default": True,  # Always true since it's the only one shown
                     "created_at": acc.created_at.isoformat(),
                     "last_used_at": acc.last_used_at.isoformat() if acc.last_used_at else None,
                 }
@@ -231,9 +270,9 @@ async def sync_unipile_accounts(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """
-    Sync LinkedIn accounts from Unipile API.
-    This checks Unipile for newly connected accounts and creates them in our database.
-    This is an alternative to webhooks for local development.
+    Sync LinkedIn accounts from Unipile API for the current user only.
+    This checks Unipile for newly connected accounts and only creates/updates accounts
+    that belong to the current user. Prevents duplicate accounts across users.
     """
     unipile_api_key = settings.unipile_api_key
     unipile_base_url = settings.base_url
@@ -246,7 +285,7 @@ async def sync_unipile_accounts(
         api_url = unipile_base_url.replace('/api/v1', '').rstrip('/')
         accounts_endpoint = f"{api_url}/api/v1/accounts"
         
-        logger.info(f"Syncing Unipile accounts from: {accounts_endpoint}")
+        logger.info(f"Syncing Unipile accounts for user {current_user.id} from: {accounts_endpoint}")
         
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -258,9 +297,6 @@ async def sync_unipile_accounts(
                 timeout=30.0
             )
             
-            logger.info(f"Unipile accounts API response: {response.status_code}")
-            logger.info(f"Response body: {response.text[:500]}")  # First 500 chars
-            
             if response.status_code not in [200, 201]:
                 logger.error(f"Failed to fetch Unipile accounts: {response.status_code} - {response.text}")
                 raise HTTPException(
@@ -269,154 +305,234 @@ async def sync_unipile_accounts(
                 )
             
             unipile_accounts = response.json()
-            logger.info(f"Unipile accounts response type: {type(unipile_accounts)}")
-            logger.info(f"Unipile accounts data: {str(unipile_accounts)[:500]}")
             
             # Handle Unipile API response format: {"object": "AccountList", "items": [...], "cursor": null}
             if isinstance(unipile_accounts, dict):
-                # Unipile returns accounts in "items" field
                 accounts_list = unipile_accounts.get("items", unipile_accounts.get("accounts", unipile_accounts.get("data", [])))
             else:
                 accounts_list = unipile_accounts if isinstance(unipile_accounts, list) else []
             
-            logger.info(f"Found {len(accounts_list)} accounts from Unipile")
+            logger.info(f"Found {len(accounts_list)} total accounts from Unipile")
+            
+            # Get all existing LinkedIn accounts in our database (across all users)
+            # This helps us detect if an account already belongs to another user
+            all_existing_accounts_result = await db.execute(
+                select(LinkedInAccount)
+            )
+            all_existing_accounts = {
+                acc.unipile_account_id: acc 
+                for acc in all_existing_accounts_result.scalars().all() 
+                if acc.unipile_account_id
+            }
+            
+            # Also index by profile_id to catch duplicates
+            all_existing_by_profile = {
+                acc.profile_id: acc
+                for acc in all_existing_accounts_result.scalars().all()
+                if acc.profile_id
+            }
+            
+            # Get existing accounts for current user only
+            user_accounts_result = await db.execute(
+                select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
+            )
+            user_existing_accounts = {
+                acc.unipile_account_id: acc 
+                for acc in user_accounts_result.scalars().all() 
+                if acc.unipile_account_id
+            }
+            user_existing_by_profile = {
+                acc.profile_id: acc
+                for acc in user_accounts_result.scalars().all()
+                if acc.profile_id
+            }
             
             created_count = 0
             updated_count = 0
+            skipped_count = 0
             
-            # Get existing accounts for this user
-            result = await db.execute(
-                select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
-            )
-            existing_accounts = {acc.unipile_account_id: acc for acc in result.scalars().all() if acc.unipile_account_id}
+            # Get user settings
+            user_settings = await get_or_create_user_settings(current_user.id, db)
+            
+            # Filter LinkedIn accounts that don't belong to other users
+            # and find the most recent one to use as the active account
+            candidate_accounts = []
             
             # Track processed account IDs to avoid duplicates within this sync
             processed_account_ids = set()
             
-            # Process each Unipile account
+            # Process each Unipile account to find valid candidates
             for account_data in accounts_list:
-                logger.info(f"Processing account: {account_data}")
-                # Handle different response formats
-                if isinstance(account_data, dict):
-                    account_id = account_data.get("id") or account_data.get("account_id")
-                    provider = account_data.get("provider") or account_data.get("type", "") or account_data.get("provider_type", "")
+                if not isinstance(account_data, dict):
+                    continue
                     
-                    logger.info(f"Account ID: {account_id}, Provider: {provider}")
+                account_id = account_data.get("id") or account_data.get("account_id")
+                provider = account_data.get("provider") or account_data.get("type", "") or account_data.get("provider_type", "")
+                
+                # Only process LinkedIn accounts
+                if provider.upper() != "LINKEDIN":
+                    continue
+                
+                if not account_id:
+                    logger.warning(f"Account data missing ID: {account_data}")
+                    continue
+                
+                # Skip if we've already processed this account_id in this sync
+                if account_id in processed_account_ids:
+                    continue
+                
+                processed_account_ids.add(account_id)
+                
+                # Extract LinkedIn profile info from Unipile response
+                connection_params = account_data.get("connection_params", {})
+                im_data = connection_params.get("im", {})
+                public_identifier = im_data.get("publicIdentifier")
+                username = im_data.get("username")
+                
+                linkedin_profile_id = public_identifier
+                linkedin_profile_url = f"https://www.linkedin.com/in/{linkedin_profile_id}" if linkedin_profile_id else None
+                display_name = username or account_data.get("name")
+                
+                # CRITICAL: Check if this account already exists for a DIFFERENT user
+                # If it does, skip it to prevent duplicate accounts across users
+                belongs_to_other_user = False
+                if account_id in all_existing_accounts:
+                    existing_account = all_existing_accounts[account_id]
+                    if existing_account.owner_id != current_user.id:
+                        logger.info(f"Skipping account {account_id} - already belongs to user {existing_account.owner_id}")
+                        skipped_count += 1
+                        belongs_to_other_user = True
+                
+                # Also check by profile_id if we have it
+                if not belongs_to_other_user and linkedin_profile_id and linkedin_profile_id in all_existing_by_profile:
+                    existing_account = all_existing_by_profile[linkedin_profile_id]
+                    if existing_account.owner_id != current_user.id:
+                        logger.info(f"Skipping account with profile_id {linkedin_profile_id} - already belongs to user {existing_account.owner_id}")
+                        skipped_count += 1
+                        belongs_to_other_user = True
+                
+                if not belongs_to_other_user:
+                    # This account can be a candidate for the current user
+                    # Check if it already exists for this user
+                    existing_account = user_existing_accounts.get(account_id)
                     
-                    # Only process LinkedIn accounts
-                    if provider.upper() != "LINKEDIN":
-                        logger.info(f"Skipping non-LinkedIn account: {provider}")
-                        continue
+                    # If not found by unipile_account_id, check by profile_id
+                    if not existing_account and linkedin_profile_id and linkedin_profile_id in user_existing_by_profile:
+                        existing_account = user_existing_by_profile[linkedin_profile_id]
                     
-                    if not account_id:
-                        logger.warning(f"Account data missing ID: {account_data}")
-                        continue
-                    
-                    # Skip if we've already processed this account_id in this sync
-                    if account_id in processed_account_ids:
-                        logger.info(f"Skipping duplicate account_id in this sync: {account_id}")
-                        continue
-                    
-                    processed_account_ids.add(account_id)
-                    
-                    # Extract LinkedIn profile info from Unipile response
-                    connection_params = account_data.get("connection_params", {})
-                    im_data = connection_params.get("im", {})
-                    public_identifier = im_data.get("publicIdentifier")  # e.g., "shreyas-tulsi-4205a31b2"
-                    username = im_data.get("username")  # e.g., "Shreyas Tulsi"
-                    
-                    # Use public_identifier as profile_id if available
-                    linkedin_profile_id = public_identifier
-                    if linkedin_profile_id:
-                        linkedin_profile_url = f"https://www.linkedin.com/in/{linkedin_profile_id}"
-                    else:
-                        linkedin_profile_url = None
-                    
-                    display_name = username or account_data.get("name")
-                    
-                    # Check if account already exists in database (query fresh each time)
-                    # Check by unipile_account_id first
-                    result = await db.execute(
+                    # Add to candidate list with account data and whether it exists
+                    candidate_accounts.append({
+                        'account_id': account_id,
+                        'linkedin_profile_id': linkedin_profile_id,
+                        'linkedin_profile_url': linkedin_profile_url,
+                        'display_name': display_name,
+                        'existing_account': existing_account,
+                        'account_data': account_data
+                    })
+            
+            # Now process candidates: we want to keep ONLY ONE account per user
+            # Use the first candidate (most recent from Unipile)
+            active_linkedin_account = None
+            
+            if candidate_accounts:
+                # Get the first candidate (most recent from Unipile)
+                candidate = candidate_accounts[0]
+                
+                # If user already has an active account, check if we should update it or create new
+                if user_settings.active_linkedin_account_id:
+                    active_account_result = await db.execute(
                         select(LinkedInAccount)
+                        .where(LinkedInAccount.id == user_settings.active_linkedin_account_id)
                         .where(LinkedInAccount.owner_id == current_user.id)
-                        .where(LinkedInAccount.unipile_account_id == account_id)
                     )
-                    existing_account = result.scalar_one_or_none()
+                    active_account = active_account_result.scalar_one_or_none()
                     
-                    # If not found by unipile_account_id, check by profile_id (if we have it)
-                    # This handles cases where the same LinkedIn profile might have a different Unipile account ID
-                    if not existing_account and linkedin_profile_id:
-                        result = await db.execute(
-                            select(LinkedInAccount)
-                            .where(LinkedInAccount.owner_id == current_user.id)
-                            .where(LinkedInAccount.profile_id == linkedin_profile_id)
-                        )
-                        existing_account = result.scalar_one_or_none()
-                        # If found by profile_id, update the unipile_account_id if it's different
-                        if existing_account and existing_account.unipile_account_id != account_id:
-                            logger.info(f"Found account by profile_id {linkedin_profile_id}, updating unipile_account_id from {existing_account.unipile_account_id} to {account_id}")
-                    
-                    # Only update if we found an exact match (by unipile_account_id or profile_id)
-                    # Otherwise, create a new account (users can have multiple LinkedIn accounts)
-                    if existing_account:
-                        # Update existing account
+                    # If active account exists and matches this candidate (by existing_account or unipile_account_id)
+                    if active_account and candidate['existing_account'] and candidate['existing_account'].id == active_account.id:
+                        # Update the existing active account
+                        active_account.unipile_account_id = candidate['account_id']
+                        active_account.profile_id = candidate['linkedin_profile_id']
+                        active_account.linkedin_profile_url = candidate['linkedin_profile_url']
+                        active_account.display_name = candidate['display_name'] or active_account.display_name
+                        active_account.is_active = True
+                        active_account.updated_at = datetime.utcnow()
+                        active_linkedin_account = active_account
+                        updated_count += 1
+                        logger.info(f"Updated active account for user {current_user.id}: {candidate['account_id']}")
+                
+                # If no active account was matched/updated, process the candidate
+                if not active_linkedin_account:
+                    if candidate['existing_account']:
+                        # Update existing account (might be a different account than the active one)
+                        existing_account = candidate['existing_account']
+                        existing_account.unipile_account_id = candidate['account_id']
+                        existing_account.profile_id = candidate['linkedin_profile_id']
+                        existing_account.linkedin_profile_url = candidate['linkedin_profile_url']
+                        existing_account.display_name = candidate['display_name'] or existing_account.display_name
                         existing_account.is_active = True
                         existing_account.updated_at = datetime.utcnow()
-                        # Update unipile_account_id if it was missing or different
-                        if not existing_account.unipile_account_id or existing_account.unipile_account_id != account_id:
-                            existing_account.unipile_account_id = account_id
-                        # Update profile info if missing
-                        if linkedin_profile_id and not existing_account.profile_id:
-                            existing_account.profile_id = linkedin_profile_id
-                        if linkedin_profile_url and not existing_account.linkedin_profile_url:
-                            existing_account.linkedin_profile_url = linkedin_profile_url
-                        if display_name and not existing_account.display_name:
-                            existing_account.display_name = display_name
+                        active_linkedin_account = existing_account
                         updated_count += 1
-                        logger.info(f"Updated existing account: {account_id} (profile: {linkedin_profile_id})")
+                        logger.info(f"Updated existing account for user {current_user.id}: {candidate['account_id']}")
                     else:
                         # Create new account
-                        # Check if this should be default (check database for existing accounts)
-                        result = await db.execute(
-                            select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
-                        )
-                        existing_accounts_list = result.scalars().all()
-                        existing_count = len(existing_accounts_list)
-                        is_first_account = existing_count == 0
-                        
-                        if not is_first_account:
-                            await db.execute(
-                                update(LinkedInAccount)
-                                .where(LinkedInAccount.owner_id == current_user.id)
-                                .values(is_default=False)
-                            )
-                        
-                        linkedin_account = LinkedInAccount(
+                        active_linkedin_account = LinkedInAccount(
                             owner_id=current_user.id,
-                            unipile_account_id=account_id,
-                            profile_id=linkedin_profile_id,
-                            linkedin_profile_url=linkedin_profile_url,
-                            display_name=display_name,
-                            is_default=is_first_account,
+                            unipile_account_id=candidate['account_id'],
+                            profile_id=candidate['linkedin_profile_id'],
+                            linkedin_profile_url=candidate['linkedin_profile_url'],
+                            display_name=candidate['display_name'],
                             is_active=True,
+                            is_default=True,
                         )
-                        db.add(linkedin_account)
+                        db.add(active_linkedin_account)
                         created_count += 1
-                        logger.info(f"Created new account: {account_id} (profile: {linkedin_profile_id})")
-                        # Refresh existing_accounts dict for next iteration
-                        existing_accounts[account_id] = linkedin_account
+                        logger.info(f"Created new account for user {current_user.id}: {candidate['account_id']}")
+                
+                # Flush to get the ID if it's a new account
+                await db.flush()
+                
+                # Delete ALL other LinkedIn accounts for this user (we only want one)
+                # This includes accounts that might have been created from different Unipile accounts
+                user_accounts_result = await db.execute(
+                    select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
+                )
+                all_user_accounts = user_accounts_result.scalars().all()
+                
+                accounts_to_delete = [acc.id for acc in all_user_accounts if acc.id != active_linkedin_account.id]
+                if accounts_to_delete:
+                    # Also clear any user_settings that reference these accounts
+                    # Use ORM update instead of raw SQL to avoid async issues
+                    for acc_id in accounts_to_delete:
+                        await db.execute(
+                            update(UserSettings)
+                            .where(UserSettings.active_linkedin_account_id == acc_id)
+                            .values(active_linkedin_account_id=None, updated_at=datetime.utcnow())
+                        )
+                    
+                    await db.execute(
+                        delete(LinkedInAccount)
+                        .where(LinkedInAccount.id.in_(accounts_to_delete))
+                        .where(LinkedInAccount.owner_id == current_user.id)
+                    )
+                    logger.info(f"Deleted {len(accounts_to_delete)} duplicate LinkedIn accounts for user {current_user.id}")
+                await db.flush()
+                
+                # Set this account as active in user_settings
+                user_settings.active_linkedin_account_id = active_linkedin_account.id
+                user_settings.updated_at = datetime.utcnow()
             
             await db.commit()
             
-            logger.info(f"Synced Unipile accounts: {created_count} created, {updated_count} updated")
-            logger.info(f"Total accounts processed: {len(accounts_list)}, LinkedIn accounts found: {created_count + updated_count}")
+            logger.info(f"Synced Unipile accounts for user {current_user.id}: {created_count} created, {updated_count} updated, {skipped_count} skipped (belong to other users)")
             
             return {
                 "success": True,
                 "created": created_count,
                 "updated": updated_count,
+                "skipped": skipped_count,
                 "total_found": len(accounts_list),
-                "message": f"Synced {created_count + updated_count} LinkedIn account(s) from {len(accounts_list)} total account(s)"
+                "message": f"Synced {created_count + updated_count} LinkedIn account(s) for your account. {skipped_count} account(s) skipped (belong to other users)."
             }
             
     except HTTPException:
@@ -477,6 +593,8 @@ async def cleanup_duplicate_linkedin_accounts(
     Remove duplicate LinkedIn accounts for the current user.
     Only removes accounts that have the same profile_id or unipile_account_id.
     Users can have multiple LinkedIn accounts with different profiles.
+    
+    Also checks for accounts that belong to other users (shouldn't happen, but fixes data integrity issues).
     """
     try:
         # Get all accounts for this user
@@ -485,24 +603,36 @@ async def cleanup_duplicate_linkedin_accounts(
             .where(LinkedInAccount.owner_id == current_user.id)
             .order_by(LinkedInAccount.created_at.asc())
         )
-        all_accounts = result.scalars().all()
+        user_accounts = list(result.scalars().all())
         
-        logger.info(f"Found {len(all_accounts)} LinkedIn accounts for user {current_user.id}")
+        logger.info(f"Found {len(user_accounts)} LinkedIn accounts for user {current_user.id}")
         
-        if len(all_accounts) <= 1:
+        if len(user_accounts) <= 1:
             return {
                 "success": True,
                 "removed": 0,
-                "kept": len(all_accounts),
+                "kept": len(user_accounts),
                 "message": "No duplicates found"
             }
+        
+        # Also check for accounts that might belong to other users but have same identifiers
+        # Get all accounts across all users to check for cross-user duplicates
+        all_accounts_result = await db.execute(
+            select(LinkedInAccount)
+            .where(
+                (LinkedInAccount.unipile_account_id.isnot(None)) |
+                (LinkedInAccount.profile_id.isnot(None))
+            )
+        )
+        all_accounts = list(all_accounts_result.scalars().all())
         
         # Find actual duplicates by profile_id or unipile_account_id
         seen_profile_ids = {}
         seen_unipile_ids = {}
         duplicates_to_delete = []
         
-        for account in all_accounts:
+        # First pass: mark duplicates within user's accounts
+        for account in user_accounts:
             # Check for duplicates by profile_id (if present)
             if account.profile_id:
                 if account.profile_id in seen_profile_ids:
@@ -522,31 +652,62 @@ async def cleanup_duplicate_linkedin_accounts(
                 else:
                     seen_unipile_ids[account.unipile_account_id] = account.id
         
-        if not duplicates_to_delete:
+        # Second pass: check if any of user's accounts are duplicates of accounts belonging to other users
+        # This shouldn't happen, but we'll clean it up if it does
+        cross_user_duplicates = []
+        for account in user_accounts:
+            if account.id in duplicates_to_delete:
+                continue  # Already marked for deletion
+            
+            # Check if this account's identifiers match accounts from other users
+            for other_account in all_accounts:
+                if other_account.owner_id == current_user.id:
+                    continue  # Skip own accounts
+                
+                # Check by unipile_account_id
+                if (account.unipile_account_id and 
+                    other_account.unipile_account_id and 
+                    account.unipile_account_id == other_account.unipile_account_id):
+                    cross_user_duplicates.append(account.id)
+                    logger.warning(f"Found cross-user duplicate by unipile_account_id {account.unipile_account_id}: user's account {account.id} matches other user's account {other_account.id}")
+                    break
+                
+                # Check by profile_id
+                if (account.profile_id and 
+                    other_account.profile_id and 
+                    account.profile_id == other_account.profile_id):
+                    cross_user_duplicates.append(account.id)
+                    logger.warning(f"Found cross-user duplicate by profile_id {account.profile_id}: user's account {account.id} matches other user's account {other_account.id}")
+                    break
+        
+        # Combine both types of duplicates
+        all_duplicates = list(set(duplicates_to_delete + cross_user_duplicates))
+        
+        if not all_duplicates:
             return {
                 "success": True,
                 "removed": 0,
-                "kept": len(all_accounts),
+                "kept": len(user_accounts),
                 "message": "No duplicates found - all accounts have unique identifiers"
             }
         
-        logger.info(f"Deleting {len(duplicates_to_delete)} duplicate accounts: {duplicates_to_delete}")
+        logger.info(f"Deleting {len(all_duplicates)} duplicate accounts: {all_duplicates}")
         
-        # Delete only the actual duplicates
+        # Delete only the actual duplicates (ensure they belong to current user for safety)
         await db.execute(
             delete(LinkedInAccount)
-            .where(LinkedInAccount.id.in_(duplicates_to_delete))
+            .where(LinkedInAccount.id.in_(all_duplicates))
             .where(LinkedInAccount.owner_id == current_user.id)
         )
         await db.commit()
         
-        logger.info(f"Removed {len(duplicates_to_delete)} duplicate LinkedIn accounts for user {current_user.id}")
+        logger.info(f"Removed {len(all_duplicates)} duplicate LinkedIn accounts for user {current_user.id}")
         
         return {
             "success": True,
-            "removed": len(duplicates_to_delete),
-            "kept": len(all_accounts) - len(duplicates_to_delete),
-            "message": f"Removed {len(duplicates_to_delete)} duplicate account(s), kept {len(all_accounts) - len(duplicates_to_delete)} account(s)"
+            "removed": len(all_duplicates),
+            "kept": len(user_accounts) - len(all_duplicates),
+            "message": f"Removed {len(all_duplicates)} duplicate account(s), kept {len(user_accounts) - len(all_duplicates)} account(s)"
         }
             
     except Exception as e:
@@ -601,55 +762,51 @@ async def unipile_account_webhook(
             logger.error(f"User not found: {user_id}")
             raise HTTPException(status_code=404, detail=f"User not found: {user_id}")
         
-        # Check if account already exists
-        result = await db.execute(
-            select(LinkedInAccount)
-            .where(LinkedInAccount.owner_id == user_id)
-            .where(LinkedInAccount.unipile_account_id == request.account_id)
-        )
-        existing_account = result.scalar_one_or_none()
+        # Get user settings
+        user_settings = await get_or_create_user_settings(user_id, db)
         
-        if existing_account:
-            # Update existing account
-            existing_account.is_active = True
-            existing_account.updated_at = datetime.utcnow()
-            await db.commit()
-            await db.refresh(existing_account)
-            
-            logger.info(f"Updated existing LinkedIn account: {existing_account.id} with Unipile account: {request.account_id}")
-            return {
-                "status": "success",
-                "message": "Account updated",
-                "account_id": existing_account.id
-            }
-        
-        # Check if this should be default (first account)
+        # Delete all existing LinkedIn accounts for this user (we only want one)
+        # Also clear any user_settings that reference these accounts
         result = await db.execute(
             select(LinkedInAccount).where(LinkedInAccount.owner_id == user_id)
         )
         existing_accounts = result.scalars().all()
-        is_first_account = len(existing_accounts) == 0
         
-        # If not first account, unset other defaults
-        if not is_first_account:
+        if existing_accounts:
+            account_ids_to_delete = [acc.id for acc in existing_accounts]
+            
+            # Clear user_settings references first
+            # Use ORM update instead of raw SQL to avoid async issues
+            for acc_id in account_ids_to_delete:
+                await db.execute(
+                    update(UserSettings)
+                    .where(UserSettings.active_linkedin_account_id == acc_id)
+                    .values(active_linkedin_account_id=None, updated_at=datetime.utcnow())
+                )
+            
             await db.execute(
-                update(LinkedInAccount)
+                delete(LinkedInAccount)
+                .where(LinkedInAccount.id.in_(account_ids_to_delete))
                 .where(LinkedInAccount.owner_id == user_id)
-                .values(is_default=False)
             )
-            is_default = True
-        else:
-            is_default = True
+            logger.info(f"Deleted {len(account_ids_to_delete)} existing LinkedIn accounts for user {user_id} before creating new one")
+            await db.flush()
         
-        # Create new LinkedIn account with Unipile account ID
+        # Create new LinkedIn account with Unipile account ID (only one allowed per user)
         linkedin_account = LinkedInAccount(
             owner_id=user_id,
             unipile_account_id=request.account_id,
-            is_default=is_default,
+            is_default=True,
             is_active=True,
         )
         
         db.add(linkedin_account)
+        await db.flush()  # Get the ID
+        
+        # Set this account as active in user_settings
+        user_settings.active_linkedin_account_id = linkedin_account.id
+        user_settings.updated_at = datetime.utcnow()
+        
         await db.commit()
         await db.refresh(linkedin_account)
         
@@ -890,58 +1047,37 @@ async def complete_linkedin_oauth_setup(
             # For now, we'll use a generic format - user can update later
             linkedin_profile_url = f"https://www.linkedin.com/in/{profile_id}"
         
-        # Check if account already exists
-        result = await db.execute(
-            select(LinkedInAccount)
-            .where(LinkedInAccount.owner_id == current_user.id)
-            .where(LinkedInAccount.profile_id == profile_id) if profile_id else select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id).where(LinkedInAccount.profile_id == None)
-        )
-        existing_account = result.scalar_one_or_none()
+        # Get user settings
+        user_settings = await get_or_create_user_settings(current_user.id, db)
         
-        if existing_account:
-            # Update existing account
-            existing_account.access_token = access_token
-            existing_account.refresh_token = refresh_token
-            existing_account.token_expires_at = token_expires_at
-            existing_account.display_name = display_name or existing_account.display_name
-            existing_account.linkedin_profile_url = linkedin_profile_url or existing_account.linkedin_profile_url
-            existing_account.profile_id = profile_id or existing_account.profile_id
-            existing_account.is_active = True
-            existing_account.updated_at = datetime.utcnow()
-            
-            await db.commit()
-            await db.refresh(existing_account)
-            
-            return {
-                "success": True,
-                "message": "LinkedIn account updated successfully",
-                "account": {
-                    "id": existing_account.id,
-                    "profile_id": existing_account.profile_id,
-                    "display_name": existing_account.display_name,
-                    "linkedin_profile_url": existing_account.linkedin_profile_url,
-                }
-            }
-        
-        # Check if this should be default (first account)
+        # Delete all existing LinkedIn accounts for this user (we only want one)
+        # Also clear any user_settings that reference these accounts
         result = await db.execute(
             select(LinkedInAccount).where(LinkedInAccount.owner_id == current_user.id)
         )
         existing_accounts = result.scalars().all()
-        is_first_account = len(existing_accounts) == 0
         
-        # If not first account, unset other defaults
-        if not is_first_account:
+        if existing_accounts:
+            account_ids_to_delete = [acc.id for acc in existing_accounts]
+            
+            # Clear user_settings references first
+            # Use ORM update instead of raw SQL to avoid async issues
+            for acc_id in account_ids_to_delete:
+                await db.execute(
+                    update(UserSettings)
+                    .where(UserSettings.active_linkedin_account_id == acc_id)
+                    .values(active_linkedin_account_id=None, updated_at=datetime.utcnow())
+                )
+            
             await db.execute(
-                update(LinkedInAccount)
+                delete(LinkedInAccount)
+                .where(LinkedInAccount.id.in_(account_ids_to_delete))
                 .where(LinkedInAccount.owner_id == current_user.id)
-                .values(is_default=False)
             )
-            is_default = True
-        else:
-            is_default = True
+            logger.info(f"Deleted {len(account_ids_to_delete)} existing LinkedIn accounts for user {current_user.id} before creating new one")
+            await db.flush()
         
-        # Create new LinkedIn account
+        # Create new LinkedIn account (only one allowed per user)
         linkedin_account = LinkedInAccount(
             owner_id=current_user.id,
             profile_id=profile_id,
@@ -950,11 +1086,17 @@ async def complete_linkedin_oauth_setup(
             refresh_token=refresh_token,
             access_token=access_token,
             token_expires_at=token_expires_at,
-            is_default=is_default,
+            is_default=True,
             is_active=True,
         )
         
         db.add(linkedin_account)
+        await db.flush()  # Get the ID
+        
+        # Set this account as active in user_settings
+        user_settings.active_linkedin_account_id = linkedin_account.id
+        user_settings.updated_at = datetime.utcnow()
+        
         await db.commit()
         await db.refresh(linkedin_account)
         
@@ -1016,15 +1158,12 @@ async def update_linkedin_account(
             .values(is_default=False)
         )
     
-    # If enabling this account, disable all other accounts (only one can be active at a time)
+    # If enabling this account, set it as active in user_settings
     if request.is_active is True:
-        await db.execute(
-            update(LinkedInAccount)
-            .where(LinkedInAccount.owner_id == current_user.id)
-            .where(LinkedInAccount.id != account_id)
-            .values(is_active=False)
-        )
-        logger.info(f"Disabled other LinkedIn accounts for user {current_user.id} when enabling account {account_id}")
+        user_settings = await get_or_create_user_settings(current_user.id, db)
+        user_settings.active_linkedin_account_id = account_id
+        user_settings.updated_at = datetime.utcnow()
+        logger.info(f"Set account {account_id} as active LinkedIn account for user {current_user.id}")
     
     # Update fields directly on the account object
     if request.display_name is not None:
@@ -1055,21 +1194,68 @@ async def delete_linkedin_account(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """Delete a LinkedIn account."""
-    
-    result = await db.execute(
-        select(LinkedInAccount)
-        .where(LinkedInAccount.id == account_id)
-        .where(LinkedInAccount.owner_id == current_user.id)
-    )
-    account = result.scalar_one_or_none()
-    
-    if not account:
-        raise HTTPException(status_code=404, detail="LinkedIn account not found")
-    
-    await db.execute(
-        delete(LinkedInAccount).where(LinkedInAccount.id == account_id)
-    )
-    await db.commit()
-    
-    return {"message": "LinkedIn account deleted successfully"}
+    try:
+        # Get the account first to verify it exists and belongs to user
+        result = await db.execute(
+            select(LinkedInAccount)
+            .where(LinkedInAccount.id == account_id)
+            .where(LinkedInAccount.owner_id == current_user.id)
+        )
+        account = result.scalar_one_or_none()
+        
+        if not account:
+            raise HTTPException(status_code=404, detail="LinkedIn account not found")
+        
+        logger.info(f"Deleting LinkedIn account {account_id} for user {current_user.id}")
+        
+        # CRITICAL: Clear active account from ALL user_settings that reference this account
+        # This prevents foreign key constraint errors
+        # First, find all user_settings that reference this account
+        result = await db.execute(
+            select(UserSettings).where(UserSettings.active_linkedin_account_id == account_id)
+        )
+        affected_settings = result.scalars().all()
+        
+        # Clear the reference from all affected user_settings
+        for setting in affected_settings:
+            setting.active_linkedin_account_id = None
+            setting.updated_at = datetime.utcnow()
+            logger.info(f"Clearing active LinkedIn account {account_id} from user_settings for user {setting.user_id}")
+        
+        await db.flush()  # Flush the updates
+        
+        # Delete the account
+        await db.execute(
+            delete(LinkedInAccount)
+            .where(LinkedInAccount.id == account_id)
+            .where(LinkedInAccount.owner_id == current_user.id)
+        )
+        
+        # Commit all changes together
+        await db.commit()
+        
+        logger.info(f"Successfully deleted LinkedIn account {account_id} for user {current_user.id}")
+        
+        return {"message": "LinkedIn account deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        error_msg = str(e)
+        logger.error(f"Error deleting LinkedIn account {account_id}: {error_msg}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        # Check if it's a foreign key constraint error
+        if "foreign key" in error_msg.lower() or "violates foreign key" in error_msg.lower():
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete LinkedIn account due to database constraint. Please run database migrations: alembic upgrade head. Error: {error_msg}"
+            )
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete LinkedIn account: {error_msg}"
+        )
 

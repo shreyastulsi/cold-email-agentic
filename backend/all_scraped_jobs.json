@@ -1,46 +1,15 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4315561201",
-    "title": "Engineer, Cloud Infrastructure",
+    "url": "https://www.linkedin.com/jobs/view/4293975204",
+    "title": "Machine Learning Software Development Engineer",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "AMD",
+      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
     },
-    "location": "Reston, VA",
-    "applications": "69 applicants",
-    "salary": "$147,000.00/yr - $216,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Provide expertise on public cloud and enterprise technology.\n- Design cloud architectures and migration approaches for customers.\n- Serve as a technical advisor and troubleshoot issues.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or equivalent experience.\n- 6 years of experience in secure cloud solutions.\n- Active U.S. Government Top Secret clearance with polygraph.\n\n**KEY TECHNOLOGIES:**\n- Google Cloud Platform (GCP).\n- Containerization and orchestration technologies (e.g., GKE).\n- Infrastructure provisioning and DevOps tools.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Project Management, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Provide expertise on public cloud and enterprise technology.\n- Design cloud architectures and migration approaches for customers.\n- Serve as a technical advisor and troubleshoot issues.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or equivalent experience.\n- 6 years of experience in secure cloud solutions.\n- Active U.S. Government Top Secret clearance with polygraph.\n\n**KEY TECHNOLOGIES:**\n- Google Cloud Platform (GCP).\n- Containerization and orchestration technologies (e.g., GKE).\n- Infrastructure provisioning and DevOps tools."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4320719389",
-    "title": "Senior Software Engineer, AI/ML, YouTube",
-    "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
-    },
-    "location": "San Bruno, CA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$166,000.00/yr - $244,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Write and test product or system development code.  \n• Collaborate on design and code reviews for best practices.  \n• Debug and resolve product or system issues effectively.  \n\n**REQUIREMENTS:**\n• Bachelor’s degree or equivalent practical experience.  \n• 5 years programming experience in Python and C++.  \n• 3 years experience with ML infrastructure and technologies.  \n\n**KEY TECHNOLOGIES:**\n• Python and C++.  \n• Machine Learning (ML) infrastructure.  \n• Speech/audio and reinforcement learning technologies.",
+    "location": "Austin, TX",
+    "applications": "Over 200 applicants",
+    "salary": "$200,000.00/yr - $300,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Optimize deep learning frameworks like TensorFlow and PyTorch for AMD GPUs.\n- Develop and optimize GPU kernels for AI operations.\n- Collaborate with internal teams to enhance training and inference performance.\n- Engage with open-source maintainers for code integration.\n- Optimize performance in multi-GPU and multi-node systems.\n- Apply software engineering best practices for maintainable solutions.\n- Mentor junior team members through guidance and code reviews.\n\n**REQUIREMENTS:**\n- Expertise in C++ and advanced analytical skills in Linux.\n- Proven experience in GPU kernel development and optimization.\n- Strong knowledge of AMD architectures and low-level programming.\n- Proficiency in Python and performance tuning.\n- Extensive experience in technical software development and GPU optimization.\n- Master’s or PhD in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- Deep learning frameworks: TensorFlow, PyTorch.\n- GPU programming: HIP, CUDA, assembly (ASM).\n- Compiler technologies: LLVM, ROCm.\n- Performance optimization tools: Compute Kernel (CK), CUTLASS, Triton.\n- High-performance computing environments and resource optimization.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -52,57 +21,26 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "Engineering"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Semiconductor Manufacturing"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Write and test product or system development code.  \n• Collaborate on design and code reviews for best practices.  \n• Debug and resolve product or system issues effectively.  \n\n**REQUIREMENTS:**\n• Bachelor’s degree or equivalent practical experience.  \n• 5 years programming experience in Python and C++.  \n• 3 years experience with ML infrastructure and technologies.  \n\n**KEY TECHNOLOGIES:**\n• Python and C++.  \n• Machine Learning (ML) infrastructure.  \n• Speech/audio and reinforcement learning technologies."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Optimize deep learning frameworks like TensorFlow and PyTorch for AMD GPUs.\n- Develop and optimize GPU kernels for AI operations.\n- Collaborate with internal teams to enhance training and inference performance.\n- Engage with open-source maintainers for code integration.\n- Optimize performance in multi-GPU and multi-node systems.\n- Apply software engineering best practices for maintainable solutions.\n- Mentor junior team members through guidance and code reviews.\n\n**REQUIREMENTS:**\n- Expertise in C++ and advanced analytical skills in Linux.\n- Proven experience in GPU kernel development and optimization.\n- Strong knowledge of AMD architectures and low-level programming.\n- Proficiency in Python and performance tuning.\n- Extensive experience in technical software development and GPU optimization.\n- Master’s or PhD in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- Deep learning frameworks: TensorFlow, PyTorch.\n- GPU programming: HIP, CUDA, assembly (ASM).\n- Compiler technologies: LLVM, ROCm.\n- Performance optimization tools: Compute Kernel (CK), CUTLASS, Triton.\n- High-performance computing environments and resource optimization."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4320659633",
-    "title": "Data Center Infrastructure Electrical Engineer",
+    "url": "https://www.linkedin.com/jobs/view/4337424541",
+    "title": "Sr. Product Marketing Manager",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "AMD",
+      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
     },
-    "location": "New York, NY",
-    "applications": "30 applicants",
-    "salary": "$171,000.00/yr - $254,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Execute electrical design and calculation packages for LV systems and UPS.  \n• Review single-line diagrams and equipment submittals for compliance.  \n• Support commissioning and troubleshooting of electrical infrastructure.  \n\n**REQUIREMENTS:**\n• Bachelor's degree in Electrical or Power Engineering or equivalent experience.  \n• 10 years in mission-critical facility design and construction.  \n• 8 years in electrical design for commercial or industrial facilities.  \n\n**KEY TECHNOLOGIES:**\n• Power system analysis software (e.g., ETAP, SKM).  \n• Low Voltage (LV) and Medium Voltage (MV) electrical systems.  \n• National Electrical Code/International Electrotechnical Commission standards.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Execute electrical design and calculation packages for LV systems and UPS.  \n• Review single-line diagrams and equipment submittals for compliance.  \n• Support commissioning and troubleshooting of electrical infrastructure.  \n\n**REQUIREMENTS:**\n• Bachelor's degree in Electrical or Power Engineering or equivalent experience.  \n• 10 years in mission-critical facility design and construction.  \n• 8 years in electrical design for commercial or industrial facilities.  \n\n**KEY TECHNOLOGIES:**\n• Power system analysis software (e.g., ETAP, SKM).  \n• Low Voltage (LV) and Medium Voltage (MV) electrical systems.  \n• National Electrical Code/International Electrotechnical Commission standards."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4314709465",
-    "title": "Software Engineer Lead, Network Demand Forecasting, Google Networking",
-    "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Atlanta, GA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$197,000.00/yr - $291,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Drive technical strategy for network forecasting and demand generation.  \n• Lead cross-functional projects from design to launch.  \n• Mentor engineers and promote high-quality software development.  \n\n**REQUIREMENTS:**\n• Bachelor's degree or equivalent practical experience.  \n• 8 years in software development; 5 years in cloud architecture.  \n• Experience in technical leadership and distributed systems.  \n\n**KEY TECHNOLOGIES:**\n• General-purpose programming languages (e.g., Python, Go, Java).  \n• Cloud infrastructure and large-scale data processing.  \n• Statistical modeling and machine learning techniques.",
+    "location": "Austin, TX",
+    "applications": "42 applicants",
+    "salary": "$156,480.00/yr - $234,720.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop positioning and messaging for PC and graphics software.\n- Manage launch claims and value propositions for new platforms.\n- Collaborate with engineering and product teams for customer benefits.\n- Lead go-to-market execution across marketing and PR channels.\n- Analyze market trends and competitor offerings for strategy refinement.\n\n**REQUIREMENTS:**\n- Bachelor’s degree in Computer Science or related field.\n- Experience in product marketing or management in relevant industries.\n- Strong understanding of PC software stack and performance optimization.\n- Proven ability to craft compelling messaging for diverse audiences.\n- Excellent communication skills to simplify complex technology.\n\n**KEY TECHNOLOGIES:**\n- PC software stack, including drivers and firmware.\n- Graphics acceleration and software frameworks.\n- Operating systems: Windows and Linux.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -114,30 +52,30 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "Marketing and Sales"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Semiconductor Manufacturing"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Drive technical strategy for network forecasting and demand generation.  \n• Lead cross-functional projects from design to launch.  \n• Mentor engineers and promote high-quality software development.  \n\n**REQUIREMENTS:**\n• Bachelor's degree or equivalent practical experience.  \n• 8 years in software development; 5 years in cloud architecture.  \n• Experience in technical leadership and distributed systems.  \n\n**KEY TECHNOLOGIES:**\n• General-purpose programming languages (e.g., Python, Go, Java).  \n• Cloud infrastructure and large-scale data processing.  \n• Statistical modeling and machine learning techniques."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop positioning and messaging for PC and graphics software.\n- Manage launch claims and value propositions for new platforms.\n- Collaborate with engineering and product teams for customer benefits.\n- Lead go-to-market execution across marketing and PR channels.\n- Analyze market trends and competitor offerings for strategy refinement.\n\n**REQUIREMENTS:**\n- Bachelor’s degree in Computer Science or related field.\n- Experience in product marketing or management in relevant industries.\n- Strong understanding of PC software stack and performance optimization.\n- Proven ability to craft compelling messaging for diverse audiences.\n- Excellent communication skills to simplify complex technology.\n\n**KEY TECHNOLOGIES:**\n- PC software stack, including drivers and firmware.\n- Graphics acceleration and software frameworks.\n- Operating systems: Windows and Linux."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4314712438",
-    "title": "Staff Software Engineer, Labs",
+    "url": "https://www.linkedin.com/jobs/view/4290780012",
+    "title": "Product Manager - Network Infrastructure",
     "company": {
-      "name": "Google",
-      "url": "https://www.linkedin.com/company/google?trk=public_jobs_topcard-org-name"
+      "name": "AMD",
+      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
     },
-    "location": "Mountain View, CA",
-    "applications": "25 applicants",
-    "salary": "$197,000.00/yr - $291,000.00/yr",
-    "description": "RESPONSIBILITIES:\n• Provide technical leadership on high-impact projects.  \n• Influence and coach a distributed team of engineers.  \n• Manage project priorities, deadlines, and deliverables.  \n• Design, develop, test, and enhance software solutions.  \n\nREQUIREMENTS:\n• Bachelor's degree or equivalent practical experience.  \n• 8 years of software development experience.  \n• 5 years of experience testing and launching software products.  \n• 3 years in a technical leadership role.  \n\nPREFERRED QUALIFICATIONS:\n• Master’s degree or PhD in a related field.  \n• 8 years of experience with data structures/algorithms.  \n• 3 years working on cross-functional projects.  \n\nKEY TECHNOLOGIES:\n• Information retrieval and distributed computing.  \n• Large-scale system design and networking.  \n• Artificial intelligence and natural language processing.",
+    "location": "Santa Clara, CA",
+    "applications": "130 applicants",
+    "salary": "$173,840.00/yr - $260,760.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Lead product roadmap for networking infrastructure and GPU clusters.\n- Design and implement network solutions for HPC and GPU applications.\n- Collaborate with engineering teams on network architecture requirements.\n\n**REQUIREMENTS:**\n- 7+ years in network product management or technical leadership.\n- Experience with networking technologies like TCP/IP and Ethernet.\n- Strong understanding of AI/ML networking challenges and solutions.\n\n**KEY TECHNOLOGIES:**\n- High-speed networking protocols (e.g., RDMA, Infiniband).\n- Cloud service providers (AWS, GCP, Azure) for GPU infrastructure.\n- High-performance networks for AI and HPC workloads.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -145,13 +83,75 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology and Engineering"
+        "value": "Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Information Services and Technology, Information and Internet"
+        "value": "Semiconductor Manufacturing"
       }
     ],
-    "condensed_description": "RESPONSIBILITIES:\n• Provide technical leadership on high-impact projects.  \n• Influence and coach a distributed team of engineers.  \n• Manage project priorities, deadlines, and deliverables.  \n• Design, develop, test, and enhance software solutions.  \n\nREQUIREMENTS:\n• Bachelor's degree or equivalent practical experience.  \n• 8 years of software development experience.  \n• 5 years of experience testing and launching software products.  \n• 3 years in a technical leadership role.  \n\nPREFERRED QUALIFICATIONS:\n• Master’s degree or PhD in a related field.  \n• 8 years of experience with data structures/algorithms.  \n• 3 years working on cross-functional projects.  \n\nKEY TECHNOLOGIES:\n• Information retrieval and distributed computing.  \n• Large-scale system design and networking.  \n• Artificial intelligence and natural language processing."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Lead product roadmap for networking infrastructure and GPU clusters.\n- Design and implement network solutions for HPC and GPU applications.\n- Collaborate with engineering teams on network architecture requirements.\n\n**REQUIREMENTS:**\n- 7+ years in network product management or technical leadership.\n- Experience with networking technologies like TCP/IP and Ethernet.\n- Strong understanding of AI/ML networking challenges and solutions.\n\n**KEY TECHNOLOGIES:**\n- High-speed networking protocols (e.g., RDMA, Infiniband).\n- Cloud service providers (AWS, GCP, Azure) for GPU infrastructure.\n- High-performance networks for AI and HPC workloads."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4299290905",
+    "title": "Customer Operations Account Manager",
+    "company": {
+      "name": "AMD",
+      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+    },
+    "location": "San Jose, CA",
+    "applications": "Over 200 applicants",
+    "salary": "$102,400.00/yr - $153,600.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Review customer backlogs and resolve issues with stakeholders.\n- Manage product lifecycle stages from NPI to EOL.\n- Oversee inventory to minimize costs and optimize supply.\n- Monitor demand vs. supply profiles for customers.\n- Drive key projects and provide strategic advice.\n- Engage customers through regular business reviews.\n\n**REQUIREMENTS:**\n- Strong supply chain and project management knowledge.\n- Excellent problem-solving and solution implementation skills.\n- Proficient in executive communications and presentations.\n- Strong analytical skills for managing dependencies.\n- Ability to adapt to change and uncertainty.\n- Experience with data center customers preferred.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Excel and PowerPoint.\n- Experience with Power BI for data analysis.\n- Familiarity with supply chain management tools.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Sales and Business Development"
+      },
+      {
+        "name": "Industries",
+        "value": "Semiconductor Manufacturing"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Review customer backlogs and resolve issues with stakeholders.\n- Manage product lifecycle stages from NPI to EOL.\n- Oversee inventory to minimize costs and optimize supply.\n- Monitor demand vs. supply profiles for customers.\n- Drive key projects and provide strategic advice.\n- Engage customers through regular business reviews.\n\n**REQUIREMENTS:**\n- Strong supply chain and project management knowledge.\n- Excellent problem-solving and solution implementation skills.\n- Proficient in executive communications and presentations.\n- Strong analytical skills for managing dependencies.\n- Ability to adapt to change and uncertainty.\n- Experience with data center customers preferred.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Excel and PowerPoint.\n- Experience with Power BI for data analysis.\n- Familiarity with supply chain management tools."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4316292493",
+    "title": "GPU Product Manager for Gaming and AI",
+    "company": {
+      "name": "AMD",
+      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Austin, TX",
+    "applications": "53 applicants",
+    "salary": "$103,200.00/yr - $154,800.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Define product strategy and roadmap for Radeon GPUs and software.\n- Develop market and product requirements based on customer feedback.\n- Collaborate with teams to prioritize features and manage trade-offs.\n- Drive feature definition for gaming and AI workflows.\n- Lead go-to-market planning with marketing and sales teams.\n- Own business outcomes and track KPIs for product performance.\n- Represent product in customer meetings and executive reviews.\n\n**REQUIREMENTS:**\n- Strong technical understanding of GPU architectures and graphics pipelines.\n- Proven experience in go-to-market planning and lifecycle management.\n- Excellent communication and stakeholder management skills.\n- Data-driven mindset with proficiency in market analysis.\n- Several years of product management experience in relevant domains.\n- Bachelor's degree in Computer Science or related field; Master's preferred.\n\n**KEY TECHNOLOGIES:**\n- GPU architectures and graphics APIs (DirectX/Vulkan/OpenGL).\n- AI workloads and content creation pipelines.\n- Performance testing tools and benchmarking methodologies.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Product Management and Marketing"
+      },
+      {
+        "name": "Industries",
+        "value": "Semiconductor Manufacturing"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Define product strategy and roadmap for Radeon GPUs and software.\n- Develop market and product requirements based on customer feedback.\n- Collaborate with teams to prioritize features and manage trade-offs.\n- Drive feature definition for gaming and AI workflows.\n- Lead go-to-market planning with marketing and sales teams.\n- Own business outcomes and track KPIs for product performance.\n- Represent product in customer meetings and executive reviews.\n\n**REQUIREMENTS:**\n- Strong technical understanding of GPU architectures and graphics pipelines.\n- Proven experience in go-to-market planning and lifecycle management.\n- Excellent communication and stakeholder management skills.\n- Data-driven mindset with proficiency in market analysis.\n- Several years of product management experience in relevant domains.\n- Bachelor's degree in Computer Science or related field; Master's preferred.\n\n**KEY TECHNOLOGIES:**\n- GPU architectures and graphics APIs (DirectX/Vulkan/OpenGL).\n- AI workloads and content creation pipelines.\n- Performance testing tools and benchmarking methodologies."
   }
 ]

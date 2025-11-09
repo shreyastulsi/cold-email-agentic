@@ -11,6 +11,7 @@ from app.db.models.draft import Draft
 from app.db.models.email_account import EmailAccount
 from app.db.base import get_db
 from app.services.unified_messenger.adapter import send_invitation, send_email
+from app.services.job_context_service import get_job_context_by_url
 
 router = APIRouter()
 
@@ -431,6 +432,72 @@ async def send_draft(
     draft.updated_at = datetime.utcnow()
     await db.commit()
     
+    # Create permanent history records for sent messages
+    from app.db.models.outreach_history import OutreachHistory
+    
+    if email_success:
+        history = OutreachHistory(
+            user_id=current_user.id,
+            recipient_name=draft.recipient_name,
+            recipient_email=draft.recipient_email,
+            job_title=draft.job_title,
+            company_name=draft.company_name,
+            channel="email",
+            email_subject=draft.email_subject,
+            email_body=draft.email_body,
+            sent_at=draft.email_sent_at or datetime.utcnow(),
+            draft_id=draft.id
+        )
+        db.add(history)
+    
+    if linkedin_success:
+        history = OutreachHistory(
+            user_id=current_user.id,
+            recipient_name=draft.recipient_name,
+            recipient_linkedin_url=draft.recipient_linkedin_url,
+            job_title=draft.job_title,
+            company_name=draft.company_name,
+            channel="linkedin",
+            linkedin_message=draft.linkedin_message,
+            sent_at=draft.linkedin_sent_at or datetime.utcnow(),
+            draft_id=draft.id
+        )
+        db.add(history)
+    
+    # If both were sent, create a combined "both" record
+    if email_success and linkedin_success:
+        history = OutreachHistory(
+            user_id=current_user.id,
+            recipient_name=draft.recipient_name,
+            recipient_email=draft.recipient_email,
+            recipient_linkedin_url=draft.recipient_linkedin_url,
+            job_title=draft.job_title,
+            company_name=draft.company_name,
+            channel="both",
+            email_subject=draft.email_subject,
+            email_body=draft.email_body,
+            linkedin_message=draft.linkedin_message,
+            sent_at=draft.sent_at or datetime.utcnow(),
+            draft_id=draft.id
+        )
+        db.add(history)
+    
+    await db.commit()
+    
+    # Increment user stats for sent messages
+    from app.services.user_settings_service import increment_linkedin_invites, increment_emails_sent
+    if email_success:
+        try:
+            await increment_emails_sent(current_user.id, db)
+        except Exception as e:
+            logger.warning(f"Failed to increment email stats: {e}")
+    
+    if linkedin_success:
+        try:
+            await increment_linkedin_invites(current_user.id, db)
+        except Exception as e:
+            logger.warning(f"Failed to increment LinkedIn stats: {e}")
+    
     return {
         "success": True,
         "results": results,
@@ -467,4 +534,41 @@ async def delete_draft(
     await db.commit()
     
     return {"message": "Draft deleted successfully"}
+
+
+@router.get("/job-context")
+async def fetch_job_context(
+    job_url: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Fetch job context (requirements, technologies, responsibilities) for a given job URL."""
+    try:
+        job_context = await get_job_context_by_url(db, job_url)
+        
+        if not job_context:
+            return {
+                "success": False,
+                "error": "Job context not found",
+                "context": None
+            }
+        
+        return {
+            "success": True,
+            "context": {
+                "title": job_context.title,
+                "company": job_context.company,
+                "employment_type": job_context.employment_type,
+                "requirements": job_context.requirements or [],
+                "technologies": job_context.technologies or [],
+                "responsibilities": job_context.responsibilities or [],
+                "condensed_description": job_context.condensed_description
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "context": None
+        }
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
 import os
@@ -13,7 +13,12 @@ from dotenv import load_dotenv
 from app.api.deps import get_current_user
 from app.db.models.user import User
 from app.db.models.email_account import EmailAccount
+from app.db.models.user_settings import UserSettings
 from app.db.base import get_db
+from app.services.user_settings_service import (
+    get_or_create_user_settings,
+    set_active_email_account
+)
 
 # Ensure .env is loaded when this module is imported
 BACKEND_DIR = Path(__file__).parent.parent.parent.parent
@@ -65,14 +70,45 @@ async def list_email_accounts(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """List all email accounts for the current user."""
+    """List the active email account for the current user (only one account shown based on user_settings)."""
     try:
-        result = await db.execute(
-            select(EmailAccount)
-            .where(EmailAccount.owner_id == current_user.id)
-            .order_by(EmailAccount.is_default.desc(), EmailAccount.created_at.desc())
-        )
-        accounts = result.scalars().all()
+        # Get user settings to find active email account
+        user_settings = await get_or_create_user_settings(current_user.id, db)
+        
+        accounts = []
+        
+        # If user has an active email account set, return only that one
+        if user_settings.active_email_account_id:
+            result = await db.execute(
+                select(EmailAccount)
+                .where(EmailAccount.id == user_settings.active_email_account_id)
+                .where(EmailAccount.owner_id == current_user.id)
+            )
+            active_account = result.scalar_one_or_none()
+            
+            if active_account:
+                accounts = [active_account]
+            else:
+                # Active account ID doesn't exist or doesn't belong to user - clear it
+                logger.warning(f"Active email account {user_settings.active_email_account_id} not found for user {current_user.id}, clearing it")
+                user_settings.active_email_account_id = None
+                await db.commit()
+        
+        # If no active account set, check if user has any email accounts and set the first one as active
+        if not accounts:
+            result = await db.execute(
+                select(EmailAccount)
+                .where(EmailAccount.owner_id == current_user.id)
+                .order_by(EmailAccount.created_at.desc())
+            )
+            all_accounts = result.scalars().all()
+            
+            if all_accounts:
+                # Set the most recent account as active
+                first_account = all_accounts[0]
+                user_settings.active_email_account_id = first_account.id
+                await db.commit()
+                accounts = [first_account]
         
         return {
             "accounts": [
@@ -81,8 +117,8 @@ async def list_email_accounts(
                     "email": acc.email,
                     "provider": acc.provider,
                     "display_name": acc.display_name,
-                    "is_active": acc.is_active,
-                    "is_default": acc.is_default,
+                    "is_active": True,  # Always true since it's the active account
+                    "is_default": True,  # Always true since it's the only one shown
                     "created_at": acc.created_at.isoformat(),
                     "last_used_at": acc.last_used_at.isoformat() if acc.last_used_at else None,
                 }
@@ -115,33 +151,80 @@ async def create_email_account(
         if not request.smtp_server or not request.smtp_username or not request.smtp_password:
             raise HTTPException(status_code=400, detail="Custom provider requires SMTP credentials")
     
-    # If this is set as default, unset other defaults
-    if request.is_default is True:
-        await db.execute(
-            update(EmailAccount)
-            .where(EmailAccount.owner_id == current_user.id)
-            .values(is_default=False)
-        )
+    # Get user settings
+    user_settings = await get_or_create_user_settings(current_user.id, db)
     
-    # Create email account
-    email_account = EmailAccount(
-        owner_id=current_user.id,
-        email=request.email,
-        provider=request.provider,
-        display_name=request.display_name or request.email.split('@')[0],
-        refresh_token=request.refresh_token,
-        access_token=request.access_token,
-        token_expires_at=request.token_expires_at,
-        smtp_server=request.smtp_server,
-        smtp_port=str(request.smtp_port) if request.smtp_port else None,
-        smtp_username=request.smtp_username,
-        smtp_password=request.smtp_password,  # TODO: Encrypt this
-        is_default=request.is_default if request.is_default is not None else False,
+    # Check if account with same email already exists for this user (case-insensitive)
+    existing_result = await db.execute(
+        select(EmailAccount)
+        .where(EmailAccount.owner_id == current_user.id)
+        .where(EmailAccount.email.ilike(request.email))
     )
+    existing_account = existing_result.scalar_one_or_none()
     
-    db.add(email_account)
-    await db.commit()
-    await db.refresh(email_account)
+    if existing_account:
+        # Update existing account instead of creating duplicate
+        existing_account.provider = request.provider
+        existing_account.display_name = request.display_name or request.email.split('@')[0]
+        existing_account.refresh_token = request.refresh_token or existing_account.refresh_token
+        existing_account.access_token = request.access_token or existing_account.access_token
+        existing_account.token_expires_at = request.token_expires_at or existing_account.token_expires_at
+        existing_account.smtp_server = request.smtp_server or existing_account.smtp_server
+        existing_account.smtp_port = str(request.smtp_port) if request.smtp_port else existing_account.smtp_port
+        existing_account.smtp_username = request.smtp_username or existing_account.smtp_username
+        existing_account.smtp_password = request.smtp_password or existing_account.smtp_password
+        existing_account.is_active = True
+        existing_account.updated_at = datetime.utcnow()
+        
+        # Set as active in user_settings
+        user_settings.active_email_account_id = existing_account.id
+        user_settings.updated_at = datetime.utcnow()
+        
+        await db.commit()
+        await db.refresh(existing_account)
+        email_account = existing_account
+    else:
+        # Delete all other email accounts for this user (we only want one)
+        result = await db.execute(
+            select(EmailAccount).where(EmailAccount.owner_id == current_user.id)
+        )
+        existing_accounts = result.scalars().all()
+        
+        if existing_accounts:
+            account_ids_to_delete = [acc.id for acc in existing_accounts]
+            await db.execute(
+                delete(EmailAccount)
+                .where(EmailAccount.id.in_(account_ids_to_delete))
+                .where(EmailAccount.owner_id == current_user.id)
+            )
+            logger.info(f"Deleted {len(account_ids_to_delete)} existing email accounts for user {current_user.id} before creating new one")
+        
+        # Create new email account (only one allowed per user)
+        email_account = EmailAccount(
+            owner_id=current_user.id,
+            email=request.email,
+            provider=request.provider,
+            display_name=request.display_name or request.email.split('@')[0],
+            refresh_token=request.refresh_token,
+            access_token=request.access_token,
+            token_expires_at=request.token_expires_at,
+            smtp_server=request.smtp_server,
+            smtp_port=str(request.smtp_port) if request.smtp_port else None,
+            smtp_username=request.smtp_username,
+            smtp_password=request.smtp_password,  # TODO: Encrypt this
+            is_default=True,
+            is_active=True,
+        )
+        
+        db.add(email_account)
+        await db.flush()  # Get the ID
+        
+        # Set this account as active in user_settings
+        user_settings.active_email_account_id = email_account.id
+        user_settings.updated_at = datetime.utcnow()
+        
+        await db.commit()
+        await db.refresh(email_account)
     
     return {
         "id": email_account.id,
@@ -248,6 +331,13 @@ async def delete_email_account(
     
     if not account:
         raise HTTPException(status_code=404, detail="Email account not found")
+    
+    # Clear active account from user_settings if this was the active account
+    user_settings = await get_or_create_user_settings(current_user.id, db)
+    if user_settings.active_email_account_id == account_id:
+        user_settings.active_email_account_id = None
+        user_settings.updated_at = datetime.utcnow()
+        logger.info(f"Cleared active email account for user {current_user.id} after deleting account {account_id}")
     
     await db.execute(
         delete(EmailAccount).where(EmailAccount.id == account_id).where(EmailAccount.owner_id == current_user.id)
@@ -571,81 +661,185 @@ async def complete_oauth_setup(
             expires_in = tokens.get('expires_in', 3600)
             token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in) if expires_in else None
         
-        # Check if account already exists - check by email AND provider to prevent duplicates
-        print(f"[OAUTH DEBUG] Checking for existing account with email: {email} and provider: {request.provider}")
+        # Get user settings
+        user_settings = await get_or_create_user_settings(current_user.id, db)
+        
+        # CRITICAL: Check if an account with this EXACT email (case-insensitive) already exists
+        # We need to check this FIRST before doing anything else
+        # Use func.lower() for case-insensitive comparison (matches the unique index)
         result = await db.execute(
             select(EmailAccount)
             .where(EmailAccount.owner_id == current_user.id)
-            .where(EmailAccount.email == email)
-            .where(EmailAccount.provider == request.provider)
+            .where(func.lower(EmailAccount.email) == func.lower(email))
         )
         existing_account = result.scalar_one_or_none()
-        print(f"[OAUTH DEBUG] Existing account found: {existing_account is not None}")
         
         if existing_account:
-            # Update existing account
-            print(f"[OAUTH DEBUG] Updating existing account (ID: {existing_account.id})...")
+            # Account with this email already exists - UPDATE it instead of creating duplicate
+            print(f"[OAUTH DEBUG] Found existing email account {existing_account.id} for email: {email}, updating it")
+            logger.info(f"Updating existing email account {existing_account.id} for user {current_user.id}, email: {email}")
+            
+            existing_account.provider = request.provider
+            existing_account.display_name = email.split('@')[0]
             existing_account.refresh_token = refresh_token
             existing_account.access_token = access_token
             existing_account.token_expires_at = token_expires_at
             existing_account.is_active = True
+            existing_account.is_default = True
             existing_account.updated_at = datetime.utcnow()
-            # Ensure provider matches
-            existing_account.provider = request.provider
+            
+            # Set as active in user_settings
+            user_settings.active_email_account_id = existing_account.id
+            user_settings.updated_at = datetime.utcnow()
+            
+            # Delete any OTHER email accounts (not this one) for this user
+            result = await db.execute(
+                select(EmailAccount)
+                .where(EmailAccount.owner_id == current_user.id)
+                .where(EmailAccount.id != existing_account.id)
+            )
+            other_accounts = result.scalars().all()
+            
+            if other_accounts:
+                other_account_ids = [acc.id for acc in other_accounts]
+                await db.execute(
+                    delete(EmailAccount)
+                    .where(EmailAccount.id.in_(other_account_ids))
+                    .where(EmailAccount.owner_id == current_user.id)
+                )
+                logger.info(f"Deleted {len(other_account_ids)} other email accounts for user {current_user.id}")
+            
             await db.commit()
             print(f"[OAUTH DEBUG] Account updated successfully")
             await db.refresh(existing_account)
-            
-            return {
-                "success": True,
-                "message": "Email account updated successfully",
-                "account": {
-                    "id": existing_account.id,
-                    "email": existing_account.email,
-                    "provider": existing_account.provider,
-                }
-            }
-        
-        # Check if this should be default (first account)
-        result = await db.execute(
-            select(EmailAccount).where(EmailAccount.owner_id == current_user.id)
-        )
-        existing_accounts = result.scalars().all()
-        is_first_account = len(existing_accounts) == 0
-        
-        # If this is the first account, it should be default. Otherwise, unset other defaults
-        if is_first_account:
-            # First account - will be set as default
-            is_default = True
+            email_account = existing_account
         else:
-            # Not first account - unset other defaults and set this as default (OAuth accounts are always default)
-            await db.execute(
-                update(EmailAccount)
-                .where(EmailAccount.owner_id == current_user.id)
-                .values(is_default=False)
+            # No account with this email exists - delete ALL existing accounts and create new one
+            print(f"[OAUTH DEBUG] No existing account found for email: {email}, creating new one")
+            logger.info(f"Creating new email account for user {current_user.id}, email: {email}")
+            
+            # Delete ALL existing email accounts for this user (we only want one)
+            # Use a more aggressive approach: delete by owner_id, then check again
+            result = await db.execute(
+                select(EmailAccount).where(EmailAccount.owner_id == current_user.id)
             )
-            is_default = True
-        
-        # Create new email account
-        email_account = EmailAccount(
-            owner_id=current_user.id,
-            email=email,
-            provider=request.provider,
-            display_name=email.split('@')[0],
-            refresh_token=refresh_token,
-            access_token=access_token,
-            token_expires_at=token_expires_at,
-            is_default=is_default,
-            is_active=True,
-        )
-        
-        db.add(email_account)
-        await db.commit()
-        await db.refresh(email_account)
+            existing_accounts = result.scalars().all()
+            
+            if existing_accounts:
+                account_ids_to_delete = [acc.id for acc in existing_accounts]
+                logger.info(f"Found {len(account_ids_to_delete)} existing accounts to delete: {[acc.id for acc in existing_accounts]}, emails: {[acc.email for acc in existing_accounts]}")
+                
+                # Also clear user_settings references
+                # Use ORM update instead of raw SQL to avoid async issues
+                for acc_id in account_ids_to_delete:
+                    await db.execute(
+                        update(UserSettings)
+                        .where(UserSettings.active_email_account_id == acc_id)
+                        .values(active_email_account_id=None, updated_at=datetime.utcnow())
+                    )
+                
+                await db.execute(
+                    delete(EmailAccount)
+                    .where(EmailAccount.id.in_(account_ids_to_delete))
+                    .where(EmailAccount.owner_id == current_user.id)
+                )
+                logger.info(f"Deleted {len(account_ids_to_delete)} existing email accounts for user {current_user.id} before creating new one")
+                await db.flush()  # Flush the deletion to ensure it's committed before insert
+            
+            # Double-check: query again to make sure no account with this email exists
+            # Use a case-insensitive comparison with LOWER()
+            result = await db.execute(
+                select(EmailAccount)
+                .where(EmailAccount.owner_id == current_user.id)
+                .where(func.lower(EmailAccount.email) == func.lower(email))
+            )
+            still_exists = result.scalar_one_or_none()
+            
+            if still_exists:
+                # Account still exists - update it instead
+                logger.warning(f"Account with email {email} still exists after deletion attempt (id: {still_exists.id}), updating it instead")
+                still_exists.provider = request.provider
+                still_exists.display_name = email.split('@')[0]
+                still_exists.refresh_token = refresh_token
+                still_exists.access_token = access_token
+                still_exists.token_expires_at = token_expires_at
+                still_exists.is_active = True
+                still_exists.is_default = True
+                still_exists.updated_at = datetime.utcnow()
+                
+                user_settings.active_email_account_id = still_exists.id
+                user_settings.updated_at = datetime.utcnow()
+                
+                await db.commit()
+                await db.refresh(still_exists)
+                email_account = still_exists
+            else:
+                # Now create new email account (only one allowed per user)
+                try:
+                    email_account = EmailAccount(
+                        owner_id=current_user.id,
+                        email=email,
+                        provider=request.provider,
+                        display_name=email.split('@')[0],
+                        refresh_token=refresh_token,
+                        access_token=access_token,
+                        token_expires_at=token_expires_at,
+                        is_default=True,
+                        is_active=True,
+                    )
+                    
+                    db.add(email_account)
+                    await db.flush()  # Get the ID and ensure it's in the transaction
+                    
+                    # Set this account as active in user_settings
+                    user_settings.active_email_account_id = email_account.id
+                    user_settings.updated_at = datetime.utcnow()
+                    
+                    await db.commit()
+                    print(f"[OAUTH DEBUG] Account created successfully")
+                    await db.refresh(email_account)
+                except Exception as e:
+                    # If we get a unique constraint error, the account might have been created in another transaction
+                    # Try to find and update it instead
+                    if "unique constraint" in str(e).lower() or "duplicate key" in str(e).lower():
+                        logger.warning(f"Unique constraint violation when creating account, attempting to find and update existing account: {e}")
+                        await db.rollback()
+                        
+                        # Try to find the account again
+                        result = await db.execute(
+                            select(EmailAccount)
+                            .where(EmailAccount.owner_id == current_user.id)
+                            .where(func.lower(EmailAccount.email) == func.lower(email))
+                        )
+                        existing_account = result.scalar_one_or_none()
+                        
+                        if existing_account:
+                            logger.info(f"Found existing account {existing_account.id} after constraint violation, updating it")
+                            existing_account.provider = request.provider
+                            existing_account.display_name = email.split('@')[0]
+                            existing_account.refresh_token = refresh_token
+                            existing_account.access_token = access_token
+                            existing_account.token_expires_at = token_expires_at
+                            existing_account.is_active = True
+                            existing_account.is_default = True
+                            existing_account.updated_at = datetime.utcnow()
+                            
+                            user_settings.active_email_account_id = existing_account.id
+                            user_settings.updated_at = datetime.utcnow()
+                            
+                            await db.commit()
+                            await db.refresh(existing_account)
+                            email_account = existing_account
+                        else:
+                            # Re-raise the original error if we can't find the account
+                            raise
+                    else:
+                        # Re-raise if it's a different error
+                        raise
         
         return {
             "success": True,
-            "message": "Email account created successfully",
+            "message": "Email account connected successfully",
             "account": {
                 "id": email_account.id,
                 "email": email_account.email,

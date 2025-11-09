@@ -1,6 +1,20 @@
 """API router configuration."""
 from fastapi import APIRouter
-from app.api.v1 import auth, linkedin, search, outreach, templates, pipeline, resume, verbose, email_accounts, linkedin_accounts, drafts
+from app.api.v1 import (
+    auth,
+    linkedin,
+    search,
+    outreach,
+    templates,
+    pipeline,
+    resume,
+    verbose,
+    email_accounts,
+    linkedin_accounts,
+    drafts,
+    user_stats,
+    onboarding,
+)
 
 api_router = APIRouter()
 
@@ -16,4 +30,6 @@ api_router.include_router(verbose.router, tags=["verbose"])
 api_router.include_router(email_accounts.router, tags=["email-accounts"])
 api_router.include_router(linkedin_accounts.router, tags=["linkedin-accounts"])
 api_router.include_router(drafts.router, tags=["drafts"])
+api_router.include_router(user_stats.router, tags=["user-stats"])
+api_router.include_router(onboarding.router, tags=["onboarding"])
 

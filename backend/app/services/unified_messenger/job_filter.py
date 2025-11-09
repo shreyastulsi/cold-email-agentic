@@ -12,36 +12,25 @@ from .scraper import scrape_job
 from .resume_message_generator import ResumeMessageGenerator
 from .job_condenser import JobCondenser
 from .job_context_tracker import JobContextTracker
-from .resume_parser import ResumeParser
+from app.db.base import AsyncSessionLocal
 
 load_dotenv()
 
 # Import verbose logger for thread-safe logging
 try:
     from app.services.verbose_logger import verbose_logger
-    
     def emit_verbose_log_sync(message: str, level: str = "info", emoji: str = ""):
-        """Thread-safe verbose logging."""
+        if not verbose_logger:
+            return
         try:
-            # Use a thread-safe approach - schedule coroutine in existing loop or create new one
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If loop is running (in async context), schedule it
-                    asyncio.ensure_future(verbose_logger.log(message, level, emoji))
-                else:
-                    # If no loop, run it
-                    loop.run_until_complete(verbose_logger.log(message, level, emoji))
-            except RuntimeError:
-                # No event loop in this thread, create one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    loop.run_until_complete(verbose_logger.log(message, level, emoji))
-                finally:
-                    loop.close()
-        except Exception:
-            pass  # Fail silently if verbose logging unavailable
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(verbose_logger.log(message, level, emoji))
+        else:
+            asyncio.run(verbose_logger.log(message, level, emoji))
     VERBOSE_LOGGING = True
 except ImportError:
     VERBOSE_LOGGING = False
@@ -52,8 +41,6 @@ class JobFilter:
     def __init__(self):
         self.resume_generator = ResumeMessageGenerator()
         self.job_condenser = JobCondenser()
-        self.context_tracker = JobContextTracker()
-        self.resume_parser = ResumeParser()
         
     def extract_job_urls(self, jobs):
         """Extract job URLs from unified_messenger job results"""
@@ -120,23 +107,20 @@ class JobFilter:
         return formatted_content
     
     def rank_jobs_by_relevance(self, condensed_jobs, resume_content):
-        """Use LLM to rank jobs by relevance to resume using bullets"""
+        """Use LLM to rank jobs by relevance to resume using stored resume profile text"""
         import logging
         logger = logging.getLogger(__name__)
         
         jobs_content = self.format_jobs_for_llm(condensed_jobs)
+        resume_profile = resume_content or ""
         
-        # Extract key resume bullets once
-        print(f"\n📋 Extracting key resume bullets...")
-        logger.info(f"🔍 DEBUG: Extracting resume bullets...")
-        resume_bullets = self.resume_parser.extract_key_bullets(resume_content)
-        logger.info(f"✅ DEBUG: Extracted resume bullets ({len(resume_bullets)} chars)")
+        logger.info(f"🔍 DEBUG: Using resume profile text ({len(resume_profile)} chars) for ranking")
         
         prompt = f"""
         Rank these jobs by relevance to candidate profile.
         
         CANDIDATE PROFILE:
-        {resume_bullets}
+        {resume_profile}
         
         {jobs_content}
         
@@ -149,10 +133,10 @@ class JobFilter:
         try:
             # Debug: Show prompt length
             print(f"🔍 Debug - Prompt length: {len(prompt)} characters")
-            print(f"🔍 Debug - Resume bullets length: {len(resume_bullets)} characters")
+            print(f"🔍 Debug - Resume profile length: {len(resume_profile)} characters")
             print(f"🔍 Debug - Jobs content length: {len(jobs_content)} characters")
             logger.info(f"🔍 DEBUG: Calling LLM with prompt ({len(prompt)} chars)")
-            logger.info(f"🔍 DEBUG: Resume bullets length: {len(resume_bullets)} chars")
+            logger.info(f"🔍 DEBUG: Resume profile length: {len(resume_profile)} chars")
             logger.info(f"🔍 DEBUG: Jobs content length: {len(jobs_content)} chars")
             
             if not self.resume_generator or not self.resume_generator.llm:
@@ -315,7 +299,7 @@ class JobFilter:
         
         return top_urls
     
-    def filter_jobs(self, jobs, resume_file="Resume-Tulsi,Shreyas.pdf", resume_content=None):
+    def filter_jobs(self, jobs, resume_file="Resume-Tulsi,Shreyas.pdf", resume_content=None, loop=None):
         """Main function to filter and rank jobs"""
         import logging
         logger = logging.getLogger(__name__)
@@ -375,6 +359,12 @@ class JobFilter:
                 resume_content = self.resume_generator.load_resume(resume_path)
                 print(f"✅ Resume loaded: {len(resume_content)} characters")
                 logger.info(f"✅ DEBUG: Resume loaded successfully, {len(resume_content)} characters")
+                try:
+                    emit_verbose_log_sync("🧾 Resume profile text loaded from PDF:", "info", "🧾")
+                    emit_verbose_log_sync(resume_content, "info", "")
+                    logger.info("🧾 DEBUG: Resume profile text loaded from PDF:\n%s", resume_content)
+                except Exception:
+                    logger.warning("⚠️ DEBUG: Failed to log resume text loaded from PDF")
             except Exception as e:
                 error_msg = f"Error loading resume: {e}"
                 print(f"❌ {error_msg}")
@@ -386,6 +376,12 @@ class JobFilter:
             logger.info(f"✅ DEBUG: Using provided resume content ({len(resume_content)} characters)")
             print(f"✅ Using resume content from database ({len(resume_content)} characters)")
             emit_verbose_log_sync(f"✅ Using resume content from database ({len(resume_content)} characters)", "success", "✅")
+            try:
+                emit_verbose_log_sync("🧾 Resume profile text provided to model:", "info", "🧾")
+                emit_verbose_log_sync(resume_content, "info", "")
+                logger.info("🧾 DEBUG: Resume profile text provided to model:\n%s", resume_content)
+            except Exception:
+                logger.warning("⚠️ DEBUG: Failed to log resume profile text")
         
         # Extract job URLs
         logger.info(f"🔍 DEBUG: Extracting job URLs...")
@@ -431,7 +427,7 @@ class JobFilter:
         # Store job contexts for later LinkedIn message generation
         try:
             logger.info(f"🔍 DEBUG: Storing job contexts...")
-            self.context_tracker.store_all_job_contexts(condensed_jobs)
+            self._store_job_contexts_sync(condensed_jobs, loop=loop)
             logger.info(f"✅ DEBUG: Job contexts stored")
         except Exception as e:
             logger.warning(f"⚠️ DEBUG: Error storing job contexts: {e}")
@@ -442,7 +438,6 @@ class JobFilter:
         print(f"\n🤖 Analyzing {len(condensed_jobs)} jobs with LLM...")
         logger.info(f"🔍 DEBUG: Ranking {len(condensed_jobs)} jobs with LLM...")
         logger.info(f"🔍 DEBUG: resume_generator available: {self.resume_generator is not None}")
-        logger.info(f"🔍 DEBUG: resume_parser available: {self.resume_parser is not None}")
         logger.info(f"🔍 DEBUG: llm available: {self.resume_generator.llm is not None if self.resume_generator else False}")
         
         try:
@@ -558,20 +553,56 @@ class JobFilter:
         print(f"   • job_ranking.txt - LLM analysis and ranking")
         print(f"   • top_job_urls.txt - Top 5 job URLs")
         print(f"   • all_scraped_jobs.json - All scraped job data")
-        print(f"   • job_contexts.json - Job contexts for LinkedIn messages")
+
+    def _store_job_contexts_sync(self, condensed_jobs, loop=None):
+        async def _store_async():
+            async with AsyncSessionLocal() as session:
+                tracker = JobContextTracker(session)
+                await tracker.store_all_job_contexts(condensed_jobs)
+                await session.commit()
+
+        target_loop = loop
+        try:
+            if target_loop is None:
+                target_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            target_loop = None
+
+        if target_loop and target_loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(_store_async(), target_loop)
+            try:
+                future.result()
+            except Exception as exc:
+                import traceback
+                print(f"❌ Error storing job contexts: {exc}")
+                traceback.print_exc()
+            return
+
+        try:
+            asyncio.run(_store_async())
+        except Exception as exc:
+            import traceback
+            print(f"❌ Error storing job contexts: {exc}")
+            traceback.print_exc()
     
     def generate_linkedin_message_for_job(self, job_url, recruiter_name, resume_file="Resume-Tulsi,Shreyas.pdf"):
         """Generate job-specific LinkedIn message using stored context"""
         try:
             # Load resume
             resume_content = self.resume_generator.load_resume(resume_file)
-            
-            # Generate job-specific message
-            message = self.context_tracker.generate_job_specific_message(
-                job_url, recruiter_name, self.resume_generator, resume_content
-            )
-            
-            return message
+
+            async def _generate():
+                async with AsyncSessionLocal() as session:
+                    tracker = JobContextTracker(session)
+                    return await tracker.generate_job_specific_message(
+                        job_url, recruiter_name, self.resume_generator, resume_content
+                    )
+
+            try:
+                return asyncio.run(_generate())
+            except RuntimeError:
+                print("⚠️ Unable to generate job-specific message within the current event loop context.")
+                return None
             
         except Exception as e:
             print(f"❌ Error generating LinkedIn message: {e}")

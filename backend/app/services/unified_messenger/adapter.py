@@ -377,8 +377,13 @@ async def search_company(name: str, db: Optional[Any] = None) -> Dict[str, Any]:
 async def search_jobs(
     company_ids: List[str],
     job_titles: List[str],
-    job_type: str,
-    location_id: str = "102571732"
+    job_types: Optional[List[str]] = None,
+    location_id: Optional[str] = "102571732",
+    locations: Optional[List[str]] = None,
+    location: Optional[str] = None,
+    experience_levels: Optional[List[str]] = None,
+    salary_min: Optional[int] = None,
+    salary_max: Optional[int] = None
 ) -> List[Dict[str, Any]]:
     """
     Search for jobs.
@@ -400,8 +405,13 @@ async def search_jobs(
         messenger.search_jobs,
         company_ids,
         job_titles,
-        job_type,
-        location_id
+        job_types,
+        location_id,
+        locations,
+        location,
+        experience_levels,
+        salary_min,
+        salary_max
     )
     
     return jobs
@@ -469,7 +479,8 @@ async def filter_jobs(
             job_filter.filter_jobs,
             jobs,
             resume_file,
-            resume_content
+            resume_content,
+            loop
         )
         
         await emit_verbose_log(f"📝 Condensing job descriptions with AI...", "info", "📝")
@@ -599,6 +610,98 @@ async def search_recruiters(company_ids: List[str]) -> List[Dict[str, Any]]:
     return recruiters
 
 
+async def store_job_contexts_for_jobs(jobs: List[Dict[str, Any]], db) -> int:
+    """
+    Store job contexts for manually selected jobs.
+    Scrapes, condenses, and stores jobs that don't have contexts yet.
+    
+    Args:
+        jobs: List of job dictionaries
+        db: Async database session
+        
+    Returns:
+        Number of contexts stored
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from .job_context_tracker import JobContextTracker
+        from .scraper import scrape_job
+        from .job_condenser import JobCondenser
+        
+        # Initialize services
+        condenser = JobCondenser()
+        tracker = JobContextTracker(db)
+        
+        logger.info(f"🗂️ Checking/storing contexts for {len(jobs)} manually-selected jobs...")
+        await emit_verbose_log(f"🗂️ Processing job contexts for {len(jobs)} job(s)...", "info", "🗂️")
+        
+        stored_count = 0
+        skipped_count = 0
+        
+        for idx, job in enumerate(jobs, 1):
+            job_url = job.get('url') or job.get('job_url')
+            job_title = job.get('title', 'Unknown')
+            
+            if not job_url:
+                logger.warning(f"⚠️ Skipping job without URL: {job_title}")
+                continue
+            
+            try:
+                # Check if context already exists
+                existing_context = await tracker.fetch_job_context(job_url)
+                if existing_context and existing_context.get('requirements'):
+                    logger.info(f"✅ Context already exists for {job_title}")
+                    skipped_count += 1
+                    continue
+                
+                # If job doesn't have condensed_description, scrape and condense it
+                if not job.get('condensed_description'):
+                    logger.info(f"🔍 [{idx}/{len(jobs)}] Scraping: {job_title}")
+                    await emit_verbose_log(f"   Scraping: {job_title}", "info", "🔍")
+                    
+                    # Run scraping in executor since it's synchronous
+                    loop = asyncio.get_event_loop()
+                    scraped = await loop.run_in_executor(None, scrape_job, job_url)
+                    
+                    if scraped and scraped.get('description'):
+                        logger.info(f"✅ Scraped successfully, condensing...")
+                        condensed = await loop.run_in_executor(None, condenser.condense_job, scraped)
+                        if condensed and condensed.get('condensed_description'):
+                            job['condensed_description'] = condensed.get('condensed_description', '')
+                            logger.info(f"✅ Condensed successfully")
+                        else:
+                            logger.warning(f"⚠️ Condensing failed for {job_title}")
+                    else:
+                        logger.warning(f"⚠️ Scraping failed for {job_title}")
+                
+                # Store the context if we have condensed description
+                if job.get('condensed_description'):
+                    await tracker.store_job_context(job_url, job)
+                    stored_count += 1
+                    logger.info(f"✅ [{idx}/{len(jobs)}] Stored context for {job_title}")
+                    await emit_verbose_log(f"   ✅ Stored: {job_title}", "success", "✅")
+                else:
+                    logger.warning(f"⚠️ No condensed description available for {job_title}")
+                    
+            except Exception as e:
+                logger.error(f"❌ Error storing context for {job_url}: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                continue
+        
+        logger.info(f"✅ Job context storage complete: {stored_count} stored, {skipped_count} already existed")
+        await emit_verbose_log(f"✅ Job contexts: {stored_count} stored, {skipped_count} already existed", "success", "✅")
+        return stored_count
+        
+    except Exception as e:
+        logger.error(f"❌ Error in store_job_contexts_for_jobs: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return 0
+
+
 async def map_jobs_to_recruiters(
     jobs: List[Dict[str, Any]],
     recruiters: List[Dict[str, Any]],
@@ -632,6 +735,20 @@ async def map_jobs_to_recruiters(
         await emit_verbose_log("❌ No recruiters provided for mapping", "error", "❌")
         logger.warning("⚠️ DEBUG: No recruiters provided to map_jobs_to_recruiters")
         return {"mapping": [], "selected_recruiters": []}
+    
+    # **NEW: Store job contexts for manually-selected jobs before mapping**
+    # This ensures email generation can use job-specific details
+    try:
+        from app.db.base import AsyncSessionLocal
+        logger.info("🗂️ Storing job contexts for manually-selected jobs...")
+        async with AsyncSessionLocal() as db:
+            stored_count = await store_job_contexts_for_jobs(jobs, db)
+            logger.info(f"✅ Stored {stored_count} job contexts")
+    except Exception as e:
+        logger.error(f"⚠️ Failed to store job contexts: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        # Continue anyway - mapping will still work
     
     try:
         await emit_verbose_log("🔍 Analyzing job and recruiter compatibility...", "info", "🔍")
@@ -702,7 +819,8 @@ async def generate_email(
     job_titles: List[str],
     job_type: str,
     recruiter: Dict[str, Any],
-    resume_content: Optional[str] = None
+    resume_content: Optional[str] = None,
+    job_url: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Generate email content for recruiter.
@@ -727,14 +845,13 @@ async def generate_email(
         except Exception:
             pass
     
-    loop = asyncio.get_event_loop()
-    subject, body = await loop.run_in_executor(
-        None,
-        messenger.generate_email_content,
+    # Now we can call async method directly - no executor needed! 🎉
+    subject, body = await messenger.generate_email_content(
         job_titles,
         job_type,
         recruiter,
-        resume_content
+        resume_content,
+        job_url,
     )
     
     return {

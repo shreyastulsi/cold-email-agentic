@@ -8,14 +8,42 @@ import os
 import requests
 import re
 import json
+import asyncio
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from .resume_message_generator import ResumeMessageGenerator
 from .job_filter import JobFilter
+from .job_context_tracker import JobContextTracker
+from app.db.base import AsyncSessionLocal
+from typing import Optional, Dict, Any
 
 load_dotenv()
+
+try:
+    from app.services.verbose_logger import verbose_logger
+    VERBOSE_LOGGING = True
+except ImportError:
+    VERBOSE_LOGGING = False
+    verbose_logger = None
+
+
+def emit_verbose_log_sync(message: str, level: str = "info", emoji: str = ""):
+    """Thread-safe helper to emit verbose logs from sync context."""
+    if not VERBOSE_LOGGING or not verbose_logger:
+        return
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        loop.create_task(verbose_logger.log(message, level, emoji))
+    else:
+        asyncio.run(verbose_logger.log(message, level, emoji))
+
 
 class UnifiedMessenger:
     def __init__(self):
@@ -361,13 +389,52 @@ class UnifiedMessenger:
             print(f"❌ Error searching company: {e}")
             return None, None
 
-    def search_jobs(self, company_ids, job_titles, job_type, location_id="102571732"):
+    def search_jobs(
+        self,
+        company_ids,
+        job_titles,
+        job_types=None,
+        location_id="102571732",
+        locations=None,
+        location=None,
+        experience_levels=None,
+        salary_min=None,
+        salary_max=None
+    ):
         """
         Search for jobs using LinkedIn API - sends separate request for each company.
         """
-        print(f"🔍 Searching for {job_type} jobs...")
+        print("🔍 Searching for jobs...")
         print(f"🏢 Companies: {company_ids}")
         print(f"💼 Job titles: {job_titles}")
+        if job_types:
+            print(f"🧾 Job type filter: {job_types}")
+        location_filters = []
+        if locations:
+            location_filters.extend(locations)
+        if location:
+            location_filters.append(location)
+        if location_filters:
+            print(f"📍 Location filter(s): {location_filters}")
+        if experience_levels:
+            print(f"📈 Experience level filter(s): {experience_levels}")
+        if salary_min is not None or salary_max is not None:
+            print(f"💰 Salary filter: min={salary_min}, max={salary_max}")
+        
+        emit_verbose_log_sync(
+            (
+                "🔍 Starting job search\n"
+                f"• Companies: {company_ids}\n"
+                f"• Titles: {job_titles}\n"
+                f"• Job types: {job_types or ['full_time (default)']}\n"
+                f"• Location(s): {location_filters or ['Any']} (location_id={location_id})\n"
+                f"• Experience level(s): {experience_levels or ['Any']}\n"
+                f"• Salary range: {salary_min if salary_min is not None else 'Any'} - "
+                f"{salary_max if salary_max is not None else 'Any'}"
+            ),
+            "info",
+            "🔍"
+        )
         
         all_jobs = []
         
@@ -378,12 +445,37 @@ class UnifiedMessenger:
                 data = {
                     "api": "classic",
                     "category": "jobs",
-                    "job_type": [job_type],
                     "company": [company_id],  # Single company per request
                     "keywords": " ".join(job_titles),
-                    "sort_by": "date",
-                    "locations": [location_id]
+                    "sort_by": "date"
                 }
+                
+                locations_payload = []
+                if location_id:
+                    locations_payload.append(location_id)
+                if location_filters:
+                    for loc_filter in location_filters:
+                        if loc_filter and isinstance(loc_filter, str) and loc_filter.strip():
+                            locations_payload.append(loc_filter.strip())
+                if locations_payload:
+                    data["locations"] = locations_payload
+                
+                if job_types:
+                    data["job_type"] = job_types
+                
+                if experience_levels:
+                    if len(experience_levels) == 1:
+                        data["experience_level"] = experience_levels[0]
+                    else:
+                        data["experience_level"] = list(set(experience_levels))
+                
+                if salary_min is not None or salary_max is not None:
+                    salary_filter = {}
+                    if salary_min is not None:
+                        salary_filter["min"] = salary_min
+                    if salary_max is not None:
+                        salary_filter["max"] = salary_max
+                    data["salary"] = salary_filter
                 
                 response = requests.post(
                     f"{self.base_url}/linkedin/search",
@@ -392,20 +484,228 @@ class UnifiedMessenger:
                     json=data
                 )
                 
+                try:
+                    print(f"📤 Request payload for company {company_id}: {json.dumps(data, indent=2)[:500]}")
+                    emit_verbose_log_sync(
+                        f"📤 Sent job search payload for company {company_id}:\n{json.dumps(data, indent=2)[:600]}",
+                        "info",
+                        "📤"
+                    )
+                except Exception:
+                    pass
+                
                 if response.status_code == 200:
                     result = response.json()
-                    items = result.get('items', [])
-                    all_jobs.extend(items)
-                    print(f"✅ Found {len(items)} jobs for company {company_id}")
+                    items = result.get('items', []) or result.get('data', []) or result.get('jobs', [])
+                    filtered_items = []
+                    print(f"📥 Received {len(items)} raw job(s) for company {company_id}")
+                    emit_verbose_log_sync(
+                        f"📥 Received {len(items)} raw job(s) for company {company_id}",
+                        "info",
+                        "📥"
+                    )
+                    for job in items:
+                        filter_reasons = []
+                        if not self._matches_location_filter(job, location_filters):
+                            filter_reasons.append("location")
+                        if not self._matches_experience_filter(job, experience_levels):
+                            filter_reasons.append("experience")
+                        if not self._matches_salary_filter(job, salary_min, salary_max):
+                            filter_reasons.append("salary")
+
+                        if filter_reasons:
+                            title = job.get('title') or job.get('jobTitle') or 'Untitled'
+                            company_name = job.get('company', {}).get('name') if isinstance(job.get('company'), dict) else job.get('company') or job.get('companyName') or 'Unknown'
+                            print(f"🚫 Filtered out job '{title}' at {company_name} due to: {', '.join(filter_reasons)}")
+                            emit_verbose_log_sync(
+                                f"🚫 Filtered out job '{title}' at {company_name} (company ID {company_id}) due to: {', '.join(filter_reasons)}",
+                                "warning",
+                                "🚫"
+                            )
+                            continue
+                        # Try to ensure a job URL field exists
+                        if not job.get('job_url'):
+                            url_candidates = [
+                                job.get('url'),
+                                job.get('jobUrl'),
+                                job.get('link'),
+                                job.get('canonical_url'),
+                                job.get('company', {}).get('url') if isinstance(job.get('company'), dict) else None
+                            ]
+                            for candidate in url_candidates:
+                                if candidate:
+                                    job['job_url'] = candidate
+                                    break
+                        filtered_items.append(job)
+                    all_jobs.extend(filtered_items)
+                    print(f"✅ Found {len(filtered_items)} matching jobs for company {company_id}")
+                    emit_verbose_log_sync(
+                        f"✅ {len(filtered_items)} matching job(s) for company {company_id}",
+                        "success",
+                        "✅"
+                    )
                 else:
                     print(f"❌ Failed to search jobs for company {company_id}: {response.text}")
                     
             except Exception as e:
                 print(f"❌ Error searching jobs for company {company_id}: {e}")
+                emit_verbose_log_sync(
+                    f"❌ Error searching jobs for company {company_id}: {e}",
+                    "error",
+                    "❌"
+                )
                 continue
         
         print(f"✅ Total found {len(all_jobs)} job listings across all companies")
+        emit_verbose_log_sync(
+            f"📊 Job search complete. Returning {len(all_jobs)} job(s) after filtering.",
+            "info",
+            "📊"
+        )
         return all_jobs
+
+    # Helper methods for job filtering
+    def _matches_location_filter(self, job, location_filters):
+        if not location_filters:
+            return True
+        
+        if isinstance(location_filters, str):
+            location_filters = [location_filters]
+        location_filters = [loc.lower() for loc in location_filters if isinstance(loc, str) and loc.strip()]
+        if not location_filters:
+            return True
+        
+        possible_locations = []
+        
+        location_value = job.get('location') or job.get('job_location')
+        if location_value:
+            if isinstance(location_value, dict):
+                possible_locations.extend(
+                    str(v) for v in location_value.values() if isinstance(v, str)
+                )
+            elif isinstance(location_value, list):
+                possible_locations.extend(str(item) for item in location_value if item)
+            else:
+                possible_locations.append(str(location_value))
+        
+        for key in ['locations', 'locationNames']:
+            if key in job and isinstance(job[key], list):
+                for loc in job[key]:
+                    if isinstance(loc, dict):
+                        possible_locations.extend(str(v) for v in loc.values() if isinstance(v, str))
+                    else:
+                        possible_locations.append(str(loc))
+        
+        if 'workplaceType' in job and job['workplaceType']:
+            possible_locations.append(str(job['workplaceType']))
+        
+        if not possible_locations:
+            return True  # no location info, keep
+        
+        lower_locations = [loc.lower() for loc in possible_locations if isinstance(loc, str)]
+        return any(any(filter_value in loc for loc in lower_locations) for filter_value in location_filters)
+    
+    def _matches_experience_filter(self, job, experience_filter):
+        if not experience_filter:
+            return True
+        
+        if isinstance(experience_filter, str):
+            experience_filters = [experience_filter]
+        else:
+            experience_filters = [f for f in experience_filter if isinstance(f, str)]
+        experience_filters = [f.lower() for f in experience_filters if f.strip()]
+        if not experience_filters:
+            return True
+        
+        fields_to_check = [
+            job.get('experience_level'),
+            job.get('experienceLevel'),
+            job.get('experience'),
+            job.get('job_level'),
+            job.get('jobLevel'),
+            job.get('seniority'),
+            job.get('seniority_level'),
+            job.get('seniorityLevel')
+        ]
+        
+        found_any_field = False
+        for field in fields_to_check:
+            if not field:
+                continue
+            found_any_field = True
+            field_values = []
+            if isinstance(field, str):
+                field_values.append(field.lower())
+            elif isinstance(field, list):
+                field_values.extend(str(item).lower() for item in field if item)
+            elif isinstance(field, dict):
+                field_values.extend(str(v).lower() for v in field.values() if v)
+
+            if any(
+                any(filter_value in value for filter_value in experience_filters)
+                for value in field_values
+            ):
+                return True
+        
+        return not found_any_field  # keep if no data to compare
+    
+    def _extract_salary_value(self, value, prefer_max=False):
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return value
+        if isinstance(value, dict):
+            keys_preference = (
+                ['max', 'maximum', 'max_amount', 'maxAmount', 'high', 'upperBound']
+                if prefer_max else
+                ['min', 'minimum', 'min_amount', 'minAmount', 'low', 'lowerBound']
+            )
+            for key in keys_preference:
+                if key in value and value[key] is not None:
+                    return self._extract_salary_value(value[key], prefer_max=prefer_max)
+            for dict_value in value.values():
+                parsed = self._extract_salary_value(dict_value, prefer_max=prefer_max)
+                if parsed is not None:
+                    return parsed
+        if isinstance(value, list):
+            parsed_values = [
+                self._extract_salary_value(item, prefer_max=prefer_max)
+                for item in value
+            ]
+            parsed_values = [v for v in parsed_values if v is not None]
+            if parsed_values:
+                return max(parsed_values) if prefer_max else min(parsed_values)
+        if isinstance(value, str):
+            numbers = re.findall(r'\d[\d,]*', value)
+            if numbers:
+                numbers = [int(n.replace(',', '')) for n in numbers]
+                return max(numbers) if prefer_max else min(numbers)
+        return None
+    
+    def _matches_salary_filter(self, job, salary_min, salary_max):
+        if salary_min is None and salary_max is None:
+            return True
+        
+        salary_info = (
+            job.get('salary') or
+            job.get('salary_range') or
+            job.get('salaryRange') or
+            job.get('compensation') or
+            job.get('pay')
+        )
+        
+        if not salary_info:
+            return True  # keep when salary info missing
+        
+        job_min = self._extract_salary_value(salary_info, prefer_max=False)
+        job_max = self._extract_salary_value(salary_info, prefer_max=True)
+        
+        if salary_min is not None and job_max is not None and job_max < salary_min:
+            return False
+        if salary_max is not None and job_min is not None and job_min > salary_max:
+            return False
+        
+        return True
 
     def search_recruiters(self, company_ids, keywords="recruiter", company_id_to_name=None):
         """
@@ -607,10 +907,20 @@ class UnifiedMessenger:
                 continue
 
             used_indices.add(chosen_idx)
-            chosen = recruiters[chosen_idx]
+            chosen = recruiters[chosen_idx].copy()  # Make a copy to avoid modifying the original
+            
+            # Extract job_url from the job - try multiple possible keys
+            job_url = job.get('job_url') or job.get('url') or job.get('link') or job.get('canonical_url')
+            
+            # CRITICAL: Attach the job_url to the recruiter so it's available during email generation
+            chosen['job_url'] = job_url
+            chosen['job_title'] = job_title
+            chosen['job_company'] = job_company
+            
             recruiter_name = chosen.get('name', 'Unknown')
             recruiter_company = self._recruiter_company_name(chosen) or chosen.get('company', 'Unknown')
             logger.info(f"🔍 DEBUG: Mapped {job_title} -> {recruiter_name} ({recruiter_company})")
+            logger.info(f"🔗 DEBUG: Job URL attached to recruiter: {job_url}")
             
             emit_verbose_log_sync(f"🧩 Matched: {job_title} @ {job_company} → {recruiter_name} @ {recruiter_company}", "success", "🧩")
             
@@ -618,6 +928,7 @@ class UnifiedMessenger:
             mapping.append({
                 'job_title': job.get('title'),
                 'job_company': self._get_company_name_from_job(job),
+                'job_url': job_url,  # Include job_url in mapping for reference
                 'recruiter_name': chosen.get('name'),
                 'recruiter_company': self._recruiter_company_name(chosen) or chosen.get('company'),
                 'recruiter_profile_url': chosen.get('profile_url')
@@ -781,7 +1092,7 @@ class UnifiedMessenger:
         
         # Search for jobs
         print("\n" + "="*50)
-        jobs = self.search_jobs(company_ids, job_titles, job_type)
+        jobs = self.search_jobs(company_ids, job_titles, [job_type] if job_type else None)
         
         # Ask user if they want intelligent filtering
         if jobs and self.job_filter:
@@ -1028,211 +1339,159 @@ class UnifiedMessenger:
         
         return recruiters_with_emails
     
-    def generate_email_content(self, job_titles, job_type, recruiter, resume_content):
-        """
-        Generate professional email content for recruiter outreach.
-        Uses resume_parser for efficient content extraction when available.
-        """
+    async def generate_email_content(self, job_titles, job_type, recruiter, resume_content, job_url=None):
+        """Generate a longer, context-rich outreach email. Now fully async!"""
+
         recruiter_name = recruiter.get('name', 'Hiring Manager')
-        # Prefer enriched recruiter.company; fall back to Apollo org name; else default
-        company_name = recruiter.get('company') or (
-            recruiter.get('apollo_data', {}).get('organization', {}).get('name') if isinstance(recruiter.get('apollo_data'), dict) else None
-        ) or 'your company'
-        # Debug: show resolved company name
-        print(f"🔎 Resolved company name: {company_name}")
         
-        job_titles_str = ', '.join(job_titles)
-        
-        # Resume content from database is already parsed bullets, use directly
-        # Only parse if this looks like raw resume content (very long, not bullet format)
-        is_parsed_bullets = False
-        if resume_content:
-            # Check if it's short enough to be parsed bullets
-            if len(resume_content) < 1000:
-                # Check if it contains bullet-like characters (•, -, *, etc.)
-                bullet_chars = ['•', '-', '*', '→', '·']
-                lines = resume_content.strip().split('\n')
-                bullet_lines = sum(1 for line in lines if line.strip() and any(line.strip().startswith(char) for char in bullet_chars))
-                # If more than half the non-empty lines start with bullets, it's likely parsed
-                if bullet_lines > len([l for l in lines if l.strip()]) * 0.3:
-                    is_parsed_bullets = True
-            
-            if not is_parsed_bullets and len(resume_content) > 1500:
-                # This looks like raw resume content, parse it
-                if self.resume_generator and self.resume_generator.resume_parser:
-                    try:
-                        print("📝 Parsing raw resume content (not from database)...")
-                        resume_bullets = self.resume_generator.resume_parser.extract_key_bullets(resume_content)
-                        resume_highlights = resume_bullets
-                    except Exception as e:
-                        print(f"⚠️  Resume parser failed, using truncated content: {e}")
-                        resume_highlights = resume_content[:1200]
-                else:
-                    resume_highlights = resume_content[:1200]
-            else:
-                # Already parsed bullets from database, use directly
-                resume_highlights = resume_content
+        # If job_url is not provided as argument, try to get it from recruiter data
+        if not job_url:
+            job_url = recruiter.get('job_url')
+            print(f"🔗 No job_url provided as argument, extracted from recruiter: {job_url}")
         else:
-            resume_highlights = 'No resume content available'
+            print(f"🔗 Using job_url from argument: {job_url}")
+
+        job_context = await self._fetch_job_context(job_url)
+
+        company_name = (
+            recruiter.get('company')
+            or recruiter.get('company_name')
+            or (
+                recruiter.get('apollo_data', {}).get('organization', {}).get('name')
+                if isinstance(recruiter.get('apollo_data'), dict)
+                else None
+            )
+            or (job_context.get('company') if job_context else None)
+            or 'your company'
+        )
+        print(f"🔎 Resolved company name: {company_name}")
+
+        job_titles_str = ', '.join(job_titles)
+        job_type_label = {
+            'full_time': 'full-time',
+            'internship': 'internship',
+        }.get(job_type, job_type)
+
+        # Safely extract and convert job context fields to strings
+        def safe_extract_list(context, key, default_empty=''):
+            if not context:
+                return default_empty
+            value = context.get(key, [])
+            if not value:
+                return default_empty
+            if not isinstance(value, list):
+                print(f"⚠️ Warning: {key} is not a list (type: {type(value)}), converting...")
+                try:
+                    value = list(value) if value else []
+                except (TypeError, ValueError):
+                    print(f"❌ Could not convert {key} to list, using empty list")
+                    return default_empty
+            return ', '.join(str(item) for item in value[:3]) if value else default_empty
         
-        # Create email generation prompt with strict structure and explicit output contract
+        requirements = safe_extract_list(job_context, 'requirements')
+        technologies = safe_extract_list(job_context, 'technologies')
+        responsibilities = safe_extract_list(job_context, 'responsibilities')
+
+        resume_details = self._extract_resume_details(resume_content)
+        education_text = resume_details.get('education') or 'Not specified'
+        graduation_text = resume_details.get('graduation') or 'Not specified'
+        experience_highlights = resume_details.get('experience', [])
+        experience_text = '; '.join(experience_highlights[:4]) if experience_highlights else 'Not specified'
+
         email_prompt = f"""
-You are formatting an outreach email. Follow these RULES STRICTLY and return ONLY the content between <<<BEGIN>>> and <<<END>>>.
+You are writing a professional outreach email. Follow these instructions carefully and return ONLY the content between <<<BEGIN>>> and <<<END>>>.
+
+CONTEXT:
+- Recruiter: {recruiter_name}
+- Company: {company_name}
+- Roles of Interest: {job_titles_str} ({job_type_label})
+- Job Requirements: {requirements or 'Not specified'}
+- Job Technologies: {technologies or 'Not specified'}
+- Job Responsibilities: {responsibilities or 'Not specified'}
+- Education Summary: {education_text}
+- Graduation Detail: {graduation_text}
+- Resume Experience Highlights: {experience_text}
+
+STRUCTURE:
+1. Open with a greeting that includes a courteous introduction (e.g., "I hope you're doing well") and clearly state the role at {company_name} you are pursuing.
+2. Provide a short paragraph introducing yourself, focusing on education and explicitly mentioning university and graduation date when available.
+3. Write a paragraph with 3-4 sentences that creates DIRECT, SPECIFIC mappings between the job requirements/technologies and your experience. For EACH requirement or technology listed, create a connection following this template: "My experience at [SPECIFIC COMPANY] helped me master fundamentals in [SPECIFIC TECHNOLOGY/SKILL], which is directly applicable to this position because [SPECIFIC REASON from requirements]." DO NOT use general statements. MUST reference specific companies from experience highlights and specific technologies/requirements from the job posting.
+4. Conclude with a warm, professional closing inviting a conversation. End with "Best regards," and "Shreyas Tulsi" exactly.
+
+CRITICAL REQUIREMENTS FOR PARAGRAPH 3:
+- Pick 2-3 specific requirements or technologies from the job posting
+- For EACH one, mention a specific company/role from experience highlights where you used that skill
+- Explain the direct connection: "My [experience at X] → developed [specific skill Y] → useful for [specific requirement Z]"
+- Be concrete: mention actual technologies, actual companies, actual outcomes
+- Avoid vague phrases like "strong background" or "extensive experience" - use specific examples only
+
+EXAMPLE OF GOOD PARAGRAPH 3 (if job requires Python and ML):
+"My internship at Amazon provided hands-on experience with Python for building data processing pipelines, which directly aligns with your requirement for Python proficiency. Additionally, my research at UCLA Data Mining Lab helped me master machine learning fundamentals through implementing classification models, skills that would be valuable for developing the ML features mentioned in the role. At Anvi Cybernetics, I applied these technologies to real-world problems, strengthening my ability to translate technical requirements into production solutions."
+
+EXAMPLE OF BAD PARAGRAPH 3 (too vague):
+"I have strong experience in software development and have worked with various technologies. My background includes internships at leading companies where I gained valuable skills. I'm confident these experiences would be beneficial for this role."
 
 RULES:
-- ASCII only. No smart quotes or fancy bullet characters.
-- Use EXACTLY this structure and wording for the first and last lines.
-- Use '-' hyphen bullets only, 2-3 bullets, each <= 12 words.
+- Use ASCII characters only.
+- Write in full sentences; do not use bullet points.
+- Keep the email between 180 and 240 words.
+- Mention {company_name} at least twice.
+- Maintain a polished yet friendly tone.
+- Paragraph 3 must contain specific mappings, not general claims.
 
-TEMPLATE (copy exactly, replacing bracketed guidance):
+OUTPUT TEMPLATE:
 <<<BEGIN>>>
-SUBJECT: Interest in {job_titles_str} Opportunities at {company_name}
+SUBJECT: Exploring {job_titles_str} opportunities at {company_name}
 
 BODY:
-Dear {recruiter_name},
-
-I hope you're doing well. I'm reaching out to express my interest in {job_titles_str} roles at {company_name}. [Add 1-2 sentences about why you're interested in the company and role]
-
-- [Bullet 1: most relevant skills/experience]
-- [Bullet 2: another relevant skills/experience]
-- [Optional Bullet 3: if uniquely strong]
-
-I'd love to chat about how I could bring my skills and passion for technology to {company_name}. Would you be open to a quick conversation?
-
-Best regards,
-Shreyas Tulsi
+[Write the body following the structure above with paragraphs separated by blank lines.]
 <<<END>>>
-
-RESUME HIGHLIGHTS (use to craft concise bullets):
-{resume_highlights}
 """
-        
+
+        print("📬 Email generation prompt:\n" + email_prompt)
+        print(f"📬 Prompt context summary for {job_url}:")
+        print(f"   • Requirements: {job_context.get('requirements') if job_context else []}")
+        print(f"   • Technologies: {job_context.get('technologies') if job_context else []}")
+        print(f"   • Responsibilities: {job_context.get('responsibilities') if job_context else []}")
+
         try:
             if self.resume_generator:
                 result = self.resume_generator.llm.invoke(email_prompt)
-                # Handle ChatOpenAI response format properly
-                if hasattr(result, 'content'):
-                    email_content = result.content.strip()
-                elif isinstance(result, dict):
-                    email_content = result.get('text', result.get('content', str(result))).strip()
-                else:
-                    email_content = str(result).strip()
-                
-                # Extract between explicit markers if present
+                email_content = (
+                    result.content.strip()
+                    if hasattr(result, 'content')
+                    else (result.get('text', result.get('content', str(result))).strip()
+                          if isinstance(result, dict)
+                          else str(result).strip())
+                )
+
                 if '<<<BEGIN>>>' in email_content and '<<<END>>>' in email_content:
                     email_content = email_content.split('<<<BEGIN>>>', 1)[1].split('<<<END>>>', 1)[0].strip()
-                
-                # Parse subject and body
+
                 if 'SUBJECT:' in email_content and 'BODY:' in email_content:
                     parts = email_content.split('BODY:', 1)
                     subject = parts[0].replace('SUBJECT:', '').strip()
                     body = parts[1].strip()
-                elif 'SUBJECT:' in email_content:
-                    # If only SUBJECT is present, split on it
-                    parts = email_content.split('SUBJECT:', 1)
-                    if len(parts) == 2:
-                        # Subject is the first line after SUBJECT:
-                        remaining = parts[1].strip()
-                        lines = remaining.split('\n', 1)
-                        subject = lines[0].strip()
-                        body = lines[1].strip() if len(lines) > 1 else ""
-                    else:
-                        subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
-                        body = email_content
                 else:
-                    subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
+                    subject = f"Exploring {job_titles_str} opportunities at {company_name}"
                     body = email_content
-                
-                # Additional cleanup and normalization
-                body_lines = body.split('\n')
-                body_lines = [line for line in body_lines if not line.strip().startswith('SUBJECT:')]
-                body = '\n'.join(body_lines)
-                
-                # Normalize bullets to '-' and enforce 2-3 bullets, short length
-                lines = [ln.rstrip() for ln in body.split('\n')]
-                normalized = []
-                bullet_lines = []
-                for ln in lines:
-                    # replace common bullet chars with '-'
-                    clean_ln = ln.replace('•', '-').replace('–', '-').replace('—', '-')
-                    # collapse multiple spaces in bullet line
-                    if clean_ln.strip().startswith('-'):
-                        bullet_lines.append(clean_ln)
-                    normalized.append(clean_ln)
-                
-                # Limit bullets to 3, keep at least 2 if available
-                if bullet_lines:
-                    # shorten each bullet to <= 12 words
-                    def shorten_bullet(text):
-                        words = text.split()
-                        # ensure leading '-' remains
-                        if words and words[0].startswith('-'):
-                            head = words[0]
-                            rest = words[1:13]
-                            return ' '.join([head] + rest)
-                        return ' '.join(words[:12])
-                    bullet_lines = [shorten_bullet(b) for b in bullet_lines]
-                    bullet_lines = bullet_lines[:3]
-                    if len(bullet_lines) == 1:
-                        # if only one bullet, keep it; template allows optional 3rd
-                        pass
-                
-                # Rebuild body preserving greeting, paragraphs, and replacing bullet block
-                # Find indices of first and last bullet in normalized
-                first_idx = next((i for i, ln in enumerate(normalized) if ln.strip().startswith('-')), None)
-                last_idx = None
-                if first_idx is not None:
-                    for i in range(len(normalized)-1, -1, -1):
-                        if normalized[i].strip().startswith('-'):
-                            last_idx = i
-                            break
-                if first_idx is not None and last_idx is not None:
-                    rebuilt = normalized[:first_idx] + bullet_lines + normalized[last_idx+1:]
-                else:
-                    rebuilt = normalized
-                
-                # Trim body to <= 150 words (soft limit)
-                def word_count(s):
-                    return len([w for w in re.split(r"\s+", s.strip()) if w])
-                body = '\n'.join(rebuilt).strip()
-                if word_count(body) > 150:
-                    # Keep header lines until bullets, bullets (max 3), closing lines
-                    parts = body.split('\n')
-                    # Preserve greeting block until first blank line after greeting
-                    # Simple truncation to 150 words
-                    tokens = []
-                    for ln in parts:
-                        for w in ln.split():
-                            if len(tokens) >= 150:
-                                break
-                            tokens.append(w)
-                        if len(tokens) >= 150:
-                            break
-                        tokens.append('\n')
-                    body = ' '.join(tokens).replace(' \n ', '\n').replace(' \n', '\n').strip()
-                
-                # Validate email completeness - check for proper closing
-                if not (('Best regards' in body or 'Sincerely' in body) and 'Shreyas' in body):
-                    print(f"⚠️  Generated email incomplete, adding proper closing")
-                    # Remove any trailing incomplete text
-                    body = body.strip()
-                    # Add proper closing if missing
-                    if not body.endswith('Shreyas Tulsi'):
-                        if not ('Best regards' in body or 'Sincerely' in body):
-                            body += "\n\nBest regards,\nShreyas Tulsi"
-                        else:
-                            body += "\nShreyas Tulsi"
-                
+
+                if not subject:
+                    subject = f"Exploring {job_titles_str} opportunities at {company_name}"
+
+                if 'Best regards' not in body:
+                    body = body.rstrip() + "\n\nBest regards,\nShreyas Tulsi"
+
                 return subject, body
-            else:
-                subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
-                body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\nShreyas Tulsi"
-                return subject, body
-                
-        except Exception as e:
-            print(f"⚠️  Error generating email: {e}")
-            subject = f"Interest in {job_titles_str} Opportunities at {company_name}"
-            body = f"Dear {recruiter_name},\n\nI am writing to express my interest in {job_titles_str} opportunities at {company_name}. I believe my background and experience make me a strong candidate for these roles.\n\nI would welcome the opportunity to discuss how my skills align with your team's needs.\n\nBest regards,\nShreyas Tulsi"
+
+            subject = f"Exploring {job_titles_str} opportunities at {company_name}"
+            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str)
+            return subject, body
+
+        except Exception as exc:
+            print(f"⚠️  Error generating email: {exc}")
+            subject = f"Exploring {job_titles_str} opportunities at {company_name}"
+            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str)
             return subject, body
     
     def send_email(self, to_email, subject, body):
@@ -1536,7 +1795,13 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
         # Show email preview for first recruiter with email
         email_recruiter = next((r for r in recruiters_with_emails if r.get('extracted_email')), None)
         if email_recruiter and resume_content:
-            subject, body = self.generate_email_content(job_titles, job_type, email_recruiter, resume_content)
+            subject, body = self.generate_email_content(
+                job_titles,
+                job_type,
+                email_recruiter,
+                resume_content,
+                email_recruiter.get('job_url') if isinstance(email_recruiter, dict) else None,
+            )
             print(f"\n📧 EMAIL TEMPLATE (Sample):")
             print("-" * 40)
             print(f"📝 Subject: {subject}")
@@ -1584,7 +1849,13 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
             email = recruiter.get('extracted_email')
             if email and resume_content:
                 try:
-                    subject, body = self.generate_email_content(job_titles, job_type, recruiter, resume_content)
+                    subject, body = self.generate_email_content(
+                        job_titles,
+                        job_type,
+                        recruiter,
+                        resume_content,
+                        recruiter.get('job_url') if isinstance(recruiter, dict) else None,
+                    )
                     
                     email_type = "⚠️  (DEFAULT)" if email == DEFAULT_EMAIL else "✅"
                     print(f"📧 Sending email {email_type} to: {email}")
@@ -1680,7 +1951,13 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
         # Show email preview for first recruiter with email
         email_recruiter = next((r for r in recruiters_with_emails if r.get('extracted_email')), None)
         if email_recruiter and resume_content:
-            subject, body = self.generate_email_content(job_titles, job_type, email_recruiter, resume_content)
+            subject, body = self.generate_email_content(
+                job_titles,
+                job_type,
+                email_recruiter,
+                resume_content,
+                email_recruiter.get('job_url') if isinstance(email_recruiter, dict) else None,
+            )
             print(f"\n📧 EMAIL TEMPLATE (Sample):")
             print("-" * 40)
             print(f"📝 Subject: {subject}")
@@ -1751,7 +2028,13 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
             email = recruiter.get('extracted_email')
             if email and resume_content:
                 try:
-                    subject, body = self.generate_email_content(job_titles, job_type, recruiter, resume_content)
+                    subject, body = self.generate_email_content(
+                        job_titles,
+                        job_type,
+                        recruiter,
+                        resume_content,
+                        recruiter.get('job_url') if isinstance(recruiter, dict) else None,
+                    )
                     
                     email_type = "⚠️  (DEFAULT)" if email == DEFAULT_EMAIL else "✅"
                     print(f"📧 Sending email {email_type} to: {email}")
@@ -1880,6 +2163,69 @@ RESUME HIGHLIGHTS (use to craft concise bullets):
             else:
                 print(f"❌ No existing chat found with '{user_input}'")
                 print("💡 Try using their LinkedIn profile URL instead.")
+
+    def _fallback_email_body(self, recruiter_name: str, company_name: str, job_titles_str: str) -> str:
+        return (
+            f"Dear {recruiter_name},\n\n"
+            f"I hope you're doing well. I'm reaching out to express my interest in {job_titles_str} opportunities at {company_name}. "
+            "My background combines rigorous academic training with hands-on project experience that aligns well with this team.\n\n"
+            f"I'd appreciate the chance to discuss how I can contribute to {company_name}'s goals and would welcome a quick conversation at your convenience.\n\n"
+            "Best regards,\n"
+            "Shreyas Tulsi"
+        )
+
+    def _extract_resume_details(self, resume_content: Optional[str]) -> Dict[str, Any]:
+        details: Dict[str, Any] = {
+            'education': None,
+            'graduation': None,
+            'experience': [],
+        }
+
+        if not resume_content:
+            return details
+
+        lines = [line.strip() for line in resume_content.splitlines() if line.strip()]
+        for line in lines:
+            normalized = line.lstrip('•').strip()
+            if normalized.lower().startswith('education') and not details['education']:
+                details['education'] = normalized
+            if 'graduation' in normalized.lower() and not details['graduation']:
+                details['graduation'] = normalized
+            if normalized.startswith('-'):
+                details['experience'].append(normalized.lstrip('-').strip())
+            elif normalized.startswith('•'):
+                # Already handled, but keep for safety
+                continue
+            elif line.startswith('-') or line.startswith('•'):
+                details['experience'].append(line.lstrip('-•').strip())
+
+        return details
+
+    async def _fetch_job_context(self, job_url: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Fetch job context from database. Now fully async!"""
+        if not job_url:
+            print("⚠️ No job_url provided to _fetch_job_context")
+            return None
+
+        async with AsyncSessionLocal() as session:
+            try:
+                tracker = JobContextTracker(session)
+                context = await tracker.fetch_job_context(job_url)
+                # Commit any updates that might have happened during fetch (like re-parsing)
+                await session.commit()
+                
+                if context:
+                    print(f"✅ Successfully fetched job context for {job_url}")
+                else:
+                    print(f"⚠️ No job context found for {job_url}")
+                
+                return context
+            except Exception as e:
+                print(f"❌ Error fetching job context: {e}")
+                import traceback
+                traceback.print_exc()
+                await session.rollback()
+                return None
 
 def main():
     """Entry point for the script."""

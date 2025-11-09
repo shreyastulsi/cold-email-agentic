@@ -244,3 +244,61 @@ async def get_resume_status(
         "has_edited_content": resume_content is not None and resume_content.updated_at is not None
     }
 
+
+@router.get("/resume/structured")
+async def get_structured_resume_data(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get structured resume data (JSON format with all sections)."""
+    import json
+    
+    # Check database for extracted content
+    result = await db.execute(
+        select(ResumeContent).where(ResumeContent.owner_id == current_user.id)
+    )
+    resume_content = result.scalar_one_or_none()
+    
+    if not resume_content:
+        raise HTTPException(status_code=404, detail="No resume content found. Please upload a resume first.")
+    
+    # Check multiple possible locations for PDF file
+    possible_paths = [
+        RESUMES_DIR / "Resume-Tulsi,Shreyas.pdf",
+        Path("ananya/Resume-Tulsi,Shreyas.pdf"),
+        Path("backend/Resume-Tulsi,Shreyas.pdf"),
+        Path("Resume-Tulsi,Shreyas.pdf"),
+    ]
+    
+    pdf_path = None
+    for path in possible_paths:
+        if path.exists():
+            pdf_path = path
+            break
+    
+    if not pdf_path:
+        raise HTTPException(status_code=404, detail="Resume PDF not found. Please upload a resume first.")
+    
+    try:
+        # Load raw resume content from PDF
+        messenger = get_messenger()
+        if not messenger or not messenger.resume_generator:
+            raise HTTPException(status_code=500, detail="Resume generator not available")
+        
+        raw_resume_content = messenger.resume_generator.load_resume(str(pdf_path))
+        
+        # Parse structured data
+        from app.services.unified_messenger.resume_parser import ResumeParser
+        resume_parser = ResumeParser()
+        structured_data = resume_parser.get_structured_resume_data(raw_resume_content)
+        
+        return {
+            "structured_data": structured_data,
+            "parsed_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        print(f"❌ Error getting structured resume data: {e}")
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to parse structured resume data: {str(e)}")
+
