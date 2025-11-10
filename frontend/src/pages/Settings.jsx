@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Auth from '../components/Auth'
 import { Button } from '../components/ui/button'
@@ -99,6 +99,10 @@ export default function Settings() {
   const handleEmailOAuthLink = async (provider) => {
     try {
       setEmailError(null)
+      if (emailAccounts.length > 0) {
+        setEmailError('You already have an email account connected. Please delete your current account before adding a new one.')
+        return
+      }
       const result = await apiRequest(`/api/v1/email-accounts/oauth/${provider}/auth-url`)
       
       const width = 600
@@ -159,6 +163,10 @@ export default function Settings() {
     setEmailError(null)
     
     try {
+      if (emailAccounts.length > 0) {
+        setEmailError('You already have an email account connected. Please delete your current account before adding a new one.')
+        return
+      }
       await apiRequest('/api/v1/email-accounts', {
         method: 'POST',
         body: JSON.stringify({
@@ -169,7 +177,6 @@ export default function Settings() {
           smtp_port: parseInt(customForm.smtp_port),
           smtp_username: customForm.smtp_username,
           smtp_password: customForm.smtp_password,
-          is_default: emailAccounts.length === 0,
         })
       })
       
@@ -185,19 +192,6 @@ export default function Settings() {
       loadEmailAccounts()
     } catch (err) {
       setEmailError(err.message || 'Failed to add email account')
-    }
-  }
-
-  // Set default email account
-  const handleSetDefaultEmail = async (accountId) => {
-    try {
-      await apiRequest(`/api/v1/email-accounts/${accountId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_default: true })
-      })
-      loadEmailAccounts()
-    } catch (err) {
-      setEmailError(err.message || 'Failed to set default account')
     }
   }
 
@@ -217,29 +211,6 @@ export default function Settings() {
     }
   }
 
-  // Toggle email account active status
-  const handleToggleEmailActive = async (accountId, isActive) => {
-    try {
-      // If trying to enable, check if another account is already enabled
-      if (!isActive) {
-        const activeAccount = emailAccounts.find(acc => acc.id !== accountId && acc.is_active)
-        if (activeAccount) {
-          const confirmMessage = `Another email account (${activeAccount.email || activeAccount.display_name}) is already enabled. Enabling this account will disable the other one. Continue?`
-          if (!confirm(confirmMessage)) {
-            return
-          }
-        }
-      }
-      
-      await apiRequest(`/api/v1/email-accounts/${accountId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_active: !isActive })
-      })
-      loadEmailAccounts()
-    } catch (err) {
-      setEmailError(err.message || 'Failed to update email account')
-    }
-  }
 
   // Handle Unipile hosted auth flow for LinkedIn
   const handleLinkedInAuthLink = async () => {
@@ -272,29 +243,7 @@ export default function Settings() {
     }
   }
 
-  // Toggle LinkedIn account active status
-  const handleToggleLinkedInActive = async (accountId, isActive) => {
-    try {
-      // If trying to enable, check if another account is already enabled
-      if (!isActive) {
-        const activeAccount = linkedInAccounts.find(acc => acc.id !== accountId && acc.is_active)
-        if (activeAccount) {
-          const confirmMessage = `Another LinkedIn account (${activeAccount.display_name || 'LinkedIn Account'}) is already enabled. Enabling this account will disable the other one. Continue?`
-          if (!confirm(confirmMessage)) {
-            return
-          }
-        }
-      }
-      
-      await apiRequest(`/api/v1/linkedin-accounts/${accountId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_active: !isActive })
-      })
-      loadLinkedInAccounts()
-    } catch (err) {
-      setLinkedInError(err.message || 'Failed to update LinkedIn account')
-    }
-  }
+  // Removed handleToggleLinkedInActive - users can only have one LinkedIn account, no enable/disable needed
 
   const getProviderIcon = (provider) => {
     switch (provider) {
@@ -370,12 +319,18 @@ export default function Settings() {
               <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Connected Accounts</h3>
-                  <button
-                    onClick={() => setShowAddEmailModal(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
-                  >
-                    + Link Email Account
-                  </button>
+                  {emailAccounts.length === 0 ? (
+                    <button
+                      onClick={() => setShowAddEmailModal(true)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
+                    >
+                      + Link Email Account
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      You can only have one email account connected. Delete your current account to connect a different one.
+                    </p>
+                  )}
                 </div>
 
                 {emailLoading ? (
@@ -405,21 +360,6 @@ export default function Settings() {
                                   <h3 className="font-semibold">
                                     {account.display_name || account.email}
                                   </h3>
-                                  {account.is_default && (
-                                    <span className="rounded-full bg-blue-900/50 border border-blue-700/50 px-2 py-1 text-xs font-medium text-blue-300">
-                                      Default
-                                    </span>
-                                  )}
-                                  {account.is_active && (
-                                    <span className="rounded-full bg-green-900/50 border border-green-700/50 px-2 py-1 text-xs font-medium text-green-300">
-                                      Active
-                                    </span>
-                                  )}
-                                  {!account.is_active && (
-                                    <span className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2 py-1 text-xs font-medium text-gray-400">
-                                      Inactive
-                                    </span>
-                                  )}
                                 </div>
                                 <p className="text-sm text-gray-300 mt-1">{account.email}</p>
                                 <p className="text-xs text-gray-400 mt-1 capitalize">
@@ -429,24 +369,6 @@ export default function Settings() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {!account.is_default && (
-                              <button
-                                onClick={() => handleSetDefaultEmail(account.id)}
-                                className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-700/50"
-                              >
-                                Set Default
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleToggleEmailActive(account.id, account.is_active)}
-                              className={`rounded-lg px-3 py-1.5 text-sm border ${
-                                account.is_active
-                                  ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
-                                  : 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
-                              }`}
-                            >
-                              {account.is_active ? 'Disable' : 'Enable'}
-                            </button>
                             <Button
                               onClick={() => handleDeleteEmail(account.id)}
                               variant="destructive"
@@ -690,12 +612,19 @@ export default function Settings() {
               <div className="rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Connected Accounts</h3>
-                  <button
-                    onClick={handleLinkedInAuthLink}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
-                  >
-                    + Connect LinkedIn Account
-                  </button>
+                  {linkedInAccounts.length === 0 && (
+                    <button
+                      onClick={handleLinkedInAuthLink}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium"
+                    >
+                      + Connect LinkedIn Account
+                    </button>
+                  )}
+                  {linkedInAccounts.length > 0 && (
+                    <p className="text-sm text-gray-400">
+                      You can only have one LinkedIn account. Delete your current account to connect a different one.
+                    </p>
+                  )}
                 </div>
 
                 {linkedInLoading ? (
@@ -730,21 +659,6 @@ export default function Settings() {
                                   <h3 className="font-semibold">
                                     {account.display_name || 'LinkedIn Account'}
                                   </h3>
-                                  {account.is_default && (
-                                    <span className="rounded-full bg-blue-900/50 border border-blue-700/50 px-2 py-1 text-xs font-medium text-blue-300">
-                                      Default
-                                    </span>
-                                  )}
-                                  {account.is_active && (
-                                    <span className="rounded-full bg-green-900/50 border border-green-700/50 px-2 py-1 text-xs font-medium text-green-300">
-                                      Active
-                                    </span>
-                                  )}
-                                  {!account.is_active && (
-                                    <span className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2 py-1 text-xs font-medium text-gray-400">
-                                      Inactive
-                                    </span>
-                                  )}
                                 </div>
                                 {account.linkedin_profile_url && (
                                   <a
@@ -760,16 +674,6 @@ export default function Settings() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleToggleLinkedInActive(account.id, account.is_active)}
-                              className={`rounded-lg px-3 py-1.5 text-sm border ${
-                                account.is_active
-                                  ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
-                                  : 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
-                              }`}
-                            >
-                              {account.is_active ? 'Disable' : 'Enable'}
-                            </button>
                             <Button
                               onClick={() => handleDeleteLinkedIn(account.id)}
                               variant="destructive"

@@ -1,15 +1,15 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4293975204",
-    "title": "Machine Learning Software Development Engineer",
+    "url": "https://www.linkedin.com/jobs/view/4217804156",
+    "title": "Sr. Software Dev. Engineer/MLE, AGI Customization",
     "company": {
-      "name": "AMD",
-      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Austin, TX",
-    "applications": "Over 200 applicants",
-    "salary": "$200,000.00/yr - $300,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Optimize deep learning frameworks like TensorFlow and PyTorch for AMD GPUs.\n- Develop and optimize GPU kernels for AI operations.\n- Collaborate with internal teams to enhance training and inference performance.\n- Engage with open-source maintainers for code integration.\n- Optimize performance in multi-GPU and multi-node systems.\n- Apply software engineering best practices for maintainable solutions.\n- Mentor junior team members through guidance and code reviews.\n\n**REQUIREMENTS:**\n- Expertise in C++ and advanced analytical skills in Linux.\n- Proven experience in GPU kernel development and optimization.\n- Strong knowledge of AMD architectures and low-level programming.\n- Proficiency in Python and performance tuning.\n- Extensive experience in technical software development and GPU optimization.\n- Master’s or PhD in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- Deep learning frameworks: TensorFlow, PyTorch.\n- GPU programming: HIP, CUDA, assembly (ASM).\n- Compiler technologies: LLVM, ROCm.\n- Performance optimization tools: Compute Kernel (CK), CUTLASS, Triton.\n- High-performance computing environments and resource optimization.",
+    "location": "Boston, MA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "RESPONSIBILITIES:\n• Lead development of LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Investigate design approaches and evaluate technical feasibility.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI frameworks.  \n• Agile/Scrum methodologies.  \n• Large-scale computing resources.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -21,30 +21,30 @@
       },
       {
         "name": "Job function",
-        "value": "Engineering"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Semiconductor Manufacturing"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Optimize deep learning frameworks like TensorFlow and PyTorch for AMD GPUs.\n- Develop and optimize GPU kernels for AI operations.\n- Collaborate with internal teams to enhance training and inference performance.\n- Engage with open-source maintainers for code integration.\n- Optimize performance in multi-GPU and multi-node systems.\n- Apply software engineering best practices for maintainable solutions.\n- Mentor junior team members through guidance and code reviews.\n\n**REQUIREMENTS:**\n- Expertise in C++ and advanced analytical skills in Linux.\n- Proven experience in GPU kernel development and optimization.\n- Strong knowledge of AMD architectures and low-level programming.\n- Proficiency in Python and performance tuning.\n- Extensive experience in technical software development and GPU optimization.\n- Master’s or PhD in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- Deep learning frameworks: TensorFlow, PyTorch.\n- GPU programming: HIP, CUDA, assembly (ASM).\n- Compiler technologies: LLVM, ROCm.\n- Performance optimization tools: Compute Kernel (CK), CUTLASS, Triton.\n- High-performance computing environments and resource optimization."
+    "condensed_description": "RESPONSIBILITIES:\n• Lead development of LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Investigate design approaches and evaluate technical feasibility.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI frameworks.  \n• Agile/Scrum methodologies.  \n• Large-scale computing resources."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4337424541",
-    "title": "Sr. Product Marketing Manager",
+    "url": "https://www.linkedin.com/jobs/view/4316030682",
+    "title": "Language Engineer, Artificial General Intelligence - Data Services",
     "company": {
-      "name": "AMD",
-      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Austin, TX",
-    "applications": "42 applicants",
-    "salary": "$156,480.00/yr - $234,720.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop positioning and messaging for PC and graphics software.\n- Manage launch claims and value propositions for new platforms.\n- Collaborate with engineering and product teams for customer benefits.\n- Lead go-to-market execution across marketing and PR channels.\n- Analyze market trends and competitor offerings for strategy refinement.\n\n**REQUIREMENTS:**\n- Bachelor’s degree in Computer Science or related field.\n- Experience in product marketing or management in relevant industries.\n- Strong understanding of PC software stack and performance optimization.\n- Proven ability to craft compelling messaging for diverse audiences.\n- Excellent communication skills to simplify complex technology.\n\n**KEY TECHNOLOGIES:**\n- PC software stack, including drivers and firmware.\n- Graphics acceleration and software frameworks.\n- Operating systems: Windows and Linux.",
+    "location": "Sunnyvale, CA",
+    "applications": "59 applicants",
+    "salary": "$67,700.00/yr - $151,400.00/yr",
+    "description": "RESPONSIBILITIES:\n• Design complex data collections with human participants.  \n• Conduct data creation using synthetic and model-based methods.  \n• Analyze large datasets and extract insights.  \n• Build tools for data analysis or creation using scripting languages.  \n• Collaborate with cross-functional teams to evaluate AI model performance.  \n\nREQUIREMENTS:\n• Master's degree in Computational Linguistics or related field.  \n• 2+ years experience in computational linguistics or AI data creation.  \n• Proficient in scripting languages, especially Python.  \n• Experience with multimodal data in multiple languages.  \n• Strong organizational skills and attention to detail.  \n\nKEY TECHNOLOGIES:\n• Python for scripting and data analysis.  \n• Familiarity with APIs and version control.  \n• Experience with SQL, R, or Matlab for data analysis.  \n• Knowledge of machine learning concepts.  \n• Tools for data annotation and markup systems.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Mid-Senior level"
+        "value": "Not Applicable"
       },
       {
         "name": "Employment type",
@@ -52,26 +52,26 @@
       },
       {
         "name": "Job function",
-        "value": "Marketing and Sales"
+        "value": "Engineering and Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Semiconductor Manufacturing"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop positioning and messaging for PC and graphics software.\n- Manage launch claims and value propositions for new platforms.\n- Collaborate with engineering and product teams for customer benefits.\n- Lead go-to-market execution across marketing and PR channels.\n- Analyze market trends and competitor offerings for strategy refinement.\n\n**REQUIREMENTS:**\n- Bachelor’s degree in Computer Science or related field.\n- Experience in product marketing or management in relevant industries.\n- Strong understanding of PC software stack and performance optimization.\n- Proven ability to craft compelling messaging for diverse audiences.\n- Excellent communication skills to simplify complex technology.\n\n**KEY TECHNOLOGIES:**\n- PC software stack, including drivers and firmware.\n- Graphics acceleration and software frameworks.\n- Operating systems: Windows and Linux."
+    "condensed_description": "RESPONSIBILITIES:\n• Design complex data collections with human participants.  \n• Conduct data creation using synthetic and model-based methods.  \n• Analyze large datasets and extract insights.  \n• Build tools for data analysis or creation using scripting languages.  \n• Collaborate with cross-functional teams to evaluate AI model performance.  \n\nREQUIREMENTS:\n• Master's degree in Computational Linguistics or related field.  \n• 2+ years experience in computational linguistics or AI data creation.  \n• Proficient in scripting languages, especially Python.  \n• Experience with multimodal data in multiple languages.  \n• Strong organizational skills and attention to detail.  \n\nKEY TECHNOLOGIES:\n• Python for scripting and data analysis.  \n• Familiarity with APIs and version control.  \n• Experience with SQL, R, or Matlab for data analysis.  \n• Knowledge of machine learning concepts.  \n• Tools for data annotation and markup systems."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4290780012",
-    "title": "Product Manager - Network Infrastructure",
+    "url": "https://www.linkedin.com/jobs/view/4303746797",
+    "title": "Software Development Engineer , AGI Customization",
     "company": {
-      "name": "AMD",
-      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Santa Clara, CA",
-    "applications": "130 applicants",
-    "salary": "$173,840.00/yr - $260,760.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Lead product roadmap for networking infrastructure and GPU clusters.\n- Design and implement network solutions for HPC and GPU applications.\n- Collaborate with engineering teams on network architecture requirements.\n\n**REQUIREMENTS:**\n- 7+ years in network product management or technical leadership.\n- Experience with networking technologies like TCP/IP and Ethernet.\n- Strong understanding of AI/ML networking challenges and solutions.\n\n**KEY TECHNOLOGIES:**\n- High-speed networking protocols (e.g., RDMA, Infiniband).\n- Cloud service providers (AWS, GCP, Azure) for GPU infrastructure.\n- High-performance networks for AI and HPC workloads.",
+    "location": "Boston, MA",
+    "applications": "79 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "RESPONSIBILITIES:\n• Lead development of novel LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Build customization capabilities like fine-tuning and prompt optimization.  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience.  \n• 2+ years in design or architecture of systems.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine learning and AI frameworks.  \n• Software programming languages (e.g., Python, Java).  \n• Large-scale computing resources and data sources.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -83,30 +83,30 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Semiconductor Manufacturing"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Lead product roadmap for networking infrastructure and GPU clusters.\n- Design and implement network solutions for HPC and GPU applications.\n- Collaborate with engineering teams on network architecture requirements.\n\n**REQUIREMENTS:**\n- 7+ years in network product management or technical leadership.\n- Experience with networking technologies like TCP/IP and Ethernet.\n- Strong understanding of AI/ML networking challenges and solutions.\n\n**KEY TECHNOLOGIES:**\n- High-speed networking protocols (e.g., RDMA, Infiniband).\n- Cloud service providers (AWS, GCP, Azure) for GPU infrastructure.\n- High-performance networks for AI and HPC workloads."
+    "condensed_description": "RESPONSIBILITIES:\n• Lead development of novel LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Build customization capabilities like fine-tuning and prompt optimization.  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience.  \n• 2+ years in design or architecture of systems.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine learning and AI frameworks.  \n• Software programming languages (e.g., Python, Java).  \n• Large-scale computing resources and data sources."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4299290905",
-    "title": "Customer Operations Account Manager",
+    "url": "https://www.linkedin.com/jobs/view/4316037478",
+    "title": "Business Intelligence Engineer, ProdOps OAT, Project Kuiper",
     "company": {
-      "name": "AMD",
-      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "San Jose, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$102,400.00/yr - $153,600.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Review customer backlogs and resolve issues with stakeholders.\n- Manage product lifecycle stages from NPI to EOL.\n- Oversee inventory to minimize costs and optimize supply.\n- Monitor demand vs. supply profiles for customers.\n- Drive key projects and provide strategic advice.\n- Engage customers through regular business reviews.\n\n**REQUIREMENTS:**\n- Strong supply chain and project management knowledge.\n- Excellent problem-solving and solution implementation skills.\n- Proficient in executive communications and presentations.\n- Strong analytical skills for managing dependencies.\n- Ability to adapt to change and uncertainty.\n- Experience with data center customers preferred.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Excel and PowerPoint.\n- Experience with Power BI for data analysis.\n- Familiarity with supply chain management tools.",
+    "location": "Bellevue, WA",
+    "applications": "48 applicants",
+    "salary": "$89,600.00/yr - $185,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Implement and maintain analytics solutions for satellite technology.\n- Collaborate with cross-functional teams for data-driven decision making.\n- Design self-service reporting solutions that scale organization-wide.\n\n**REQUIREMENTS:**\n- 3+ years of data analysis experience with SQL and large datasets.\n- Proficiency in data visualization tools like Tableau or Grafana.\n- Experience with data modeling, warehousing, and ETL pipelines.\n\n**KEY TECHNOLOGIES:**\n- SQL databases (Redshift, Oracle, NoSQL).\n- Data visualization software (Tableau, Quick Suite).\n- AWS solutions (EC2, S3, Redshift).",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Mid-Senior level"
+        "value": "Not Applicable"
       },
       {
         "name": "Employment type",
@@ -114,30 +114,30 @@
       },
       {
         "name": "Job function",
-        "value": "Sales and Business Development"
+        "value": "Strategy/Planning, Analyst, and Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Semiconductor Manufacturing"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Review customer backlogs and resolve issues with stakeholders.\n- Manage product lifecycle stages from NPI to EOL.\n- Oversee inventory to minimize costs and optimize supply.\n- Monitor demand vs. supply profiles for customers.\n- Drive key projects and provide strategic advice.\n- Engage customers through regular business reviews.\n\n**REQUIREMENTS:**\n- Strong supply chain and project management knowledge.\n- Excellent problem-solving and solution implementation skills.\n- Proficient in executive communications and presentations.\n- Strong analytical skills for managing dependencies.\n- Ability to adapt to change and uncertainty.\n- Experience with data center customers preferred.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in Excel and PowerPoint.\n- Experience with Power BI for data analysis.\n- Familiarity with supply chain management tools."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Implement and maintain analytics solutions for satellite technology.\n- Collaborate with cross-functional teams for data-driven decision making.\n- Design self-service reporting solutions that scale organization-wide.\n\n**REQUIREMENTS:**\n- 3+ years of data analysis experience with SQL and large datasets.\n- Proficiency in data visualization tools like Tableau or Grafana.\n- Experience with data modeling, warehousing, and ETL pipelines.\n\n**KEY TECHNOLOGIES:**\n- SQL databases (Redshift, Oracle, NoSQL).\n- Data visualization software (Tableau, Quick Suite).\n- AWS solutions (EC2, S3, Redshift)."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4316292493",
-    "title": "GPU Product Manager for Gaming and AI",
+    "url": "https://www.linkedin.com/jobs/view/4334862965",
+    "title": "Member of Technical Staff Intern (2026), Artificial General Intelligence (AGI)",
     "company": {
-      "name": "AMD",
-      "url": "https://www.linkedin.com/company/amd?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Austin, TX",
-    "applications": "53 applicants",
-    "salary": "$103,200.00/yr - $154,800.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Define product strategy and roadmap for Radeon GPUs and software.\n- Develop market and product requirements based on customer feedback.\n- Collaborate with teams to prioritize features and manage trade-offs.\n- Drive feature definition for gaming and AI workflows.\n- Lead go-to-market planning with marketing and sales teams.\n- Own business outcomes and track KPIs for product performance.\n- Represent product in customer meetings and executive reviews.\n\n**REQUIREMENTS:**\n- Strong technical understanding of GPU architectures and graphics pipelines.\n- Proven experience in go-to-market planning and lifecycle management.\n- Excellent communication and stakeholder management skills.\n- Data-driven mindset with proficiency in market analysis.\n- Several years of product management experience in relevant domains.\n- Bachelor's degree in Computer Science or related field; Master's preferred.\n\n**KEY TECHNOLOGIES:**\n- GPU architectures and graphics APIs (DirectX/Vulkan/OpenGL).\n- AI workloads and content creation pipelines.\n- Performance testing tools and benchmarking methodologies.",
+    "location": "San Francisco, CA",
+    "applications": "179 applicants",
+    "salary": "$47.84/hr - $96.15/hr",
+    "description": "RESPONSIBILITIES:\n• Contribute to AI agent development in a research engineering role  \n• Design and enhance tools for cutting-edge research  \n• Collaborate with researchers on new techniques and tools  \n\nREQUIREMENTS:\n• 18 years of age or older  \n• Experience in at least one modern programming language  \n• Enrolled in a relevant Bachelor's degree program  \n\nKEY TECHNOLOGIES:\n• Large language models (LLMs)  \n• Reinforcement learning (RL)  \n• Object-oriented programming (Java, C++, C#)",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Mid-Senior level"
+        "value": "Internship"
       },
       {
         "name": "Employment type",
@@ -145,13 +145,13 @@
       },
       {
         "name": "Job function",
-        "value": "Product Management and Marketing"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Semiconductor Manufacturing"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Define product strategy and roadmap for Radeon GPUs and software.\n- Develop market and product requirements based on customer feedback.\n- Collaborate with teams to prioritize features and manage trade-offs.\n- Drive feature definition for gaming and AI workflows.\n- Lead go-to-market planning with marketing and sales teams.\n- Own business outcomes and track KPIs for product performance.\n- Represent product in customer meetings and executive reviews.\n\n**REQUIREMENTS:**\n- Strong technical understanding of GPU architectures and graphics pipelines.\n- Proven experience in go-to-market planning and lifecycle management.\n- Excellent communication and stakeholder management skills.\n- Data-driven mindset with proficiency in market analysis.\n- Several years of product management experience in relevant domains.\n- Bachelor's degree in Computer Science or related field; Master's preferred.\n\n**KEY TECHNOLOGIES:**\n- GPU architectures and graphics APIs (DirectX/Vulkan/OpenGL).\n- AI workloads and content creation pipelines.\n- Performance testing tools and benchmarking methodologies."
+    "condensed_description": "RESPONSIBILITIES:\n• Contribute to AI agent development in a research engineering role  \n• Design and enhance tools for cutting-edge research  \n• Collaborate with researchers on new techniques and tools  \n\nREQUIREMENTS:\n• 18 years of age or older  \n• Experience in at least one modern programming language  \n• Enrolled in a relevant Bachelor's degree program  \n\nKEY TECHNOLOGIES:\n• Large language models (LLMs)  \n• Reinforcement learning (RL)  \n• Object-oriented programming (Java, C++, C#)"
   }
 ]

@@ -59,6 +59,10 @@ export default function EmailAccounts() {
   const handleOAuthLink = async (provider) => {
     try {
       setError(null)
+      if (accounts.length > 0) {
+        setError('You already have an email account connected. Please delete your current account before adding a new one.')
+        return
+      }
       const result = await apiRequest(`/api/v1/email-accounts/oauth/${provider}/auth-url`)
       
       // Open OAuth popup
@@ -125,6 +129,10 @@ export default function EmailAccounts() {
     setError(null)
     
     try {
+      if (accounts.length > 0) {
+        setError('You already have an email account connected. Please delete your current account before adding a new one.')
+        return
+      }
       await apiRequest('/api/v1/email-accounts', {
         method: 'POST',
         body: JSON.stringify({
@@ -135,7 +143,6 @@ export default function EmailAccounts() {
           smtp_port: parseInt(customForm.smtp_port),
           smtp_username: customForm.smtp_username,
           smtp_password: customForm.smtp_password,
-          is_default: accounts.length === 0, // Set as default if first account
         })
       })
       
@@ -154,19 +161,6 @@ export default function EmailAccounts() {
     }
   }
 
-  // Set default account
-  const handleSetDefault = async (accountId) => {
-    try {
-      await apiRequest(`/api/v1/email-accounts/${accountId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_default: true })
-      })
-      loadAccounts()
-    } catch (err) {
-      setError(err.message || 'Failed to set default account')
-    }
-  }
-
   // Delete account
   const handleDelete = async (accountId) => {
     if (!confirm('Are you sure you want to delete this email account?')) {
@@ -180,30 +174,6 @@ export default function EmailAccounts() {
       loadAccounts()
     } catch (err) {
       setError(err.message || 'Failed to delete email account')
-    }
-  }
-
-  // Toggle active status
-  const handleToggleActive = async (accountId, isActive) => {
-    try {
-      // If trying to enable, check if another account is already enabled
-      if (!isActive) {
-        const activeAccount = accounts.find(acc => acc.id !== accountId && acc.is_active)
-        if (activeAccount) {
-          const confirmMessage = `Another email account (${activeAccount.email || activeAccount.display_name}) is already enabled. Enabling this account will disable the other one. Continue?`
-          if (!confirm(confirmMessage)) {
-            return
-          }
-        }
-      }
-      
-      await apiRequest(`/api/v1/email-accounts/${accountId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_active: !isActive })
-      })
-      loadAccounts()
-    } catch (err) {
-      setError(err.message || 'Failed to update email account')
     }
   }
 
@@ -229,12 +199,18 @@ export default function EmailAccounts() {
             Link your email accounts to send messages from them
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          + Link Email Account
-        </button>
+        {accounts.length === 0 ? (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            + Link Email Account
+          </button>
+        ) : (
+          <p className="text-sm text-gray-400">
+            You can only have one email account connected. Delete your current account to connect a different one.
+          </p>
+        )}
       </div>
 
       {error && (
@@ -267,11 +243,7 @@ export default function EmailAccounts() {
           {accounts.map((account) => (
             <div
               key={account.id}
-              className={`rounded-lg border p-6 shadow-lg backdrop-blur-sm ${
-                account.is_default 
-                  ? 'border-blue-500/50 bg-blue-900/30' 
-                  : 'border-gray-700/50 bg-gray-800/50'
-              }`}
+              className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6 shadow-lg backdrop-blur-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
@@ -281,21 +253,6 @@ export default function EmailAccounts() {
                       <h3 className="text-lg font-semibold text-white">
                         {account.display_name || account.email}
                       </h3>
-                      {account.is_default && (
-                        <span className="rounded-full bg-blue-900/50 border border-blue-700/50 px-2 py-1 text-xs font-medium text-blue-300">
-                          Default
-                        </span>
-                      )}
-                      {account.is_active && (
-                        <span className="rounded-full bg-green-900/50 border border-green-700/50 px-2 py-1 text-xs font-medium text-green-300">
-                          Active
-                        </span>
-                      )}
-                      {!account.is_active && (
-                        <span className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2 py-1 text-xs font-medium text-gray-400">
-                          Inactive
-                        </span>
-                      )}
                     </div>
                     <p className="text-sm text-gray-300 mt-1">{account.email}</p>
                     <p className="text-xs text-gray-400 mt-1 capitalize">
@@ -304,24 +261,6 @@ export default function EmailAccounts() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!account.is_default && (
-                    <button
-                      onClick={() => handleSetDefault(account.id)}
-                      className="rounded-lg bg-gray-800/50 border border-gray-700/50 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-700/50"
-                    >
-                      Set Default
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleToggleActive(account.id, account.is_active)}
-                    className={`rounded-lg px-3 py-1.5 text-sm border ${
-                      account.is_active
-                        ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50 hover:bg-yellow-800/50'
-                        : 'bg-green-900/50 text-green-300 border-green-700/50 hover:bg-green-800/50'
-                    }`}
-                  >
-                    {account.is_active ? 'Disable' : 'Enable'}
-                  </button>
                   <button
                     onClick={() => handleDelete(account.id)}
                     className="rounded-lg bg-red-900/50 border border-red-700/50 px-3 py-1.5 text-sm text-red-300 hover:bg-red-800/50"

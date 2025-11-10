@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence } from 'framer-motion'
+import { AlertCircle, Bot, ChevronDown } from 'lucide-react'
 import { motion } from 'motion/react'
 import React, { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { AlertCircle } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { LoaderOne } from '../components/ui/loader'
+import { useSidebarLogger } from '../context/sidebar-logger-context'
+import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 import SearchMapping from './SearchMapping'
-import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
-import { ChevronDown } from 'lucide-react'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -45,6 +45,107 @@ const CollapsibleSection = ({ title, description, defaultOpen = false, children 
         {children}
       </CollapsibleContent>
     </Collapsible>
+  )
+}
+
+const formatTimestamp = (value) => {
+  try {
+    const date = new Date(value ?? Date.now())
+    if (Number.isNaN(date.getTime())) {
+      return new Date().toLocaleTimeString()
+    }
+    return date.toLocaleTimeString()
+  } catch (_error) {
+    return new Date().toLocaleTimeString()
+  }
+}
+
+const getLogToneClass = (type = '') => {
+  const normalized = String(type || '').toLowerCase()
+  if (normalized.includes('error') || normalized.includes('fail')) {
+    return 'text-red-400'
+  }
+  if (normalized.includes('success') || normalized.includes('done') || normalized.includes('complete')) {
+    return 'text-green-400'
+  }
+  if (normalized.includes('warn') || normalized.includes('pending')) {
+    return 'text-yellow-300'
+  }
+  if (normalized.includes('info') || normalized.includes('start')) {
+    return 'text-blue-300'
+  }
+  return 'text-gray-300'
+}
+
+const normalizeLogMessage = (log) => {
+  if (!log) return ''
+  const raw =
+    log.message ??
+    log.detail ??
+    log.text ??
+    log.statusMessage ??
+    log.title ??
+    log.description ??
+    ''
+
+  if (typeof raw === 'string') {
+    return raw
+  }
+
+  try {
+    return JSON.stringify(raw)
+  } catch (_error) {
+    return String(raw)
+  }
+}
+
+const SearchActivityConsole = ({ logs = [], onClear = () => {}, isActive = false }) => {
+  return (
+    <div className="flex h-full flex-col rounded-2xl border border-gray-700/60 bg-gray-900/70 p-4 shadow-lg shadow-black/20">
+      <div className="mb-3 flex shrink-0 items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Activity Console</h2>
+          <p className="text-xs text-gray-400">
+            Real-time events while we search and build outreach for you.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isActive && (
+            <span className="flex items-center gap-1 rounded-full bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+              Live
+            </span>
+          )}
+          <button
+            onClick={onClear}
+            className="text-xs font-medium text-gray-400 hover:text-gray-200"
+            type="button"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto rounded-xl border border-gray-800/70 bg-gray-950/60 px-3 py-3">
+        {logs.length === 0 ? (
+          <div className="text-xs font-mono text-gray-500">
+            No log entries yet. Start a search or mapping action to see updates here.
+          </div>
+        ) : (
+          <div className="space-y-1 text-xs font-mono">
+            {logs.map((log, index) => (
+              <div
+                key={log.id ?? `${log.timestamp ?? 'log'}-${index}`}
+                className={getLogToneClass(log.type || log.level || log.status)}
+              >
+                [{formatTimestamp(log.timestamp)}]{' '}
+                {log.emoji ? `${log.emoji} ` : ''}
+                {normalizeLogMessage(log)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -277,44 +378,6 @@ async function saveDraft(draftData) {
   })
 }
 
-// Floating GPT-like thinking component
-function ThinkingIndicator({ logs, isActive }) {
-  const latestLog = logs && logs.length > 0 ? logs[logs.length - 1] : null
-  
-  if (!isActive && !latestLog) return null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="fixed bottom-8 right-8 max-w-md bg-gray-900/90 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 shadow-2xl z-50"
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-1">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
-        </div>
-        <div className="flex-1 min-w-0">
-          {latestLog ? (
-            <>
-              <div className="text-xs text-cyan-400/70 font-mono mb-1">
-                {latestLog.emoji || '•'} {latestLog.message}
-              </div>
-              <div className="text-[10px] text-gray-500 font-mono">
-                {new Date(latestLog.timestamp).toLocaleTimeString()}
-              </div>
-            </>
-          ) : (
-            <div className="text-xs text-cyan-400/70 font-mono">
-              Thinking...
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 export default function Search() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -339,7 +402,13 @@ export default function Search() {
   const [mapping, setMapping] = useState([])
   const [mappedRecruiters, setMappedRecruiters] = useState([])
   const [isGeneratingMessages, setIsGeneratingMessages] = useState(false)
-  const [thinkingLogs, setThinkingLogs] = useState([])
+  const {
+    logs: sidebarLogs,
+    setLogs: setSidebarLogs,
+    clearLogs: clearSidebarLogs,
+    setIsActive: setSidebarActive,
+    isActive: sidebarIsActive
+  } = useSidebarLogger()
   const eventSourceRef = useRef(null)
   const [draggedJob, setDraggedJob] = useState(null)
   const [draggedOverIndex, setDraggedOverIndex] = useState(null)
@@ -366,6 +435,18 @@ export default function Search() {
       navigate('/dashboard/search', { replace: true })
     }
   }, [isMappingView, mapping, navigate, onboardingReady])
+
+  useEffect(() => {
+    clearSidebarLogs()
+    return () => {
+      clearSidebarLogs()
+      setSidebarActive(false)
+    }
+  }, [clearSidebarLogs, setSidebarActive])
+
+  useEffect(() => {
+    setSidebarActive(isMappingToRecruiters || isGeneratingMessages || isFiltering)
+  }, [isMappingToRecruiters, isGeneratingMessages, isFiltering, setSidebarActive])
 
   // Connect to verbose logger stream for thinking indicator
   useEffect(() => {
@@ -423,10 +504,13 @@ export default function Search() {
                   try {
                     const logEntry = JSON.parse(line.slice(6))
                     if (isMounted) {
-                      setThinkingLogs(prev => {
-                        const newLogs = [...prev, logEntry]
-                        // Keep only last 5 logs
-                        return newLogs.slice(-5)
+                      setSidebarLogs(prev => {
+                        const nextEntry = {
+                          ...logEntry,
+                          timestamp: logEntry.timestamp ?? Date.now()
+                        }
+                        const newLogs = [...prev, nextEntry]
+                        return newLogs.slice(-10)
                       })
                     }
                   } catch (e) {
@@ -752,7 +836,7 @@ export default function Search() {
     if (jobsToMap.length === 0) return
 
     setIsMappingToRecruiters(true)
-    setThinkingLogs([])
+    clearSidebarLogs()
 
     try {
       // First get recruiters - use all selected company IDs
@@ -875,7 +959,7 @@ export default function Search() {
     if (mapping.length === 0) return
 
     setIsGeneratingMessages(true)
-    setThinkingLogs([])
+    clearSidebarLogs()
 
       const selectedJobTypeArray = Array.from(jobTypes)
       const primaryJobType = selectedJobTypeArray.length > 0 ? selectedJobTypeArray[0] : 'full_time'
@@ -1466,7 +1550,7 @@ export default function Search() {
     setIsFiltering(false)
     setIsMappingToRecruiters(false)
     setIsGeneratingMessages(false)
-    setThinkingLogs([])
+    clearSidebarLogs()
     savedDraftsRef.current.clear()
   }
 
@@ -1546,320 +1630,254 @@ export default function Search() {
   }
 
   return (
-    <div className="space-y-6 min-h-screen pb-20">
-      {/* Progressive Step Indicator */}
-      <div className="flex items-center justify-center space-x-4 py-4">
-        {steps.map((step, index) => (
-          <React.Fragment key={index}>
-            <span
-              className={`text-sm font-medium transition-colors ${
-                index === currentStep
-                  ? 'text-blue-400'
-                  : index < currentStep
-                  ? 'text-green-400'
-                  : 'text-gray-500'
-              }`}
-            >
-              {step}
-            </span>
-            {index < steps.length - 1 && (
-              <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-
-      {/* Thinking Indicator */}
-      <AnimatePresence>
-        {(thinkingLogs.length > 0 || isMappingToRecruiters || isGeneratingMessages || isFiltering) && (
-          <ThinkingIndicator 
-            logs={thinkingLogs} 
-            isActive={isMappingToRecruiters || isGeneratingMessages || isFiltering}
+    <div className="min-h-screen pb-20">
+      <div className="flex flex-col gap-6 xl:flex-row">
+        <div className="w-full xl:w-1/4 2xl:w-[22%] h-full">
+          <SearchActivityConsole
+            logs={sidebarLogs}
+            onClear={clearSidebarLogs}
+            isActive={sidebarIsActive}
           />
-        )}
-      </AnimatePresence>
+        </div>
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Progressive Step Indicator */}
+          <div className="flex items-center justify-center space-x-4 py-4">
+            {steps.map((step, index) => (
+              <React.Fragment key={index}>
+                <span
+                  className={`text-sm font-medium transition-colors ${
+                    index === currentStep
+                      ? 'text-blue-400'
+                      : index < currentStep
+                      ? 'text-green-400'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {step}
+                </span>
+                {index < steps.length - 1 && (
+                  <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
 
-      {/* Initial Search Card - Keep visible during search */}
-      {(!jobResults && mapping.length === 0 && generatedMessages.length === 0) && (
-        <div className="max-w-2xl mx-auto">
-          <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
-            <CardHeader className="flex items-center justify-between gap-3">
-              <CardTitle className="text-white">Search for Jobs</CardTitle>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleClearFilters}
-                disabled={!hasActiveFilters}
-              >
-                Clear
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <CollapsibleSection
-                title="Popular Companies"
-                description="Quick add companies from cache. Use search to add more."
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {QUICK_COMPANIES.map((company) => {
-                    const normalized = company.toLowerCase()
-                    const isSelected = selectedCompanies.some(
-                      (c) => c.name.toLowerCase() === normalized
-                    )
-                    const isLoading = quickCompanyStatus[company] === 'loading'
-                    return (
-                      <label
-                        key={company}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                          isSelected
-                            ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
-                            : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
-                        }`}
-                      >
+          {/* Initial Search Card - Keep visible during search */}
+          {(!jobResults && mapping.length === 0 && generatedMessages.length === 0) && (
+            <div className="mx-auto max-w-2xl">
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                <CardHeader className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-white">Search for Jobs</CardTitle>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CollapsibleSection
+                    title="Popular Companies"
+                    description="Quick add companies from cache. Use search to add more."
+                  >
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {QUICK_COMPANIES.map((company) => {
+                        const normalized = company.toLowerCase()
+                        const isSelected = selectedCompanies.some(
+                          (c) => c.name.toLowerCase() === normalized
+                        )
+                        const isLoading = quickCompanyStatus[company] === 'loading'
+                        return (
+                          <label
+                            key={company}
+                            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                              isSelected
+                                ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                                : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                              checked={isSelected}
+                              disabled={isLoading}
+                              onChange={() => handleToggleQuickCompany(company)}
+                            />
+                            <span>{company}</span>
+                            {isLoading && (
+                              <span className="ml-auto text-xs text-gray-400 animate-pulse">
+                                Loading...
+                              </span>
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection
+                    title="Company Search"
+                    description="Look up additional companies to add to your mapping pool."
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
-                          checked={isSelected}
-                          disabled={isLoading}
-                          onChange={() => handleToggleQuickCompany(company)}
+                          type="text"
+                          placeholder="Enter company name..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && searchQuery.trim()) {
+                              setSearchTrigger(searchQuery.trim())
+                            }
+                          }}
+                          className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                         />
-                        <span>{company}</span>
-                        {isLoading && (
-                          <span className="ml-auto text-xs text-gray-400 animate-pulse">
-                            Loading...
-                          </span>
-                        )}
-                      </label>
-                    )
-                  })}
-                </div>
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Company Search"
-                description="Look up additional companies to add to your mapping pool."
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter company name..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && searchQuery.trim()) {
-                          setSearchTrigger(searchQuery.trim())
-                        }
-                      }}
-                      className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-                    />
-                    <button
-                      onClick={() => {
-                        if (searchQuery.trim()) {
-                          setSearchTrigger(searchQuery.trim())
-                        }
-                      }}
-                      disabled={isSearching || !searchQuery.trim()}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSearching ? '...' : 'Search'}
-                    </button>
-                  </div>
-                  {searchResults?.company_id && (
-                    <div className="p-3 rounded-lg bg-gray-900/50 border border-gray-700/50 flex items-center justify-between">
-                      <span className="text-white">{searchResults.company.name}</span>
-                      <button
-                        onClick={handleSelectCompany}
-                        className="text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        {selectedCompanies.find(c => c.id === searchResults.company_id) ? '✓ Selected' : 'Add Company'}
-                      </button>
+                        <button
+                          onClick={() => {
+                            if (searchQuery.trim()) {
+                              setSearchTrigger(searchQuery.trim())
+                            }
+                          }}
+                          disabled={isSearching || !searchQuery.trim()}
+                          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isSearching ? '...' : 'Search'}
+                        </button>
+                      </div>
+                      {searchResults?.company_id && (
+                        <div className="flex items-center justify-between rounded-lg border border-gray-700/50 bg-gray-900/50 p-3">
+                          <span className="text-white">{searchResults.company.name}</span>
+                          <button
+                            onClick={handleSelectCompany}
+                            className="text-sm text-blue-400 hover:text-blue-300"
+                          >
+                            {selectedCompanies.find(c => c.id === searchResults.company_id) ? '✓ Selected' : 'Add Company'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+                  {selectedCompanies.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCompanies.map((company) => (
+                        <span key={company.id} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200">
+                          {company.name}
+                          <button
+                            onClick={() => handleRemoveCompany(company.id)}
+                            className="text-blue-300 hover:text-blue-100"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
                   )}
-                </div>
-              </CollapsibleSection>
-              {selectedCompanies.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedCompanies.map((company) => (
-                    <span key={company.id} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
-                      {company.name}
-                      <button
-                        onClick={() => handleRemoveCompany(company.id)}
-                        className="text-blue-300 hover:text-blue-100"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
 
-              {selectedCompanies.length > 0 && (
-                <CollapsibleSection
-                  title="Job Titles"
-                  description="Select or add titles you want to target."
-                  defaultOpen
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {JOB_TITLE_OPTIONS.map((title) => {
-                      const normalized = title.toLowerCase()
-                      const isChecked = Array.from(selectedJobTitles).some(
-                        (t) => t.toLowerCase() === normalized
-                      )
-                      return (
-                        <label
-                          key={title}
-                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                            isChecked
-                              ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
-                              : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
-                          }`}
-                        >
+                  {selectedCompanies.length > 0 && (
+                    <CollapsibleSection
+                      title="Job Titles"
+                      description="Select or add titles you want to target."
+                      defaultOpen
+                    >
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {JOB_TITLE_OPTIONS.map((title) => {
+                          const normalized = title.toLowerCase()
+                          const isChecked = Array.from(selectedJobTitles).some(
+                            (t) => t.toLowerCase() === normalized
+                          )
+                          return (
+                            <label
+                              key={title}
+                              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                isChecked
+                                  ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
+                                  : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setSelectedJobTitles(prev => {
+                                    const next = new Set(prev)
+                                    if (isChecked) {
+                                      next.forEach(value => {
+                                        if (value.toLowerCase() === normalized) {
+                                          next.delete(value)
+                                        }
+                                      })
+                                    } else {
+                                      next.add(title)
+                                    }
+                                    return next
+                                  })
+                                }}
+                              />
+                              <span>{title}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-gray-400">Add custom job title</label>
+                        <div className="flex flex-col gap-2 sm:flex-row">
                           <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
-                            checked={isChecked}
-                            onChange={() => {
+                            type="text"
+                            value={customJobTitle}
+                            onChange={(e) => setCustomJobTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleAddCustomJobTitle()
+                              }
+                            }}
+                            placeholder="e.g., Machine Learning Engineer"
+                            className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 px-4 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                          />
+                          <button
+                            onClick={handleAddCustomJobTitle}
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+                  )}
+                  {selectedJobTitles.size > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from(selectedJobTitles).map((title) => (
+                        <span key={title} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200">
+                          {title}
+                          <button
+                            onClick={() =>
                               setSelectedJobTitles(prev => {
                                 const next = new Set(prev)
-                                if (isChecked) {
-                                  next.forEach(value => {
-                                    if (value.toLowerCase() === normalized) {
-                                      next.delete(value)
-                                    }
-                                  })
-                                } else {
-                                  next.add(title)
-                                }
+                                next.delete(title)
                                 return next
                               })
-                            }}
-                          />
-                          <span>{title}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-400">Add custom job title</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
-                        value={customJobTitle}
-                        onChange={(e) => setCustomJobTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleAddCustomJobTitle()
-                          }
-                        }}
-                        placeholder="e.g., Machine Learning Engineer"
-                        className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-2 focus:border-blue-500 focus:outline-none"
-                      />
-                      <button
-                        onClick={handleAddCustomJobTitle}
-                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                      >
-                        Add
-                      </button>
+                            }
+                            className="text-blue-300 hover:text-blue-100"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
-                  </div>
-                </CollapsibleSection>
-              )}
-              {selectedJobTitles.size > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(selectedJobTitles).map((title) => (
-                    <span key={title} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
-                      {title}
-                      <button
-                        onClick={() =>
-                          setSelectedJobTitles(prev => {
-                            const next = new Set(prev)
-                            next.delete(title)
-                            return next
-                          })
-                        }
-                        className="text-blue-300 hover:text-blue-100"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {selectedCompanies.length > 0 && (
-                <CollapsibleSection
-                  title="Job Types"
-                  description="Pick all employment types you want to consider."
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {JOB_TYPE_OPTIONS.map(option => {
-                      const isChecked = jobTypes.has(option.value)
-                      return (
-                        <label
-                          key={option.value}
-                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                            isChecked
-                              ? 'border-blue-500/60 bg-blue-900/40 text-blue-200'
-                              : 'border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600/70'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
-                            checked={isChecked}
-                            onChange={() => {
-                              setJobTypes(prev => {
-                                const next = new Set(prev)
-                                if (next.has(option.value)) {
-                                  next.delete(option.value)
-                                } else {
-                                  next.add(option.value)
-                                }
-                                return next
-                              })
-                            }}
-                          />
-                          <span>{option.label}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </CollapsibleSection>
-              )}
-              {selectedCompanies.length > 0 && jobTypes.size > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(jobTypes).map((type) => {
-                    const label = JOB_TYPE_OPTIONS.find(o => o.value === type)?.label || type
-                    return (
-                      <span key={type} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
-                        {label}
-                        <button
-                          onClick={() =>
-                            setJobTypes(prev => {
-                              const next = new Set(prev)
-                              next.delete(type)
-                              return next
-                            })
-                          }
-                          className="text-blue-300 hover:text-blue-100"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
-
-              {selectedCompanies.length > 0 && (
-                <CollapsibleSection
-                  title="Location & Experience Filters"
-                  description="Refine where and at what level you'd like to work."
-                >
+                  {selectedCompanies.length > 0 && (
+                    <CollapsibleSection
+                      title="Job Types"
+                      description="Pick all employment types you want to consider."
+                    >
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-medium text-gray-400 mb-2">Locations</p>
@@ -2093,13 +2111,6 @@ export default function Search() {
                     >
                       Select All
                     </button>
-                    <button
-                      onClick={handleFilterJobs}
-                      disabled={isFiltering || !jobResults?.jobs}
-                      className="text-sm rounded-lg bg-purple-600 px-3 py-1.5 text-white hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {isFiltering ? 'Filtering...' : 'Filter'}
-                    </button>
                   </div>
                 </div>
               </CardHeader>
@@ -2147,7 +2158,7 @@ export default function Search() {
                       </div>
                     )
                   })}
-                        </div>
+                </div>
                 {/* Back button at bottom right */}
                 <div className="mt-4 flex justify-end">
                   <button
@@ -2160,6 +2171,19 @@ export default function Search() {
                     </svg>
                     Back
                   </button>
+                </div>
+                <div className="mt-6 border-t border-gray-700/40 pt-4">
+                  <button
+                    onClick={handleFilterJobs}
+                    disabled={isFiltering || !jobResults?.jobs}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-base font-semibold text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Bot className="h-5 w-5" />
+                    {isFiltering ? 'Filtering...' : 'AI Filter'}
+                  </button>
+                  <p className="mt-2 text-xs text-gray-400 text-center">
+                    Let AI rank these jobs against your resume and preferences automatically.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -2843,6 +2867,8 @@ export default function Search() {
           </motion.div>
         </AnimatePresence>
       )}
+        </div>
+      </div>
     </div>
   )
 }

@@ -771,6 +771,17 @@ class UnifiedMessenger:
         if isinstance(company, str):
             return company
         return None
+    
+    def _get_company_id_from_job(self, job):
+        """
+        Safely extract company ID from a job object returned by LinkedIn search.
+        """
+        if not job:
+            return None
+        company = job.get('company') if isinstance(job, dict) else None
+        if isinstance(company, dict):
+            return company.get('id') or company.get('company_id')
+        return None
 
     def _recruiter_company_name(self, recruiter):
         """
@@ -788,6 +799,45 @@ class UnifiedMessenger:
             except Exception:
                 return None
         return None
+    
+    def _recruiter_matches_company(self, recruiter, job_company, job=None):
+        """
+        Check if a recruiter is from the same company as the job.
+        Uses company_id for exact matching if available, otherwise falls back to name matching.
+        Uses case-insensitive comparison and handles various company name formats.
+        """
+        if not job_company:
+            return False
+        
+        # First, try to match by company_id if available (most accurate)
+        if job:
+            job_company_id = self._get_company_id_from_job(job)
+            recruiter_company_id = recruiter.get('company_id')
+            
+            if job_company_id and recruiter_company_id:
+                # Convert both to strings for comparison (IDs might be strings or numbers)
+                if str(job_company_id) == str(recruiter_company_id):
+                    return True
+        
+        # Fallback to name matching
+        recruiter_company = self._recruiter_company_name(recruiter)
+        if not recruiter_company:
+            return False
+        
+        # Normalize company names for comparison (lowercase, strip whitespace)
+        job_company_normalized = str(job_company).lower().strip()
+        recruiter_company_normalized = str(recruiter_company).lower().strip()
+        
+        # Direct match
+        if job_company_normalized == recruiter_company_normalized:
+            return True
+        
+        # Check if job company is contained in recruiter company or vice versa
+        # (handles cases like "NVIDIA Corporation" vs "NVIDIA")
+        if job_company_normalized in recruiter_company_normalized or recruiter_company_normalized in job_company_normalized:
+            return True
+        
+        return False
 
     def _score_recruiter_for_job(self, job, recruiter):
         """
@@ -878,7 +928,27 @@ class UnifiedMessenger:
             
             emit_verbose_log_sync(f"🎯 Analyzing job {job_idx + 1}/{len(jobs_considered)}: {job_title} @ {job_company}", "info", "🎯")
             
-            scored = [(idx, self._score_recruiter_for_job(job, rec)) for idx, rec in enumerate(recruiters)]
+            # CRITICAL FIX: Filter recruiters to only those from the same company as the job
+            # This ensures that when a user selects a position from NVIDIA, only NVIDIA recruiters are considered
+            matching_recruiters = []
+            matching_indices = []
+            for idx, recruiter in enumerate(recruiters):
+                if self._recruiter_matches_company(recruiter, job_company, job):
+                    matching_recruiters.append(recruiter)
+                    matching_indices.append(idx)
+            
+            if not matching_recruiters:
+                logger.warning(f"⚠️ DEBUG: No recruiters found for company {job_company}, trying all recruiters as fallback")
+                emit_verbose_log_sync(f"⚠️ No recruiters found for {job_company}, using all recruiters as fallback", "warning", "⚠️")
+                # Fallback: use all recruiters if no company match found
+                matching_recruiters = recruiters
+                matching_indices = list(range(len(recruiters)))
+            else:
+                logger.info(f"✅ DEBUG: Found {len(matching_recruiters)} recruiter(s) matching company {job_company}")
+                emit_verbose_log_sync(f"   Filtered to {len(matching_recruiters)} recruiter(s) from {job_company}", "info", "🔍")
+            
+            # Score only the matching recruiters
+            scored = [(matching_indices[idx], self._score_recruiter_for_job(job, rec)) for idx, rec in enumerate(matching_recruiters)]
             scored.sort(key=lambda x: (x[1], recruiters[x[0]].get('followers_count', 0) or 0), reverse=True)
             
             if scored:
@@ -1397,6 +1467,42 @@ class UnifiedMessenger:
         graduation_text = resume_details.get('graduation') or 'Not specified'
         experience_highlights = resume_details.get('experience', [])
         experience_text = '; '.join(experience_highlights[:4]) if experience_highlights else 'Not specified'
+        
+        # Extract key technologies from resume - CRITICAL for preventing fabrication
+        resume_technologies = []
+        if resume_content and self.resume_generator and self.resume_generator.resume_parser:
+            try:
+                structured_data = self.resume_generator.resume_parser.extract_structured_data(resume_content)
+                resume_technologies = structured_data.get('key_technologies', [])
+            except Exception as e:
+                print(f"⚠️  Could not extract technologies from resume: {e}")
+                # Fallback: try to extract from bullet format
+                if 'Key Technologies:' in resume_content or 'key_technologies' in resume_content.lower():
+                    lines = resume_content.splitlines()
+                    for line in lines:
+                        if 'Key Technologies:' in line or 'key technologies:' in line.lower():
+                            tech_part = line.split(':', 1)[1] if ':' in line else line
+                            resume_technologies = [t.strip() for t in tech_part.split(',') if t.strip()]
+                            break
+        
+        # If still no technologies found, try parsing from raw resume content
+        if not resume_technologies and resume_content:
+            # Look for common technology patterns in the resume
+            tech_keywords = ['python', 'java', 'javascript', 'react', 'node', 'sql', 'aws', 'docker', 'kubernetes', 
+                           'cassandra', 'mongodb', 'postgresql', 'redis', 'kafka', 'spark', 'tensorflow', 'pytorch',
+                           'machine learning', 'deep learning', 'data science', 'backend', 'frontend', 'full stack']
+            found_techs = []
+            resume_lower = resume_content.lower()
+            for tech in tech_keywords:
+                if tech in resume_lower:
+                    found_techs.append(tech)
+            if found_techs:
+                resume_technologies = found_techs[:10]  # Limit to 10
+        
+        technologies_list_text = ', '.join(resume_technologies) if resume_technologies else 'None explicitly listed'
+        
+        # Extract the person's name from the resume
+        person_name = self._extract_resume_name(resume_content)
 
         email_prompt = f"""
 You are writing a professional outreach email. Follow these instructions carefully and return ONLY the content between <<<BEGIN>>> and <<<END>>>.
@@ -1411,25 +1517,37 @@ CONTEXT:
 - Education Summary: {education_text}
 - Graduation Detail: {graduation_text}
 - Resume Experience Highlights: {experience_text}
+- Resume Technologies (ONLY use these): {technologies_list_text}
 
 STRUCTURE:
 1. Open with a greeting that includes a courteous introduction (e.g., "I hope you're doing well") and clearly state the role at {company_name} you are pursuing.
 2. Provide a short paragraph introducing yourself, focusing on education and explicitly mentioning university and graduation date when available.
 3. Write a paragraph with 3-4 sentences that creates DIRECT, SPECIFIC mappings between the job requirements/technologies and your experience. For EACH requirement or technology listed, create a connection following this template: "My experience at [SPECIFIC COMPANY] helped me master fundamentals in [SPECIFIC TECHNOLOGY/SKILL], which is directly applicable to this position because [SPECIFIC REASON from requirements]." DO NOT use general statements. MUST reference specific companies from experience highlights and specific technologies/requirements from the job posting.
-4. Conclude with a warm, professional closing inviting a conversation. End with "Best regards," and "Shreyas Tulsi" exactly.
+4. Conclude with a warm, professional closing inviting a conversation. End with "Best regards," and "{person_name}" exactly.
 
 CRITICAL REQUIREMENTS FOR PARAGRAPH 3:
-- Pick 2-3 specific requirements or technologies from the job posting
+- ONLY mention technologies, skills, or tools that are EXPLICITLY listed in "Resume Technologies" above
+- If a job requirement or technology is NOT in the "Resume Technologies" list, DO NOT mention it in the email - skip it entirely
+- Pick 2-3 specific requirements or technologies from the job posting that ACTUALLY EXIST in your resume
+- For EACH one you mention, it MUST be in the "Resume Technologies" list - verify this before writing
 - For EACH one, mention a specific company/role from experience highlights where you used that skill
 - Explain the direct connection: "My [experience at X] → developed [specific skill Y] → useful for [specific requirement Z]"
 - Be concrete: mention actual technologies, actual companies, actual outcomes
 - Avoid vague phrases like "strong background" or "extensive experience" - use specific examples only
+- DO NOT fabricate, infer, or assume any technologies or skills not explicitly in the resume
+- DO NOT mention technologies just because they appear in the job posting - they must be in your resume
 
-EXAMPLE OF GOOD PARAGRAPH 3 (if job requires Python and ML):
+EXAMPLE OF GOOD PARAGRAPH 3 (if job requires Python and ML, AND both are in resume):
 "My internship at Amazon provided hands-on experience with Python for building data processing pipelines, which directly aligns with your requirement for Python proficiency. Additionally, my research at UCLA Data Mining Lab helped me master machine learning fundamentals through implementing classification models, skills that would be valuable for developing the ML features mentioned in the role. At Anvi Cybernetics, I applied these technologies to real-world problems, strengthening my ability to translate technical requirements into production solutions."
 
 EXAMPLE OF BAD PARAGRAPH 3 (too vague):
 "I have strong experience in software development and have worked with various technologies. My background includes internships at leading companies where I gained valuable skills. I'm confident these experiences would be beneficial for this role."
+
+EXAMPLE OF BAD PARAGRAPH 3 (fabricating skills not in resume):
+"My experience at Amazon helped me master Cassandra database systems..." [WRONG if Cassandra is NOT in resume technologies]
+
+EXAMPLE OF GOOD PARAGRAPH 3 (when job requires Cassandra but resume doesn't have it):
+"My internship at Amazon provided hands-on experience with Python for building data processing pipelines, which directly aligns with your requirement for scalable backend systems. Additionally, my research at UCLA Data Mining Lab helped me master machine learning fundamentals through implementing classification models, skills that would be valuable for developing the ML features mentioned in the role." [CORRECT - only mentions technologies actually in resume]
 
 RULES:
 - Use ASCII characters only.
@@ -1479,19 +1597,21 @@ BODY:
                 if not subject:
                     subject = f"Exploring {job_titles_str} opportunities at {company_name}"
 
+                # Extract name from resume for signature
+                person_name = self._extract_resume_name(resume_content)
                 if 'Best regards' not in body:
-                    body = body.rstrip() + "\n\nBest regards,\nShreyas Tulsi"
+                    body = body.rstrip() + f"\n\nBest regards,\n{person_name}"
 
                 return subject, body
 
             subject = f"Exploring {job_titles_str} opportunities at {company_name}"
-            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str)
+            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str, resume_content)
             return subject, body
 
         except Exception as exc:
             print(f"⚠️  Error generating email: {exc}")
             subject = f"Exploring {job_titles_str} opportunities at {company_name}"
-            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str)
+            body = self._fallback_email_body(recruiter_name, company_name, job_titles_str, resume_content)
             return subject, body
     
     def send_email(self, to_email, subject, body):
@@ -2164,16 +2284,65 @@ BODY:
                 print(f"❌ No existing chat found with '{user_input}'")
                 print("💡 Try using their LinkedIn profile URL instead.")
 
-    def _fallback_email_body(self, recruiter_name: str, company_name: str, job_titles_str: str) -> str:
+    def _fallback_email_body(self, recruiter_name: str, company_name: str, job_titles_str: str, resume_content: Optional[str] = None) -> str:
+        # Extract name from resume if available
+        person_name = self._extract_resume_name(resume_content) if resume_content else "Shreyas Tulsi"
         return (
             f"Dear {recruiter_name},\n\n"
             f"I hope you're doing well. I'm reaching out to express my interest in {job_titles_str} opportunities at {company_name}. "
             "My background combines rigorous academic training with hands-on project experience that aligns well with this team.\n\n"
             f"I'd appreciate the chance to discuss how I can contribute to {company_name}'s goals and would welcome a quick conversation at your convenience.\n\n"
             "Best regards,\n"
-            "Shreyas Tulsi"
+            f"{person_name}"
         )
 
+    def _extract_resume_name(self, resume_content: Optional[str]) -> str:
+        """
+        Extract the person's name from resume content.
+        Tries multiple methods: bullet format, raw text, or structured parsing.
+        Returns default name if extraction fails.
+        """
+        if not resume_content:
+            return "Shreyas Tulsi"  # Fallback default
+        
+        # Method 1: Try to extract from bullet format (e.g., "• Name: Raman Arora")
+        lines = [line.strip() for line in resume_content.splitlines() if line.strip()]
+        for line in lines:
+            normalized = line.lstrip('•').strip()
+            if normalized.lower().startswith('name:'):
+                name = normalized.split(':', 1)[1].strip()
+                if name and name != "Not Available":
+                    print(f"✅ Extracted name from resume bullets: {name}")
+                    return name
+        
+        # Method 2: Try using resume parser to extract structured data
+        if self.resume_generator and self.resume_generator.resume_parser:
+            try:
+                structured_data = self.resume_generator.resume_parser.extract_structured_data(resume_content)
+                name = structured_data.get('name', '')
+                if name and name != "Not Available":
+                    print(f"✅ Extracted name from structured resume data: {name}")
+                    return name
+            except Exception as e:
+                print(f"⚠️  Could not extract name using resume parser: {e}")
+        
+        # Method 3: Try to find name in raw text (look for common patterns)
+        # This is a simple heuristic - look for lines that might be names
+        # (typically at the beginning, capitalized, 2-4 words)
+        for i, line in enumerate(lines[:5]):  # Check first 5 lines
+            words = line.split()
+            if 2 <= len(words) <= 4:
+                # Check if all words start with capital letters (likely a name)
+                if all(word and word[0].isupper() for word in words):
+                    # Exclude common headers
+                    if not any(word.lower() in ['email', 'phone', 'address', 'linkedin', 'github', 'resume', 'cv'] for word in words):
+                        print(f"✅ Extracted name from raw text: {line}")
+                        return line
+        
+        # Fallback to default
+        print("⚠️  Could not extract name from resume, using default")
+        return "Shreyas Tulsi"
+    
     def _extract_resume_details(self, resume_content: Optional[str]) -> Dict[str, Any]:
         details: Dict[str, Any] = {
             'education': None,

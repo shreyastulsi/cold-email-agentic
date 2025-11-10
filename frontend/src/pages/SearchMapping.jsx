@@ -1,7 +1,10 @@
+import { motion } from 'framer-motion'
 import React, { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+
+const STEPS = ['Find Companies', 'Find Jobs', 'Find Recruiters', 'Map to Best Recruiters', 'Outreach']
+const CURRENT_STEP_INDEX = 3
 
 const getJobUrl = (job = {}) => {
   return (
@@ -172,8 +175,30 @@ const SearchMapping = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white">
+    <div className="min-h-screen text-white">
       <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        <div className="flex items-center justify-center space-x-4 py-4">
+          {STEPS.map((step, index) => (
+            <React.Fragment key={index}>
+              <span
+                className={`text-sm font-medium transition-colors ${
+                  index === CURRENT_STEP_INDEX
+                    ? 'text-blue-400'
+                    : index < CURRENT_STEP_INDEX
+                    ? 'text-green-400'
+                    : 'text-gray-500'
+                }`}
+              >
+                {step}
+              </span>
+              {index < STEPS.length - 1 && (
+                <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-400">Recruiter Mapping</p>

@@ -1,12 +1,12 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on Shreyas Tulsi's candidate profile, the top two most relevant jobs are:
+Based on Raman Arora's profile, including his education, experience, and technical skills, here is the ranking of the top 2 most relevant jobs:
 
-1. **[Job #1] Machine Learning Software Development Engineer at AMD**
-   - This role directly aligns with Shreyas' experience in artificial intelligence and machine learning research, as well as his proficiency in Python and PyTorch. The focus on optimizing deep learning frameworks and GPU operations matches his skill set and academic background.
+1. **[Job #3] Software Development Engineer, AGI Customization at Amazon**  
+   - This position requires a Bachelor's degree in computer science, which aligns with Raman's educational background. The role also emphasizes software development experience, which matches his experience as a Technical Team Lead and ML Engineer intern. Additionally, the use of programming languages like Python and Java aligns with his key technologies.
 
-2. **[Job #5] GPU Product Manager for Gaming and AI at AMD**
-   - This position is relevant due to Shreyas' strong foundation in computer science and his involvement in AI projects. The requirement for a technical understanding of GPU architectures and experience in product management aligns well with his background in software development and research.
+2. **[Job #5] Member of Technical Staff Intern (2026), Artificial General Intelligence (AGI) at Amazon**  
+   - This internship is suitable for Raman as he is currently enrolled in a Bachelor's program. The focus on contributing to AI agent development and the requirement of experience in a modern programming language aligns well with his background in Python, Java, and C++. This role is also specifically targeted toward students, making it a good fit for his experience level. 
 
-These rankings reflect the strong alignment of the job responsibilities and requirements with Shreyas' education, skills, and experience.
+These rankings consider Raman's education, relevant internships, and skill set, making these jobs particularly suitable for him.

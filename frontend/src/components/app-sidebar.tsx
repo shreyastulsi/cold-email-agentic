@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { Logo } from "@/components/logo"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { SidebarLoggerConsole } from "@/components/sidebar-logger-console"
 import {
     Sidebar,
     SidebarContent,
@@ -156,8 +157,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={navWithStatus} />
+      <SidebarContent className="px-2 pb-2">
+        <div className="flex-1 overflow-y-auto pr-1">
+          <NavMain items={navWithStatus} />
+        </div>
+        <SidebarLoggerConsole />
       </SidebarContent>
       <SidebarFooter>
         {user && <NavUser user={user} />}
