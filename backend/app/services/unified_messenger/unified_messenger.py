@@ -394,6 +394,7 @@ class UnifiedMessenger:
         company_ids,
         job_titles,
         job_types=None,
+        company_names=None,
         location_id="102571732",
         locations=None,
         location=None,
@@ -421,17 +422,30 @@ class UnifiedMessenger:
         if salary_min is not None or salary_max is not None:
             print(f"💰 Salary filter: min={salary_min}, max={salary_max}")
         
+        # Create human-readable search criteria
+        clean_titles = [title.strip() for title in (job_titles or []) if title and title.strip()]
+        titles_text = ", ".join(clean_titles) if clean_titles else "Any"
+
+        company_list = []
+        if company_names:
+            company_list = [name.strip() for name in company_names if name and name.strip()]
+        if not company_list:
+            company_list = []
+        companies_text = ", ".join(company_list) if company_list else f"{len(company_ids)} {'company' if len(company_ids) == 1 else 'companies'}"
+        
+        unique_locations = []
+        if location_filters:
+            for loc in location_filters:
+                if loc and loc.strip() and loc not in unique_locations:
+                    unique_locations.append(loc.strip())
+        
+        search_summary = f"Searching for {titles_text} positions at {companies_text}"
+        if unique_locations:
+            locations_text = ", ".join(unique_locations)
+            search_summary = f"{search_summary} in {locations_text}"
+        
         emit_verbose_log_sync(
-            (
-                "🔍 Starting job search\n"
-                f"• Companies: {company_ids}\n"
-                f"• Titles: {job_titles}\n"
-                f"• Job types: {job_types or ['full_time (default)']}\n"
-                f"• Location(s): {location_filters or ['Any']} (location_id={location_id})\n"
-                f"• Experience level(s): {experience_levels or ['Any']}\n"
-                f"• Salary range: {salary_min if salary_min is not None else 'Any'} - "
-                f"{salary_max if salary_max is not None else 'Any'}"
-            ),
+            search_summary,
             "info",
             "🔍"
         )
@@ -484,26 +498,24 @@ class UnifiedMessenger:
                     json=data
                 )
                 
-                try:
-                    print(f"📤 Request payload for company {company_id}: {json.dumps(data, indent=2)[:500]}")
-                    emit_verbose_log_sync(
-                        f"📤 Sent job search payload for company {company_id}:\n{json.dumps(data, indent=2)[:600]}",
-                        "info",
-                        "📤"
-                    )
-                except Exception:
-                    pass
-                
                 if response.status_code == 200:
                     result = response.json()
                     items = result.get('items', []) or result.get('data', []) or result.get('jobs', [])
                     filtered_items = []
                     print(f"📥 Received {len(items)} raw job(s) for company {company_id}")
+                    
+                    # Get company name for better logging
+                    company_name_for_log = "company"
+                    if items and len(items) > 0:
+                        first_job = items[0]
+                        company_name_for_log = first_job.get('company', {}).get('name') if isinstance(first_job.get('company'), dict) else first_job.get('company') or first_job.get('companyName') or "company"
+                    
                     emit_verbose_log_sync(
-                        f"📥 Received {len(items)} raw job(s) for company {company_id}",
+                        f"Searching {company_name_for_log} for open positions",
                         "info",
-                        "📥"
+                        "🔍"
                     )
+                    
                     for job in items:
                         filter_reasons = []
                         if not self._matches_location_filter(job, location_filters):
@@ -515,13 +527,7 @@ class UnifiedMessenger:
 
                         if filter_reasons:
                             title = job.get('title') or job.get('jobTitle') or 'Untitled'
-                            company_name = job.get('company', {}).get('name') if isinstance(job.get('company'), dict) else job.get('company') or job.get('companyName') or 'Unknown'
-                            print(f"🚫 Filtered out job '{title}' at {company_name} due to: {', '.join(filter_reasons)}")
-                            emit_verbose_log_sync(
-                                f"🚫 Filtered out job '{title}' at {company_name} (company ID {company_id}) due to: {', '.join(filter_reasons)}",
-                                "warning",
-                                "🚫"
-                            )
+                            print(f"🚫 Filtered out job '{title}' due to: {', '.join(filter_reasons)}")
                             continue
                         # Try to ensure a job URL field exists
                         if not job.get('job_url'):
@@ -538,12 +544,14 @@ class UnifiedMessenger:
                                     break
                         filtered_items.append(job)
                     all_jobs.extend(filtered_items)
-                    print(f"✅ Found {len(filtered_items)} matching jobs for company {company_id}")
-                    emit_verbose_log_sync(
-                        f"✅ {len(filtered_items)} matching job(s) for company {company_id}",
-                        "success",
-                        "✅"
-                    )
+                    
+                    if len(filtered_items) > 0:
+                        print(f"✅ Found {len(filtered_items)} matching jobs for company {company_id}")
+                        emit_verbose_log_sync(
+                            f"Found {len(filtered_items)} matching {('position' if len(filtered_items) == 1 else 'positions')} at {company_name_for_log}",
+                            "success",
+                            "✅"
+                        )
                 else:
                     print(f"❌ Failed to search jobs for company {company_id}: {response.text}")
                     
@@ -557,11 +565,18 @@ class UnifiedMessenger:
                 continue
         
         print(f"✅ Total found {len(all_jobs)} job listings across all companies")
-        emit_verbose_log_sync(
-            f"📊 Job search complete. Returning {len(all_jobs)} job(s) after filtering.",
-            "info",
-            "📊"
-        )
+        if len(all_jobs) > 0:
+            emit_verbose_log_sync(
+                f"Found {len(all_jobs)} open {('position' if len(all_jobs) == 1 else 'positions')} matching your criteria",
+                "success",
+                "✅"
+            )
+        else:
+            emit_verbose_log_sync(
+                "No positions found matching your search criteria",
+                "info",
+                "ℹ️"
+            )
         return all_jobs
 
     # Helper methods for job filtering
@@ -909,14 +924,39 @@ class UnifiedMessenger:
         logger.info(f"🔍 DEBUG: Input recruiters count: {len(recruiters) if recruiters else 0}")
         logger.info(f"🔍 DEBUG: Max pairs: {max_pairs}")
         
-        emit_verbose_log_sync(f"🔍 Processing {len(jobs) if jobs else 0} job(s) against {len(recruiters) if recruiters else 0} recruiter(s)...", "info", "🔍")
-        
         if not jobs or not recruiters:
             logger.warning(f"⚠️ DEBUG: Empty input - jobs: {bool(jobs)}, recruiters: {bool(recruiters)}")
             return [], []
 
         jobs_considered = jobs[:max_pairs]
         logger.info(f"🔍 DEBUG: Considering {len(jobs_considered)} jobs for mapping")
+        job_companies = sorted({self._get_company_name_from_job(job) or 'Unknown' for job in jobs_considered if job})
+        job_titles = sorted({job.get('title') or job.get('job_title') for job in jobs_considered if job and (job.get('title') or job.get('job_title'))})
+        recruiter_count = len(recruiters) if recruiters else 0
+
+        if job_companies:
+            emit_verbose_log_sync(
+                f"Companies to find recruiters for: {', '.join(job_companies)}",
+                "info",
+                "🏢"
+            )
+        if job_titles:
+            emit_verbose_log_sync(
+                f"Positions to fill: {', '.join(job_titles)}",
+                "info",
+                "💼"
+            )
+        emit_verbose_log_sync(
+            f"Recruiters under consideration: {recruiter_count}",
+            "info",
+            "👥"
+        )
+        emit_verbose_log_sync(
+            "Parsing recruiter information for relevance to each position",
+            "info",
+            "🧠"
+        )
+
         used_indices = set()
         selected = []
         mapping = []
@@ -925,9 +965,7 @@ class UnifiedMessenger:
             job_title = job.get('title', 'Unknown')
             job_company = self._get_company_name_from_job(job) or 'Unknown'
             logger.info(f"🔍 DEBUG: Processing job {job_idx + 1}/{len(jobs_considered)}: {job_title} at {job_company}")
-            
-            emit_verbose_log_sync(f"🎯 Analyzing job {job_idx + 1}/{len(jobs_considered)}: {job_title} @ {job_company}", "info", "🎯")
-            
+
             # CRITICAL FIX: Filter recruiters to only those from the same company as the job
             # This ensures that when a user selects a position from NVIDIA, only NVIDIA recruiters are considered
             matching_recruiters = []
@@ -939,13 +977,10 @@ class UnifiedMessenger:
             
             if not matching_recruiters:
                 logger.warning(f"⚠️ DEBUG: No recruiters found for company {job_company}, trying all recruiters as fallback")
-                emit_verbose_log_sync(f"⚠️ No recruiters found for {job_company}, using all recruiters as fallback", "warning", "⚠️")
+                emit_verbose_log_sync(f"No direct recruiters found for {job_company}, expanding search", "info", "🔄")
                 # Fallback: use all recruiters if no company match found
                 matching_recruiters = recruiters
                 matching_indices = list(range(len(recruiters)))
-            else:
-                logger.info(f"✅ DEBUG: Found {len(matching_recruiters)} recruiter(s) matching company {job_company}")
-                emit_verbose_log_sync(f"   Filtered to {len(matching_recruiters)} recruiter(s) from {job_company}", "info", "🔍")
             
             # Score only the matching recruiters
             scored = [(matching_indices[idx], self._score_recruiter_for_job(job, rec)) for idx, rec in enumerate(matching_recruiters)]
@@ -991,9 +1026,7 @@ class UnifiedMessenger:
             recruiter_company = self._recruiter_company_name(chosen) or chosen.get('company', 'Unknown')
             logger.info(f"🔍 DEBUG: Mapped {job_title} -> {recruiter_name} ({recruiter_company})")
             logger.info(f"🔗 DEBUG: Job URL attached to recruiter: {job_url}")
-            
-            emit_verbose_log_sync(f"🧩 Matched: {job_title} @ {job_company} → {recruiter_name} @ {recruiter_company}", "success", "🧩")
-            
+
             selected.append(chosen)
             mapping.append({
                 'job_title': job.get('title'),
@@ -1008,11 +1041,7 @@ class UnifiedMessenger:
                 break
 
         logger.info(f"🔍 DEBUG: Mapping complete. Created {len(mapping)} mappings from {len(jobs_considered)} jobs")
-        if len(mapping) == 0:
-            emit_verbose_log_sync(f"⚠️ Warning: No mappings created", "warning", "⚠️")
-            logger.warning(f"⚠️ DEBUG: No mappings created! Jobs: {len(jobs_considered)}, Recruiters: {len(recruiters)}")
-        else:
-            emit_verbose_log_sync(f"✅ Mapping complete: {len(mapping)} pair(s) created", "success", "✅")
+        emit_verbose_log_sync(f"Number of recruiters found: {len(selected)}", "info", "📊")
         
         return selected, mapping
 

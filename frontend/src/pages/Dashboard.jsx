@@ -6,6 +6,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     linkedinInvitesSent: 0,
     emailsSent: 0,
+    uniqueCompaniesReached: 0,
     rolesReached: [],
     latestAttempts: []
   })
@@ -22,6 +23,7 @@ export default function Dashboard() {
       setStats({
         linkedinInvitesSent: response.linkedin_invites_sent || 0,
         emailsSent: response.emails_sent || 0,
+        uniqueCompaniesReached: response.unique_companies_reached || 0,
         rolesReached: response.roles_reached_list || [],
         latestAttempts: response.latest_attempts || []
       })
@@ -134,10 +136,10 @@ export default function Dashboard() {
           containerClassName="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 shadow-lg"
           className="p-6"
         >
-          <h3 className="text-sm font-medium text-muted-foreground">Total Outreach</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Unique Companies Reached</h3>
           <div className="mt-2">
             <p className="text-3xl font-semibold text-white">
-              {stats.linkedinInvitesSent + stats.emailsSent}
+              {stats.uniqueCompaniesReached}
             </p>
           </div>
         </WobbleCard>

@@ -101,6 +101,7 @@ async def get_user_stats(
         # Build latest attempts with consolidated data
         latest_attempts = []
         roles_reached = set()
+        companies_reached = set()
         
         for entry in consolidated_list:
             # Format channel display
@@ -127,6 +128,8 @@ async def get_user_stats(
             # Track unique roles reached
             if entry['title'] and entry['title'] != "Position" and entry['company'] and entry['company'] != "Company":
                 roles_reached.add((entry['title'], entry['company']))
+            if entry['company'] and entry['company'] != "Company":
+                companies_reached.add(entry['company'])
         
         # Convert roles to list of dicts
         roles_list = [
@@ -144,6 +147,8 @@ async def get_user_stats(
             "last_application_at": user_stats.last_application_at.isoformat() if user_stats.last_application_at else None,
             "latest_attempts": latest_attempts,
             "roles_reached_list": roles_list,
+            "unique_companies_reached": len(companies_reached),
+            "unique_companies_list": sorted(companies_reached),
         }
     except Exception as e:
         logger.error(f"Error getting user stats: {str(e)}")

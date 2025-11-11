@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence } from 'framer-motion'
 import { AlertCircle, Bot, ChevronDown } from 'lucide-react'
 import { motion } from 'motion/react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { ActivityConsole } from '../components/activity-console'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { LoaderOne } from '../components/ui/loader'
+import { JobContextModal } from '../components/JobContextModal'
+import { useActivityConsole } from '../context/activity-console-context'
 import { useSidebarLogger } from '../context/sidebar-logger-context'
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
 import { apiRequest } from '../utils/api'
@@ -45,107 +48,6 @@ const CollapsibleSection = ({ title, description, defaultOpen = false, children 
         {children}
       </CollapsibleContent>
     </Collapsible>
-  )
-}
-
-const formatTimestamp = (value) => {
-  try {
-    const date = new Date(value ?? Date.now())
-    if (Number.isNaN(date.getTime())) {
-      return new Date().toLocaleTimeString()
-    }
-    return date.toLocaleTimeString()
-  } catch (_error) {
-    return new Date().toLocaleTimeString()
-  }
-}
-
-const getLogToneClass = (type = '') => {
-  const normalized = String(type || '').toLowerCase()
-  if (normalized.includes('error') || normalized.includes('fail')) {
-    return 'text-red-400'
-  }
-  if (normalized.includes('success') || normalized.includes('done') || normalized.includes('complete')) {
-    return 'text-green-400'
-  }
-  if (normalized.includes('warn') || normalized.includes('pending')) {
-    return 'text-yellow-300'
-  }
-  if (normalized.includes('info') || normalized.includes('start')) {
-    return 'text-blue-300'
-  }
-  return 'text-gray-300'
-}
-
-const normalizeLogMessage = (log) => {
-  if (!log) return ''
-  const raw =
-    log.message ??
-    log.detail ??
-    log.text ??
-    log.statusMessage ??
-    log.title ??
-    log.description ??
-    ''
-
-  if (typeof raw === 'string') {
-    return raw
-  }
-
-  try {
-    return JSON.stringify(raw)
-  } catch (_error) {
-    return String(raw)
-  }
-}
-
-const SearchActivityConsole = ({ logs = [], onClear = () => {}, isActive = false }) => {
-  return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-700/60 bg-gray-900/70 p-4 shadow-lg shadow-black/20">
-      <div className="mb-3 flex shrink-0 items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Activity Console</h2>
-          <p className="text-xs text-gray-400">
-            Real-time events while we search and build outreach for you.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isActive && (
-            <span className="flex items-center gap-1 rounded-full bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-300">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-              Live
-            </span>
-          )}
-          <button
-            onClick={onClear}
-            className="text-xs font-medium text-gray-400 hover:text-gray-200"
-            type="button"
-          >
-            Clear
-          </button>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto rounded-xl border border-gray-800/70 bg-gray-950/60 px-3 py-3">
-        {logs.length === 0 ? (
-          <div className="text-xs font-mono text-gray-500">
-            No log entries yet. Start a search or mapping action to see updates here.
-          </div>
-        ) : (
-          <div className="space-y-1 text-xs font-mono">
-            {logs.map((log, index) => (
-              <div
-                key={log.id ?? `${log.timestamp ?? 'log'}-${index}`}
-                className={getLogToneClass(log.type || log.level || log.status)}
-              >
-                [{formatTimestamp(log.timestamp)}]{' '}
-                {log.emoji ? `${log.emoji} ` : ''}
-                {normalizeLogMessage(log)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
   )
 }
 
@@ -236,6 +138,10 @@ async function searchJobs(companyIds, jobTitles, jobTypes = ['full_time'], optio
     payload.job_types = jobTypes
   } else {
     payload.job_types = ['full_time']
+  }
+
+  if (options.companyNames && Array.isArray(options.companyNames) && options.companyNames.length > 0) {
+    payload.company_names = options.companyNames
   }
 
   if (Object.prototype.hasOwnProperty.call(options, 'locationId')) {
@@ -407,7 +313,8 @@ export default function Search() {
     setLogs: setSidebarLogs,
     clearLogs: clearSidebarLogs,
     setIsActive: setSidebarActive,
-    isActive: sidebarIsActive
+    isActive: sidebarIsActive,
+    appendLog
   } = useSidebarLogger()
   const eventSourceRef = useRef(null)
   const [draggedJob, setDraggedJob] = useState(null)
@@ -422,12 +329,33 @@ export default function Search() {
   const [expandedMessages, setExpandedMessages] = useState(new Set()) // Set of expanded message indices
   const [editingMessage, setEditingMessage] = useState(null) // { index: number, part: 'email' | 'linkedin' }
   const [editValues, setEditValues] = useState({}) // Temporary edit values
-  const [jobContexts, setJobContexts] = useState({}) // { index: jobContext }
-  const [loadingJobContexts, setLoadingJobContexts] = useState(new Set()) // Set of message indices loading context
-  const [expandedJobContexts, setExpandedJobContexts] = useState(new Set()) // Set of expanded job context indices
+  const { setConsoleWidth } = useActivityConsole()
+  const [localConsoleWidth, setLocalConsoleWidth] = useState(0) // Track console width for this page only
+  const salaryMinRef = useRef('')
+  const salaryMaxRef = useRef('')
   const onboardingReady = onboardingStatus?.isReadyForSearch ?? false
   const missingResume = onboardingStatus ? !onboardingStatus.hasResume : false
   const missingChannels = onboardingStatus ? !onboardingStatus.hasEmail && !onboardingStatus.hasLinkedIn : false
+
+  const logFilterEvent = useCallback(
+    (message, emoji = '🧩') => {
+      if (!appendLog) return
+      appendLog({
+        id: `filter-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        message,
+        type: 'info',
+        emoji,
+        timestamp: new Date().toISOString()
+      })
+    },
+    [appendLog]
+  )
+
+  // Update both global context and local state
+  const handleConsoleWidthChange = (width) => {
+    setConsoleWidth(width)
+    setLocalConsoleWidth(width)
+  }
 
   useEffect(() => {
     if (!onboardingReady) return
@@ -510,7 +438,7 @@ export default function Search() {
                           timestamp: logEntry.timestamp ?? Date.now()
                         }
                         const newLogs = [...prev, nextEntry]
-                        return newLogs.slice(-10)
+                        return newLogs.slice(-30)
                       })
                     }
                   } catch (e) {
@@ -570,22 +498,18 @@ export default function Search() {
     queryKey: ['searchJobs', jobSearchTrigger],
     queryFn: async () => {
       if (!jobSearchTrigger) throw new Error('Job search trigger not set')
-      const { companyIds, titles, types, locations: selectedLocs, experienceLevels: expLevels, salaryMin: minSalary, salaryMax: maxSalary } = jobSearchTrigger
+      const { companyIds, companyNames, titles, types, locations: selectedLocs, experienceLevels: expLevels, salaryMin: minSalary, salaryMax: maxSalary } = jobSearchTrigger
       const options = {
         locations: selectedLocs,
         experienceLevels: expLevels,
         salaryMin: minSalary,
-        salaryMax: maxSalary
+        salaryMax: maxSalary,
+        companyNames
       }
       if (!selectedLocs || selectedLocs.length === 0) {
         options.locationId = DEFAULT_LOCATION_ID
       }
-      const result = await searchJobs(companyIds, titles, types, options)
-      // Limit to 5 jobs total from unipile
-      if (result?.jobs && result.jobs.length > 5) {
-        return { ...result, jobs: result.jobs.slice(0, 5) }
-      }
-      return result
+      return await searchJobs(companyIds, titles, types, options)
     },
     enabled: !!(jobSearchTrigger && jobSearchTrigger.companyIds && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.titles && jobSearchTrigger.titles.length > 0),
     retry: false
@@ -612,13 +536,18 @@ export default function Search() {
         setSelectedCompanies([...selectedCompanies, { name: companyName, id: companyId }])
         setSearchQuery('')
         setSearchTrigger(null)
+        logFilterEvent(`Added ${companyName} to company filters`, '🏢')
       }
     }
   }
 
   // Remove company
   const handleRemoveCompany = (companyId) => {
+    const company = selectedCompanies.find(c => c.id === companyId)
     setSelectedCompanies(selectedCompanies.filter(c => c.id !== companyId))
+    if (company) {
+      logFilterEvent(`Removed ${company.name} from company filters`, '🏢')
+    }
   }
 
   const handleToggleQuickCompany = async (companyName) => {
@@ -631,6 +560,7 @@ export default function Search() {
       setSelectedCompanies((prev) =>
         prev.filter((company) => company.id !== existing.id)
       )
+      logFilterEvent(`Removed ${existing.name} from company filters`, '🏢')
       return
     }
 
@@ -642,12 +572,17 @@ export default function Search() {
           result.company?.name || result.company?.title || companyName
         const companyId = result.company_id
 
+        let added = false
         setSelectedCompanies((prev) => {
           if (prev.some((company) => company.id === companyId)) {
             return prev
           }
+          added = true
           return [...prev, { name: displayName, id: companyId }]
         })
+        if (added) {
+          logFilterEvent(`Added ${displayName} to company filters`, '🏢')
+        }
       } else {
         alert(`Could not find ${companyName}. Try searching manually.`)
       }
@@ -665,12 +600,19 @@ export default function Search() {
   const handleAddCustomJobTitle = () => {
     const normalized = customJobTitle.trim()
     if (!normalized) return
+    let added = false
     setSelectedJobTitles(prev => {
       const next = new Set(prev)
-      next.add(normalized)
+      if (!next.has(normalized)) {
+        next.add(normalized)
+        added = true
+      }
       return next
     })
     setCustomJobTitle('')
+    if (added) {
+      logFilterEvent(`Added ${normalized} to job title filters`, '💼')
+    }
   }
 
   // Handle job search
@@ -697,6 +639,7 @@ export default function Search() {
 
       setJobSearchTrigger({
         companyIds: companyIds,
+        companyNames: selectedCompanies.map(c => c.name).filter(Boolean),
         titles: jobTitleArray,
         types: finalJobTypes,
         locations: locationList,
@@ -1350,51 +1293,6 @@ export default function Search() {
     }
   }
 
-  const fetchJobContext = async (index, jobUrl) => {
-    if (!jobUrl || jobContexts[index] || loadingJobContexts.has(index)) {
-      return // Already have it or currently loading
-    }
-
-    setLoadingJobContexts(prev => new Set(prev).add(index))
-
-    try {
-      const result = await apiRequest(`/api/v1/job-context?job_url=${encodeURIComponent(jobUrl)}`, {
-        method: 'GET'
-      })
-
-      if (result.success && result.context) {
-        setJobContexts(prev => ({
-          ...prev,
-          [index]: result.context
-        }))
-      }
-    } catch (error) {
-      console.error('Error fetching job context:', error)
-    } finally {
-      setLoadingJobContexts(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(index)
-        return newSet
-      })
-    }
-  }
-
-  const toggleJobContext = (index, jobUrl) => {
-    setExpandedJobContexts(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(index)) {
-        newSet.delete(index)
-      } else {
-        newSet.add(index)
-        // Fetch job context when expanding
-        if (jobUrl) {
-          fetchJobContext(index, jobUrl)
-        }
-      }
-      return newSet
-    })
-  }
-
   // Rearrange jobs and recruiters
   const handleRearrangeJob = (fromIndex, toIndex) => {
     const newMappedJobs = [...mappedJobs]
@@ -1601,45 +1499,67 @@ export default function Search() {
     )
   }
 
+  // Show Activity Console on search page and mapping view
+  const showActivityConsole = true // Always show on this page and sub-pages
+
   if (isMappingView) {
     const jobsForMapping = jobResults?.jobs || mappedJobs.filter(Boolean)
 
     return (
-      <SearchMapping
-        mapping={mapping}
-        recruiters={mappedRecruiters}
-        jobs={jobsForMapping}
-        onBack={() => {
-          setMapping([])
-          setMappedRecruiters([])
-          if (jobResults?.jobs) {
-            setMappedJobs(Array(jobResults.jobs.length).fill(null))
-          } else {
-            setMappedJobs([])
-          }
-          navigate('/dashboard/search')
-        }}
-        onGenerate={async () => {
-          if (isGeneratingMessages || mapping.length === 0) return
-          await handleGenerateMessages()
-          navigate('/dashboard/search')
-        }}
-        isGenerating={isGeneratingMessages}
-      />
+      <>
+        {showActivityConsole && (
+          <ActivityConsole
+            logs={sidebarLogs}
+            onClear={clearSidebarLogs}
+            isActive={sidebarIsActive}
+            onWidthChange={handleConsoleWidthChange}
+          />
+        )}
+        <div 
+          className="transition-all duration-300"
+          style={{ marginRight: `${localConsoleWidth}px` }}
+        >
+          <SearchMapping
+            mapping={mapping}
+            recruiters={mappedRecruiters}
+            jobs={jobsForMapping}
+            onBack={() => {
+              setMapping([])
+              setMappedRecruiters([])
+              if (jobResults?.jobs) {
+                setMappedJobs(Array(jobResults.jobs.length).fill(null))
+              } else {
+                setMappedJobs([])
+              }
+              navigate('/dashboard/search')
+            }}
+            onGenerate={async () => {
+              if (isGeneratingMessages || mapping.length === 0) return
+              await handleGenerateMessages()
+              navigate('/dashboard/search')
+            }}
+            isGenerating={isGeneratingMessages}
+          />
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="flex flex-col gap-6 xl:flex-row">
-        <div className="w-full xl:w-1/4 2xl:w-[22%] h-full">
-          <SearchActivityConsole
-            logs={sidebarLogs}
-            onClear={clearSidebarLogs}
-            isActive={sidebarIsActive}
-          />
-        </div>
-        <div className="flex-1 min-w-0 space-y-6">
+    <>
+      {showActivityConsole && (
+        <ActivityConsole
+          logs={sidebarLogs}
+          onClear={clearSidebarLogs}
+          isActive={sidebarIsActive}
+          onWidthChange={handleConsoleWidthChange}
+        />
+      )}
+      <div 
+        className="min-h-screen pb-20 transition-all duration-300"
+        style={{ marginRight: `${localConsoleWidth}px` }}
+      >
+        <div className="space-y-6">
           {/* Progressive Step Indicator */}
           <div className="flex items-center justify-center space-x-4 py-4">
             {steps.map((step, index) => (
@@ -1817,6 +1737,10 @@ export default function Search() {
                                     }
                                     return next
                                   })
+                                  logFilterEvent(
+                                    `${isChecked ? 'Removed' : 'Added'} ${title} ${isChecked ? 'from' : 'to'} job title filters`,
+                                    '💼'
+                                  )
                                 }}
                               />
                               <span>{title}</span>
@@ -1857,13 +1781,14 @@ export default function Search() {
                         <span key={title} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200">
                           {title}
                           <button
-                            onClick={() =>
+                            onClick={() => {
+                              logFilterEvent(`Removed ${title} from job title filters`, '💼')
                               setSelectedJobTitles(prev => {
                                 const next = new Set(prev)
                                 next.delete(title)
                                 return next
                               })
-                            }
+                            }}
                             className="text-blue-300 hover:text-blue-100"
                           >
                             ×
@@ -1907,6 +1832,10 @@ export default function Search() {
                                     }
                                     return next
                                   })
+                                  logFilterEvent(
+                                    `${isChecked ? 'Removed' : 'Added'} ${option.label} ${isChecked ? 'from' : 'to'} location filters`,
+                                    '📍'
+                                  )
                                 }}
                               />
                               <span>{option.label}</span>
@@ -1944,6 +1873,10 @@ export default function Search() {
                                     }
                                     return next
                                   })
+                                  logFilterEvent(
+                                    `${isChecked ? 'Removed' : 'Added'} ${option.label} ${isChecked ? 'from' : 'to'} experience level filters`,
+                                    '📈'
+                                  )
                                 }}
                               />
                               <span>{option.label}</span>
@@ -1961,13 +1894,14 @@ export default function Search() {
                     <span key={loc} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
                       {loc}
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          logFilterEvent(`Removed ${loc} from location filters`, '📍')
                           setSelectedLocations(prev => {
                             const next = new Set(prev)
                             next.delete(loc)
                             return next
                           })
-                        }
+                        }}
                         className="text-blue-300 hover:text-blue-100"
                       >
                         ×
@@ -1984,13 +1918,14 @@ export default function Search() {
                       <span key={level} className="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-700/40 px-3 py-1 text-xs text-blue-200">
                         {label}
                         <button
-                          onClick={() =>
+                          onClick={() => {
+                            logFilterEvent(`Removed ${label} from experience level filters`, '📈')
                             setExperienceLevels(prev => {
                               const next = new Set(prev)
                               next.delete(level)
                               return next
                             })
-                          }
+                          }}
                           className="text-blue-300 hover:text-blue-100"
                         >
                           ×
@@ -2014,6 +1949,16 @@ export default function Search() {
                         min="0"
                         value={salaryMin}
                         onChange={(e) => setSalaryMin(e.target.value)}
+                        onBlur={() => {
+                          if (salaryMin !== salaryMinRef.current) {
+                            if (salaryMin) {
+                              logFilterEvent(`Set minimum salary to $${salaryMin}`, '💰')
+                            } else if (salaryMinRef.current) {
+                              logFilterEvent('Cleared minimum salary filter', '💰')
+                            }
+                            salaryMinRef.current = salaryMin
+                          }
+                        }}
                         className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-3 py-2 focus:border-blue-500 focus:outline-none"
                         placeholder="e.g., 100000"
                       />
@@ -2025,6 +1970,16 @@ export default function Search() {
                         min="0"
                         value={salaryMax}
                         onChange={(e) => setSalaryMax(e.target.value)}
+                        onBlur={() => {
+                          if (salaryMax !== salaryMaxRef.current) {
+                            if (salaryMax) {
+                              logFilterEvent(`Set maximum salary to $${salaryMax}`, '💰')
+                            } else if (salaryMaxRef.current) {
+                              logFilterEvent('Cleared maximum salary filter', '💰')
+                            }
+                            salaryMaxRef.current = salaryMax
+                          }
+                        }}
                         className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white px-3 py-2 focus:border-blue-500 focus:outline-none"
                         placeholder="e.g., 200000"
                       />
@@ -2453,8 +2408,8 @@ export default function Search() {
                     <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm transition-colors">
                       {/* Message Header - Always Visible */}
                       <div className="flex items-center gap-3 p-4 hover:bg-gray-700/20 transition-colors">
-                        <CollapsibleTrigger asChild>
-                          <button className="flex-1 flex items-center gap-4 text-left">
+                      <CollapsibleTrigger asChild>
+                          <div className="flex-1 flex items-center gap-4 text-left cursor-pointer">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-base font-semibold text-white truncate">
@@ -2470,6 +2425,15 @@ export default function Search() {
                             </div>
                             
                             <div className="flex items-center gap-3 text-sm text-gray-400">
+                              {(mapItem.job_url || recruiter.job_url) && (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <JobContextModal
+                                    jobUrl={mapItem.job_url || recruiter.job_url}
+                                    buttonText="View Job Context"
+                                    buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                                  />
+                                </div>
+                              )}
                               <div className="flex items-center gap-2">
                                 {recruiter.extracted_email || recruiter.email ? (
                                   <span className={`text-xs px-2 py-1 rounded ${
@@ -2507,7 +2471,7 @@ export default function Search() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                               </svg>
                             </div>
-                          </button>
+                          </div>
                         </CollapsibleTrigger>
                       </div>
 
@@ -2674,82 +2638,6 @@ export default function Search() {
                             })()}
                           </div>
 
-                          {/* Job Context Section */}
-                          {(mapItem.job_url || recruiter.job_url) && (
-                            <div className="mt-6 pt-6 border-t border-gray-700/50">
-                              <Collapsible
-                                open={expandedJobContexts.has(index)}
-                                onOpenChange={() => toggleJobContext(index, mapItem.job_url || recruiter.job_url)}
-                              >
-                                <CollapsibleTrigger asChild>
-                                  <button className="flex items-center justify-between w-full text-left hover:bg-gray-700/20 p-3 rounded-lg transition-colors">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-base font-semibold text-white">📋 Job Context</span>
-                                      <span className="text-xs text-gray-400">
-                                        (Requirements, Technologies, Responsibilities)
-                                      </span>
-                                    </div>
-                                    <svg
-                                      className={`w-4 h-4 text-gray-400 transition-transform ${expandedJobContexts.has(index) ? 'rotate-180' : ''}`}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="p-4 space-y-4">
-                                    {loadingJobContexts.has(index) ? (
-                                      <p className="text-gray-400 text-sm">Loading job context...</p>
-                                    ) : jobContexts[index] ? (
-                                      <>
-                                        {jobContexts[index].requirements?.length > 0 && (
-                                          <div>
-                                            <h5 className="text-sm font-semibold text-white mb-2">✅ Requirements</h5>
-                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                              {jobContexts[index].requirements.map((req, idx) => (
-                                                <li key={idx}>{req}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {jobContexts[index].technologies?.length > 0 && (
-                                          <div>
-                                            <h5 className="text-sm font-semibold text-white mb-2">💻 Technologies</h5>
-                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                              {jobContexts[index].technologies.map((tech, idx) => (
-                                                <li key={idx}>{tech}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {jobContexts[index].responsibilities?.length > 0 && (
-                                          <div>
-                                            <h5 className="text-sm font-semibold text-white mb-2">🎯 Responsibilities</h5>
-                                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                              {jobContexts[index].responsibilities.map((resp, idx) => (
-                                                <li key={idx}>{resp}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {(!jobContexts[index].requirements || jobContexts[index].requirements.length === 0) &&
-                                         (!jobContexts[index].technologies || jobContexts[index].technologies.length === 0) &&
-                                         (!jobContexts[index].responsibilities || jobContexts[index].responsibilities.length === 0) && (
-                                          <p className="text-gray-400 text-sm">No job context available for this position.</p>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <p className="text-gray-400 text-sm">Click to load job context</p>
-                                    )}
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
-                            </div>
-                          )}
-
                           {/* Additional Info */}
                           <div className="pt-4 border-t border-gray-700/50">
                             <div className="flex items-center justify-between text-sm text-gray-400">
@@ -2869,6 +2757,6 @@ export default function Search() {
       )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

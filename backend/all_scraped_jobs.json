@@ -1,50 +1,19 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4217804156",
-    "title": "Sr. Software Dev. Engineer/MLE, AGI Customization",
+    "url": "https://www.linkedin.com/jobs/view/4335116186",
+    "title": "Backend Software Engineer, Machine Learning Platform, AI Infrastructure",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Tesla",
+      "url": "https://www.linkedin.com/company/tesla-motors?trk=public_jobs_topcard-org-name"
     },
-    "location": "Boston, MA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$151,300.00/yr - $261,500.00/yr",
-    "description": "RESPONSIBILITIES:\n• Lead development of LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Investigate design approaches and evaluate technical feasibility.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI frameworks.  \n• Agile/Scrum methodologies.  \n• Large-scale computing resources.",
+    "location": "Palo Alto, CA",
+    "applications": "53 applicants",
+    "salary": null,
+    "description": "**RESPONSIBILITIES:**\n- Develop and deploy scalable infrastructure solutions.\n- Implement best practices and monitoring systems.\n- Coordinate resources for high availability of cluster hardware.\n\n**REQUIREMENTS:**\n- Expertise in designing scalable distributed systems.\n- Strong knowledge of Python/Go and Linux.\n- Experience with backend infrastructure components.\n\n**KEY TECHNOLOGIES:**\n- SQL/NoSQL databases, caching, message brokers.\n- Containerization and orchestration (Docker, Kubernetes).\n- Front-end development in React.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "RESPONSIBILITIES:\n• Lead development of LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Investigate design approaches and evaluate technical feasibility.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI frameworks.  \n• Agile/Scrum methodologies.  \n• Large-scale computing resources."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4316030682",
-    "title": "Language Engineer, Artificial General Intelligence - Data Services",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Sunnyvale, CA",
-    "applications": "59 applicants",
-    "salary": "$67,700.00/yr - $151,400.00/yr",
-    "description": "RESPONSIBILITIES:\n• Design complex data collections with human participants.  \n• Conduct data creation using synthetic and model-based methods.  \n• Analyze large datasets and extract insights.  \n• Build tools for data analysis or creation using scripting languages.  \n• Collaborate with cross-functional teams to evaluate AI model performance.  \n\nREQUIREMENTS:\n• Master's degree in Computational Linguistics or related field.  \n• 2+ years experience in computational linguistics or AI data creation.  \n• Proficient in scripting languages, especially Python.  \n• Experience with multimodal data in multiple languages.  \n• Strong organizational skills and attention to detail.  \n\nKEY TECHNOLOGIES:\n• Python for scripting and data analysis.  \n• Familiarity with APIs and version control.  \n• Experience with SQL, R, or Matlab for data analysis.  \n• Knowledge of machine learning concepts.  \n• Tools for data annotation and markup systems.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Entry level"
       },
       {
         "name": "Employment type",
@@ -56,22 +25,22 @@
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Motor Vehicle Manufacturing, Renewable Energy Semiconductor Manufacturing, and Utilities"
       }
     ],
-    "condensed_description": "RESPONSIBILITIES:\n• Design complex data collections with human participants.  \n• Conduct data creation using synthetic and model-based methods.  \n• Analyze large datasets and extract insights.  \n• Build tools for data analysis or creation using scripting languages.  \n• Collaborate with cross-functional teams to evaluate AI model performance.  \n\nREQUIREMENTS:\n• Master's degree in Computational Linguistics or related field.  \n• 2+ years experience in computational linguistics or AI data creation.  \n• Proficient in scripting languages, especially Python.  \n• Experience with multimodal data in multiple languages.  \n• Strong organizational skills and attention to detail.  \n\nKEY TECHNOLOGIES:\n• Python for scripting and data analysis.  \n• Familiarity with APIs and version control.  \n• Experience with SQL, R, or Matlab for data analysis.  \n• Knowledge of machine learning concepts.  \n• Tools for data annotation and markup systems."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop and deploy scalable infrastructure solutions.\n- Implement best practices and monitoring systems.\n- Coordinate resources for high availability of cluster hardware.\n\n**REQUIREMENTS:**\n- Expertise in designing scalable distributed systems.\n- Strong knowledge of Python/Go and Linux.\n- Experience with backend infrastructure components.\n\n**KEY TECHNOLOGIES:**\n- SQL/NoSQL databases, caching, message brokers.\n- Containerization and orchestration (Docker, Kubernetes).\n- Front-end development in React."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4303746797",
-    "title": "Software Development Engineer , AGI Customization",
+    "url": "https://www.linkedin.com/jobs/view/4134199996",
+    "title": "Machine Learning Engineer, Integration, AI Platforms",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Tesla",
+      "url": "https://www.linkedin.com/company/tesla-motors?trk=public_jobs_topcard-org-name"
     },
-    "location": "Boston, MA",
-    "applications": "79 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "RESPONSIBILITIES:\n• Lead development of novel LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Build customization capabilities like fine-tuning and prompt optimization.  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience.  \n• 2+ years in design or architecture of systems.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine learning and AI frameworks.  \n• Software programming languages (e.g., Python, Java).  \n• Large-scale computing resources and data sources.",
+    "location": "Palo Alto, CA",
+    "applications": "Over 200 applicants",
+    "salary": null,
+    "description": "RESPONSIBILITIES:\n• Develop AI solutions for FSD accessory controls.  \n• Design vision-based solutions for vehicle systems.  \n• Integrate with vehicle firmware for production software.  \n• Analyze fleet data for feature iteration.  \n\nREQUIREMENTS:\n• Proficient in Python and deep learning frameworks.  \n• Skilled in modern C++ for firmware integration.  \n• Strong understanding of deep learning architectures.  \n• Excellent problem-solving and communication skills.  \n\nKEY TECHNOLOGIES:\n• Python  \n• C++  \n• Deep learning frameworks  \n• Vehicle firmware integration",
     "criteria": [
       {
         "name": "Seniority level",
@@ -83,30 +52,30 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
+        "value": "Engineering and Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Motor Vehicle Manufacturing, Renewable Energy Semiconductor Manufacturing, and Utilities"
       }
     ],
-    "condensed_description": "RESPONSIBILITIES:\n• Lead development of novel LLM training techniques and optimizations.  \n• Collaborate with Applied Scientists on multimodal AI solutions.  \n• Build customization capabilities like fine-tuning and prompt optimization.  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience.  \n• 2+ years in design or architecture of systems.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine learning and AI frameworks.  \n• Software programming languages (e.g., Python, Java).  \n• Large-scale computing resources and data sources."
+    "condensed_description": "RESPONSIBILITIES:\n• Develop AI solutions for FSD accessory controls.  \n• Design vision-based solutions for vehicle systems.  \n• Integrate with vehicle firmware for production software.  \n• Analyze fleet data for feature iteration.  \n\nREQUIREMENTS:\n• Proficient in Python and deep learning frameworks.  \n• Skilled in modern C++ for firmware integration.  \n• Strong understanding of deep learning architectures.  \n• Excellent problem-solving and communication skills.  \n\nKEY TECHNOLOGIES:\n• Python  \n• C++  \n• Deep learning frameworks  \n• Vehicle firmware integration"
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4316037478",
-    "title": "Business Intelligence Engineer, ProdOps OAT, Project Kuiper",
+    "url": "https://www.linkedin.com/jobs/view/4122573281",
+    "title": "Robotics Software Engineer, Optimus Connectivity",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Tesla",
+      "url": "https://www.linkedin.com/company/tesla-motors?trk=public_jobs_topcard-org-name"
     },
-    "location": "Bellevue, WA",
-    "applications": "48 applicants",
-    "salary": "$89,600.00/yr - $185,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Implement and maintain analytics solutions for satellite technology.\n- Collaborate with cross-functional teams for data-driven decision making.\n- Design self-service reporting solutions that scale organization-wide.\n\n**REQUIREMENTS:**\n- 3+ years of data analysis experience with SQL and large datasets.\n- Proficiency in data visualization tools like Tableau or Grafana.\n- Experience with data modeling, warehousing, and ETL pipelines.\n\n**KEY TECHNOLOGIES:**\n- SQL databases (Redshift, Oracle, NoSQL).\n- Data visualization software (Tableau, Quick Suite).\n- AWS solutions (EC2, S3, Redshift).",
+    "location": "Palo Alto, CA",
+    "applications": "Over 200 applicants",
+    "salary": null,
+    "description": "**RESPONSIBILITIES:**\n- Develop Tesla’s Cellular wireless connectivity stack (LTE/5G).\n- Create telemetry and analytics platform for data collection.\n- Contribute to test automation frameworks for connectivity features.\n- Support QA, manufacturing, and software teams.\n- Rapidly prototype next-generation wireless platforms.\n\n**REQUIREMENTS:**\n- Degree in Computer Engineering, Computer Science, or related field.\n- Exceptional programming skills in C/C++, Linux, and Python.\n- Strong understanding of Embedded Systems and OS concepts.\n- Familiarity with networking concepts like Ethernet and TCP/IP.\n\n**KEY TECHNOLOGIES:**\n- Cellular technologies (LTE and 5G).\n- Wireless technologies (Wi-Fi, Bluetooth, BLE).\n- Embedded systems and operating systems.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Entry level"
       },
       {
         "name": "Employment type",
@@ -114,30 +83,30 @@
       },
       {
         "name": "Job function",
-        "value": "Strategy/Planning, Analyst, and Information Technology"
+        "value": "Engineering and Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Motor Vehicle Manufacturing, Renewable Energy Semiconductor Manufacturing, and Utilities"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Implement and maintain analytics solutions for satellite technology.\n- Collaborate with cross-functional teams for data-driven decision making.\n- Design self-service reporting solutions that scale organization-wide.\n\n**REQUIREMENTS:**\n- 3+ years of data analysis experience with SQL and large datasets.\n- Proficiency in data visualization tools like Tableau or Grafana.\n- Experience with data modeling, warehousing, and ETL pipelines.\n\n**KEY TECHNOLOGIES:**\n- SQL databases (Redshift, Oracle, NoSQL).\n- Data visualization software (Tableau, Quick Suite).\n- AWS solutions (EC2, S3, Redshift)."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop Tesla’s Cellular wireless connectivity stack (LTE/5G).\n- Create telemetry and analytics platform for data collection.\n- Contribute to test automation frameworks for connectivity features.\n- Support QA, manufacturing, and software teams.\n- Rapidly prototype next-generation wireless platforms.\n\n**REQUIREMENTS:**\n- Degree in Computer Engineering, Computer Science, or related field.\n- Exceptional programming skills in C/C++, Linux, and Python.\n- Strong understanding of Embedded Systems and OS concepts.\n- Familiarity with networking concepts like Ethernet and TCP/IP.\n\n**KEY TECHNOLOGIES:**\n- Cellular technologies (LTE and 5G).\n- Wireless technologies (Wi-Fi, Bluetooth, BLE).\n- Embedded systems and operating systems."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4334862965",
-    "title": "Member of Technical Staff Intern (2026), Artificial General Intelligence (AGI)",
+    "url": "https://www.linkedin.com/jobs/view/4104706488",
+    "title": "Deep Learning Vision Engineer, Optimus",
     "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+      "name": "Tesla",
+      "url": "https://www.linkedin.com/company/tesla-motors?trk=public_jobs_topcard-org-name"
     },
-    "location": "San Francisco, CA",
-    "applications": "179 applicants",
-    "salary": "$47.84/hr - $96.15/hr",
-    "description": "RESPONSIBILITIES:\n• Contribute to AI agent development in a research engineering role  \n• Design and enhance tools for cutting-edge research  \n• Collaborate with researchers on new techniques and tools  \n\nREQUIREMENTS:\n• 18 years of age or older  \n• Experience in at least one modern programming language  \n• Enrolled in a relevant Bachelor's degree program  \n\nKEY TECHNOLOGIES:\n• Large language models (LLMs)  \n• Reinforcement learning (RL)  \n• Object-oriented programming (Java, C++, C#)",
+    "location": "Palo Alto, CA",
+    "applications": "Over 200 applicants",
+    "salary": null,
+    "description": "**RESPONSIBILITIES:**\n• Write fleet queries and Python scripts for dataset sourcing.  \n• Analyze robot data distributions to identify anomalies.  \n• Develop methods for data acquisition, clustering, and cleaning.  \n• Build metrics to track model improvements across datasets.  \n• Write alerts to flag anomalies during data collection.  \n\n**REQUIREMENTS:**\n• Experience with large models and datasets.  \n• Proficiency in Python, SQL, and MATLAB/R.  \n• Strong problem-solving skills in cross-functional teams.  \n• Willingness to take on multiple roles.  \n\n**KEY TECHNOLOGIES:**\n• Python (Pandas, NumPy)  \n• SQL (PostgreSQL)  \n• Deep learning frameworks (PyTorch, TensorFlow, JAX)",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Internship"
+        "value": "Entry level"
       },
       {
         "name": "Employment type",
@@ -145,13 +114,44 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
+        "value": "Engineering and Information Technology"
       },
       {
         "name": "Industries",
-        "value": "Software Development"
+        "value": "Motor Vehicle Manufacturing, Renewable Energy Semiconductor Manufacturing, and Utilities"
       }
     ],
-    "condensed_description": "RESPONSIBILITIES:\n• Contribute to AI agent development in a research engineering role  \n• Design and enhance tools for cutting-edge research  \n• Collaborate with researchers on new techniques and tools  \n\nREQUIREMENTS:\n• 18 years of age or older  \n• Experience in at least one modern programming language  \n• Enrolled in a relevant Bachelor's degree program  \n\nKEY TECHNOLOGIES:\n• Large language models (LLMs)  \n• Reinforcement learning (RL)  \n• Object-oriented programming (Java, C++, C#)"
+    "condensed_description": "**RESPONSIBILITIES:**\n• Write fleet queries and Python scripts for dataset sourcing.  \n• Analyze robot data distributions to identify anomalies.  \n• Develop methods for data acquisition, clustering, and cleaning.  \n• Build metrics to track model improvements across datasets.  \n• Write alerts to flag anomalies during data collection.  \n\n**REQUIREMENTS:**\n• Experience with large models and datasets.  \n• Proficiency in Python, SQL, and MATLAB/R.  \n• Strong problem-solving skills in cross-functional teams.  \n• Willingness to take on multiple roles.  \n\n**KEY TECHNOLOGIES:**\n• Python (Pandas, NumPy)  \n• SQL (PostgreSQL)  \n• Deep learning frameworks (PyTorch, TensorFlow, JAX)"
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4053646955",
+    "title": "AI Engineer, Foundation Models, Autonomy & Robotics",
+    "company": {
+      "name": "Tesla",
+      "url": "https://www.linkedin.com/company/tesla-motors?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Palo Alto, CA",
+    "applications": "Be among the first 25 applicants",
+    "salary": null,
+    "description": "**RESPONSIBILITIES:**\n- Own a machine learning vertical and data collection strategy.\n- Design network architecture and train models at scale.\n- Evaluate models in engineering Tesla vehicles.\n\n**REQUIREMENTS:**\n- Strong software engineering skills and problem-solving track record.\n- Knowledge of deep learning concepts and optimization techniques.\n- Experience with PyTorch or similar deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- PyTorch, JAX, or TensorFlow.\n- Large datasets for model training.\n- Multimodal models and generative learning techniques.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Entry level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Engineering and Information Technology"
+      },
+      {
+        "name": "Industries",
+        "value": "Motor Vehicle Manufacturing, Renewable Energy Semiconductor Manufacturing, and Utilities"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Own a machine learning vertical and data collection strategy.\n- Design network architecture and train models at scale.\n- Evaluate models in engineering Tesla vehicles.\n\n**REQUIREMENTS:**\n- Strong software engineering skills and problem-solving track record.\n- Knowledge of deep learning concepts and optimization techniques.\n- Experience with PyTorch or similar deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- PyTorch, JAX, or TensorFlow.\n- Large datasets for model training.\n- Multimodal models and generative learning techniques."
   }
 ]

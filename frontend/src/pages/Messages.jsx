@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
+import { JobContextModal } from '../components/JobContextModal'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
@@ -47,9 +47,6 @@ export default function Messages() {
   const [isSending, setIsSending] = useState(false)
   const [savingStatus, setSavingStatus] = useState({}) // Track saving status for each message
   const [isSavingAll, setIsSavingAll] = useState(false)
-  const [jobContexts, setJobContexts] = useState({}) // { index: jobContext }
-  const [loadingJobContexts, setLoadingJobContexts] = useState(new Set()) // Set of message indices loading context
-  const [expandedJobContexts, setExpandedJobContexts] = useState(new Set()) // Set of expanded job context indices
   const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
   const messagesRef = useRef(messages)
   const sendingStatusRef = useRef(sendingStatus)
@@ -596,51 +593,6 @@ export default function Messages() {
     }
   }
 
-  const fetchJobContext = async (index, jobUrl) => {
-    if (!jobUrl || jobContexts[index] || loadingJobContexts.has(index)) {
-      return // Already have it or currently loading
-    }
-
-    setLoadingJobContexts(prev => new Set(prev).add(index))
-
-    try {
-      const result = await apiRequest(`/api/v1/job-context?job_url=${encodeURIComponent(jobUrl)}`, {
-        method: 'GET'
-      })
-
-      if (result.success && result.context) {
-        setJobContexts(prev => ({
-          ...prev,
-          [index]: result.context
-        }))
-      }
-    } catch (error) {
-      console.error('Error fetching job context:', error)
-    } finally {
-      setLoadingJobContexts(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(index)
-        return newSet
-      })
-    }
-  }
-
-  const toggleJobContext = (index, jobUrl) => {
-    setExpandedJobContexts(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(index)) {
-        newSet.delete(index)
-      } else {
-        newSet.add(index)
-        // Fetch job context when expanding
-        if (jobUrl) {
-          fetchJobContext(index, jobUrl)
-        }
-      }
-      return newSet
-    })
-  }
-
   if (messages.length === 0) {
     return (
       <div className="p-8 text-center">
@@ -681,8 +633,24 @@ export default function Messages() {
         {messages.map((messageData, index) => {
           const recruiter = messageData.recruiter || {}
           const mapItem = messageData.mapItem || {}
+          const jobUrl = mapItem.job_url || recruiter.job_url
           const linkedinStatus = sendingStatus[index]?.linkedin
           const emailStatus = sendingStatus[index]?.email
+          const hasEmailChannel = Boolean(
+            recruiter.extracted_email ||
+            recruiter.email ||
+            messageData.email ||
+            messageData.email?.subject ||
+            messageData.email?.body ||
+            messageData.editedEmailSubject ||
+            messageData.editedEmailBody
+          )
+          const hasLinkedInChannel = Boolean(
+            mapItem.recruiter_profile_url ||
+            recruiter.profile_url ||
+            messageData.linkedinMessage ||
+            messageData.editedLinkedInMessage
+          )
 
           return (
             <div key={index} className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
@@ -744,9 +712,32 @@ export default function Messages() {
                     </div>
                   </div>
                 </div>
+                {(jobUrl || hasEmailChannel || hasLinkedInChannel) && (
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {jobUrl && (
+                      <JobContextModal
+                        jobUrl={jobUrl}
+                        buttonText="View Job Context"
+                        buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                      />
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      {hasEmailChannel && (
+                        <span className={`px-2 py-1 rounded ${getStatusColor(emailStatus || '')}`}>
+                          📧 {emailStatus === 'sent' ? 'Sent' : emailStatus === 'sending' ? 'Sending' : emailStatus === 'error' ? 'Error' : 'Email'}
+                        </span>
+                      )}
+                      {hasLinkedInChannel && (
+                        <span className={`px-2 py-1 rounded ${getStatusColor(linkedinStatus || '')}`}>
+                          💼 {linkedinStatus === 'sent' ? 'Sent' : linkedinStatus === 'sending' ? 'Sending' : linkedinStatus === 'error' ? 'Error' : 'LinkedIn'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* LinkedIn Message Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -814,81 +805,6 @@ export default function Messages() {
                 </div>
               </div>
 
-              {/* Job Context Section */}
-              {(mapItem.job_url || recruiter.job_url) && (
-                <div className="mt-6 pt-6 border-t border-gray-700/50">
-                  <Collapsible
-                    open={expandedJobContexts.has(index)}
-                    onOpenChange={() => toggleJobContext(index, mapItem.job_url || recruiter.job_url)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <button className="flex items-center justify-between w-full text-left hover:bg-gray-700/20 p-3 rounded-lg transition-colors">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-semibold text-white">📋 Job Context</span>
-                          <span className="text-xs text-gray-400">
-                            (Requirements, Technologies, Responsibilities)
-                          </span>
-                        </div>
-                        <svg
-                          className={`w-4 h-4 text-gray-400 transition-transform ${expandedJobContexts.has(index) ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-4 space-y-4">
-                        {loadingJobContexts.has(index) ? (
-                          <p className="text-gray-400 text-sm">Loading job context...</p>
-                        ) : jobContexts[index] ? (
-                          <>
-                            {jobContexts[index].requirements?.length > 0 && (
-                              <div>
-                                <h5 className="text-sm font-semibold text-white mb-2">✅ Requirements</h5>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                  {jobContexts[index].requirements.map((req, idx) => (
-                                    <li key={idx}>{req}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {jobContexts[index].technologies?.length > 0 && (
-                              <div>
-                                <h5 className="text-sm font-semibold text-white mb-2">💻 Technologies</h5>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                  {jobContexts[index].technologies.map((tech, idx) => (
-                                    <li key={idx}>{tech}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {jobContexts[index].responsibilities?.length > 0 && (
-                              <div>
-                                <h5 className="text-sm font-semibold text-white mb-2">🎯 Responsibilities</h5>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
-                                  {jobContexts[index].responsibilities.map((resp, idx) => (
-                                    <li key={idx}>{resp}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {(!jobContexts[index].requirements || jobContexts[index].requirements.length === 0) &&
-                             (!jobContexts[index].technologies || jobContexts[index].technologies.length === 0) &&
-                             (!jobContexts[index].responsibilities || jobContexts[index].responsibilities.length === 0) && (
-                              <p className="text-gray-400 text-sm">No job context available for this position.</p>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-gray-400 text-sm">Click to load job context</p>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              )}
             </div>
           )
         })}

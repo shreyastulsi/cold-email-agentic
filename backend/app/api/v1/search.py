@@ -25,6 +25,7 @@ class JobsSearchRequest(BaseModel):
     company_ids: List[str]
     job_titles: List[str]
     job_types: Optional[List[str]] = None  # e.g. ["full_time", "internship"]
+    company_names: Optional[List[str]] = None
     location_id: Optional[str] = "102571732"
     locations: Optional[List[str]] = None
     location: Optional[str] = None  # Free-text fallback for filtering (deprecated)
@@ -74,6 +75,7 @@ async def search_jobs_endpoint(
             request.company_ids,
             request.job_titles,
             request.job_types,
+            company_names=request.company_names,
             location_id=request.location_id,
             locations=request.locations,
             location=request.location,
@@ -106,7 +108,7 @@ async def filter_jobs_endpoint(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """Filter jobs using AI to get top 2 most relevant jobs (testing mode)."""
+    """Filter jobs using AI to get top 5 most relevant jobs."""
     import logging
     logger = logging.getLogger(__name__)
     

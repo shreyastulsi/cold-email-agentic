@@ -58,8 +58,10 @@ class JobFilter:
         print(f"🔍 Scraping {len(job_urls)} job listings...")
         print("=" * 50)
         
+        total_jobs = len(job_urls)
+        
         for i, url in enumerate(job_urls, 1):
-            emit_verbose_log_sync(f"📄 Scraping job {i}/{len(job_urls)}: {url[:50]}...", "info", "📄")
+            emit_verbose_log_sync(f"Starting to scrape job {i}/{total_jobs}", "info", "🔍")
             print(f"📄 Scraping job {i}/{len(job_urls)}")
             print(f"🔗 URL: {url}")
             
@@ -68,14 +70,15 @@ class JobFilter:
                 if job_data:
                     scraped_jobs.append(job_data)
                     title = job_data.get('title', 'Unknown')
+                    company = job_data.get('company', {}).get('name', 'company') if isinstance(job_data.get('company'), dict) else 'company'
                     print(f"✅ Successfully scraped: {title}")
-                    emit_verbose_log_sync(f"✅ Scraped: {title}", "success", "✅")
+                    emit_verbose_log_sync(f"Finished scraping job {i}/{total_jobs}: {title} at {company}", "success", "📄")
                 else:
                     print(f"❌ Failed to scrape job")
-                    emit_verbose_log_sync(f"❌ Failed to scrape job {i}", "warning", "❌")
+                    emit_verbose_log_sync(f"Unable to scrape job {i}/{total_jobs}", "warning", "⚠️")
             except Exception as e:
                 print(f"❌ Error scraping job: {e}")
-                emit_verbose_log_sync(f"❌ Error scraping job {i}: {str(e)[:50]}", "error", "❌")
+                emit_verbose_log_sync(f"Error scraping job {i}/{total_jobs}: {str(e)}", "error", "❌")
             
             print("-" * 30)
         
@@ -124,10 +127,13 @@ class JobFilter:
         
         {jobs_content}
         
-        Rank the top 2 most relevant jobs (1=most relevant):
+        Rank the top 5 most relevant jobs (1=most relevant):
         
         1. [Job #X] [Title] at [Company]
         2. [Job #Y] [Title] at [Company]
+        3. [Job #Z] [Title] at [Company]
+        4. [Job #A] [Title] at [Company]
+        5. [Job #B] [Title] at [Company]
         """
         
         try:
@@ -182,7 +188,7 @@ class JobFilter:
             return None
     
     def extract_top_job_urls(self, ranking_result, condensed_jobs):
-        """Extract URLs of top 2 ranked jobs from LLM response (testing mode)"""
+        """Extract URLs of top 5 ranked jobs from LLM response"""
         import logging
         logger = logging.getLogger(__name__)
         
@@ -258,7 +264,7 @@ class JobFilter:
             # Sort by rank number and extract URLs
             found_jobs.sort(key=lambda x: x[0])  # Sort by rank
             
-            for rank_num, job_num in found_jobs[:2]:  # Top 2 (testing mode)
+            for rank_num, job_num in found_jobs[:5]:  # Top 5
                 try:
                     job_idx = job_num - 1  # Convert to 0-based index
                     logger.info(f"🔍 DEBUG: Trying to extract URL for job #{job_num} (index {job_idx})")
@@ -279,10 +285,10 @@ class JobFilter:
                     logger.warning(f"⚠️ DEBUG: Error processing job #{job_num}: {e}")
                     continue
             
-            # Fallback: if no URLs found but we have condensed_jobs, just take first 2
+            # Fallback: if no URLs found but we have condensed_jobs, just take first 5
             if len(top_urls) == 0 and len(condensed_jobs) > 0:
-                logger.warning("⚠️ DEBUG: No URLs extracted via pattern matching. Using fallback: first 2 jobs")
-                for i in range(min(2, len(condensed_jobs))):
+                logger.warning("⚠️ DEBUG: No URLs extracted via pattern matching. Using fallback: first 5 jobs")
+                for i in range(min(5, len(condensed_jobs))):
                     url = condensed_jobs[i].get('url')
                     if url:
                         top_urls.append(url)
@@ -359,12 +365,8 @@ class JobFilter:
                 resume_content = self.resume_generator.load_resume(resume_path)
                 print(f"✅ Resume loaded: {len(resume_content)} characters")
                 logger.info(f"✅ DEBUG: Resume loaded successfully, {len(resume_content)} characters")
-                try:
-                    emit_verbose_log_sync("🧾 Resume profile text loaded from PDF:", "info", "🧾")
-                    emit_verbose_log_sync(resume_content, "info", "")
-                    logger.info("🧾 DEBUG: Resume profile text loaded from PDF:\n%s", resume_content)
-                except Exception:
-                    logger.warning("⚠️ DEBUG: Failed to log resume text loaded from PDF")
+                emit_verbose_log_sync("Reading your resume to understand your experience and strengths", "info", "🧠")
+                logger.info("🧾 DEBUG: Resume profile text loaded from PDF (content omitted for privacy)")
             except Exception as e:
                 error_msg = f"Error loading resume: {e}"
                 print(f"❌ {error_msg}")
@@ -375,13 +377,8 @@ class JobFilter:
         else:
             logger.info(f"✅ DEBUG: Using provided resume content ({len(resume_content)} characters)")
             print(f"✅ Using resume content from database ({len(resume_content)} characters)")
-            emit_verbose_log_sync(f"✅ Using resume content from database ({len(resume_content)} characters)", "success", "✅")
-            try:
-                emit_verbose_log_sync("🧾 Resume profile text provided to model:", "info", "🧾")
-                emit_verbose_log_sync(resume_content, "info", "")
-                logger.info("🧾 DEBUG: Resume profile text provided to model:\n%s", resume_content)
-            except Exception:
-                logger.warning("⚠️ DEBUG: Failed to log resume profile text")
+            emit_verbose_log_sync("Reviewing your resume to understand your experience and strengths", "info", "🧠")
+            logger.info("🧾 DEBUG: Resume profile text provided to model (content omitted for privacy)")
         
         # Extract job URLs
         logger.info(f"🔍 DEBUG: Extracting job URLs...")
@@ -418,6 +415,23 @@ class JobFilter:
             logger.info(f"✅ DEBUG: Condensed to {len(condensed_jobs) if condensed_jobs else 0} jobs")
             if condensed_jobs:
                 emit_verbose_log_sync(f"✅ Condensed to {len(condensed_jobs)} job(s)", "success", "✅")
+                for idx, job in enumerate(condensed_jobs, 1):
+                    title = job.get('title') or job.get('jobTitle') or 'Role'
+                    raw_company = job.get('company')
+                    if isinstance(raw_company, dict):
+                        company = raw_company.get('name') or raw_company.get('companyName') or 'company'
+                    else:
+                        company = raw_company or job.get('companyName') or 'company'
+                    emit_verbose_log_sync(
+                        f"Scraping relevant information from job {idx}: {title} at {company}",
+                        "info",
+                        "📝"
+                    )
+                    emit_verbose_log_sync(
+                        f"Evaluating how your resume aligns with job {idx}",
+                        "info",
+                        "🤝"
+                    )
         except Exception as e:
             error_msg = f"Error condensing jobs: {e}"
             print(f"❌ {error_msg}")

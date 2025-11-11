@@ -1,12 +1,12 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on Raman Arora's profile, including his education, experience, and technical skills, here is the ranking of the top 2 most relevant jobs:
+Based on Shreyas Tulsi's candidate profile, here are the top two most relevant jobs ranked by relevance:
 
-1. **[Job #3] Software Development Engineer, AGI Customization at Amazon**  
-   - This position requires a Bachelor's degree in computer science, which aligns with Raman's educational background. The role also emphasizes software development experience, which matches his experience as a Technical Team Lead and ML Engineer intern. Additionally, the use of programming languages like Python and Java aligns with his key technologies.
+1. **[Job #5] AI Engineer, Foundation Models, Autonomy & Robotics at Tesla**
+   - This role aligns closely with Shreyas's experience in machine learning and generative AI, particularly given his background with projects involving AI and machine learning frameworks like PyTorch. The responsibilities also match his skills in model training and data collection.
 
-2. **[Job #5] Member of Technical Staff Intern (2026), Artificial General Intelligence (AGI) at Amazon**  
-   - This internship is suitable for Raman as he is currently enrolled in a Bachelor's program. The focus on contributing to AI agent development and the requirement of experience in a modern programming language aligns well with his background in Python, Java, and C++. This role is also specifically targeted toward students, making it a good fit for his experience level. 
+2. **[Job #2] Machine Learning Engineer, Integration, AI Platforms at Tesla**
+   - This position requires proficiency in Python and C++, both of which are part of Shreyas's skill set. The focus on deep learning architectures and integration with vehicle systems is relevant to his research experience and project work, making it a strong match for his profile.
 
-These rankings consider Raman's education, relevant internships, and skill set, making these jobs particularly suitable for him.
+These rankings take into account Shreyas's educational background, relevant skills, and internship experiences, ensuring that the selected roles align well with his qualifications.

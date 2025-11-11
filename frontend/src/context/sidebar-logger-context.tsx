@@ -6,7 +6,7 @@ import React, {
     useState,
 } from 'react'
 
-const MAX_LOG_ENTRIES = 20
+const MAX_LOG_ENTRIES = 30
 
 export type SidebarLogEntry = {
   id?: string

@@ -378,6 +378,7 @@ async def search_jobs(
     company_ids: List[str],
     job_titles: List[str],
     job_types: Optional[List[str]] = None,
+    company_names: Optional[List[str]] = None,
     location_id: Optional[str] = "102571732",
     locations: Optional[List[str]] = None,
     location: Optional[str] = None,
@@ -406,6 +407,7 @@ async def search_jobs(
         company_ids,
         job_titles,
         job_types,
+        company_names,
         location_id,
         locations,
         location,
@@ -423,7 +425,7 @@ async def filter_jobs(
     resume_content: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Filter jobs using AI to get top 2 most relevant jobs (testing mode).
+    Filter jobs using AI to surface the top 5 most relevant jobs.
     
     Args:
         jobs: List of job dictionaries
@@ -431,19 +433,18 @@ async def filter_jobs(
         resume_content: Resume content from database (preferred over PDF)
         
     Returns:
-        Dict with filtered_jobs (top 2) and ranking analysis
+        Dict with filtered_jobs (top 5) and ranking analysis
     """
     import logging
     logger = logging.getLogger(__name__)
     
     try:
-        await emit_verbose_log("🎯 Starting AI Job Filtering Process...", "info", "🎯")
-        await emit_verbose_log(f"   Analyzing {len(jobs) if jobs else 0} jobs against resume", "info", "📊")
+        await emit_verbose_log(f"Analyzing {len(jobs) if jobs else 0} jobs against your resume", "info", "🎯")
         logger.info(f"🔍 DEBUG: Starting filter_jobs with {len(jobs) if jobs else 0} jobs")
         logger.info(f"🔍 DEBUG: Resume file path: {resume_file}")
         
         if not jobs or len(jobs) == 0:
-            await emit_verbose_log("❌ No jobs provided to filter", "error", "❌")
+            await emit_verbose_log("No jobs provided to analyze", "error", "❌")
             logger.error("❌ DEBUG: No jobs provided to filter")
             return {
                 "error": "No jobs provided to filter",
@@ -451,7 +452,6 @@ async def filter_jobs(
                 "debug": "No jobs in input"
             }
         
-        await emit_verbose_log("🔍 Loading job filter engine...", "info", "🔍")
         logger.info(f"🔍 DEBUG: Getting messenger instance...")
         messenger = get_messenger()
         logger.info(f"✅ DEBUG: Messenger instance obtained")
@@ -459,7 +459,7 @@ async def filter_jobs(
         # Get the job filter instance
         logger.info(f"🔍 DEBUG: Getting job_filter from messenger...")
         if not hasattr(messenger, 'job_filter') or messenger.job_filter is None:
-            await emit_verbose_log("❌ Job filter not available", "error", "❌")
+            await emit_verbose_log("Job filter engine unavailable", "error", "❌")
             logger.error("❌ DEBUG: messenger.job_filter is None or not available")
             return {
                 "error": "Job filter not available on messenger instance",
@@ -470,7 +470,7 @@ async def filter_jobs(
         job_filter = messenger.job_filter
         logger.info(f"✅ DEBUG: Job filter obtained: {type(job_filter)}")
         
-        await emit_verbose_log("🚀 Starting job scraping and analysis...", "info", "🚀")
+        await emit_verbose_log("Extracting job requirements and qualifications", "info", "📝")
         logger.info(f"🔍 DEBUG: Running filter_jobs in executor...")
         logger.info(f"🔍 DEBUG: Resume content provided: {resume_content is not None}")
         loop = asyncio.get_event_loop()
@@ -483,11 +483,8 @@ async def filter_jobs(
             loop
         )
         
-        await emit_verbose_log(f"📝 Condensing job descriptions with AI...", "info", "📝")
-        await emit_verbose_log(f"🤖 Analyzing job-relevance using LLM...", "info", "🤖")
-        
         if top_urls and len(top_urls) > 0:
-            await emit_verbose_log(f"✅ Filtering complete: Found {len(top_urls)} top job(s)", "success", "✅")
+            await emit_verbose_log(f"Found {len(top_urls)} relevant {('job' if len(top_urls) == 1 else 'jobs')} for you", "success", "✅")
         
         logger.info(f"🔍 DEBUG: filter_jobs returned")
         logger.info(f"🔍 DEBUG: ranking_result is None: {ranking_result is None}")
@@ -592,9 +589,6 @@ async def search_recruiters(company_ids: List[str]) -> List[Dict[str, Any]]:
     Returns:
         List of recruiter dictionaries
     """
-    await emit_verbose_log("🔍 Searching for recruiters...", "info", "🔍")
-    await emit_verbose_log(f"   Companies: {len(company_ids)}", "info", "📊")
-    
     messenger = get_messenger()
     
     loop = asyncio.get_event_loop()
@@ -604,8 +598,6 @@ async def search_recruiters(company_ids: List[str]) -> List[Dict[str, Any]]:
         company_ids,
         "recruiter"
     )
-    
-    await emit_verbose_log(f"✅ Found {len(recruiters)} recruiters", "success", "✅")
     
     return recruiters
 
@@ -721,9 +713,6 @@ async def map_jobs_to_recruiters(
     import logging
     logger = logging.getLogger(__name__)
     
-    await emit_verbose_log(f"🔗 Starting job-to-recruiter mapping...", "info", "🔗")
-    await emit_verbose_log(f"   Input: {len(jobs)} jobs, {len(recruiters)} recruiters, max_pairs={max_pairs}", "info", "📊")
-    
     logger.info(f"🔍 DEBUG: adapter.map_jobs_to_recruiters called with {len(jobs)} jobs, {len(recruiters)} recruiters, max_pairs={max_pairs}")
     
     if not jobs:
@@ -739,22 +728,8 @@ async def map_jobs_to_recruiters(
     # **NEW: Store job contexts for manually-selected jobs before mapping**
     # This ensures email generation can use job-specific details
     try:
-        from app.db.base import AsyncSessionLocal
-        logger.info("🗂️ Storing job contexts for manually-selected jobs...")
-        async with AsyncSessionLocal() as db:
-            stored_count = await store_job_contexts_for_jobs(jobs, db)
-            logger.info(f"✅ Stored {stored_count} job contexts")
-    except Exception as e:
-        logger.error(f"⚠️ Failed to store job contexts: {e}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        # Continue anyway - mapping will still work
-    
-    try:
-        await emit_verbose_log("🔍 Analyzing job and recruiter compatibility...", "info", "🔍")
         messenger = get_messenger()
         
-        await emit_verbose_log("🤖 Computing best matches using AI scoring...", "info", "🤖")
         loop = asyncio.get_event_loop()
         selected_recruiters, mapping = await loop.run_in_executor(
             None,
@@ -763,9 +738,6 @@ async def map_jobs_to_recruiters(
             recruiters,
             max_pairs
         )
-        
-        await emit_verbose_log(f"✅ Mapping complete: {len(mapping)} pairs created", "success", "✅")
-        await emit_verbose_log(f"   Selected {len(selected_recruiters)} unique recruiters", "success", "👥")
         
         logger.info(f"🔍 DEBUG: map_jobs_to_recruiters returned {len(mapping)} mappings and {len(selected_recruiters)} selected recruiters")
         
