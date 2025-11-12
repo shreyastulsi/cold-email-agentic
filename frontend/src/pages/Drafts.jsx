@@ -565,6 +565,7 @@ export default function Drafts() {
                           </div>
                           
                           <div className="flex items-center gap-3 text-sm text-gray-400">
+                            {/* View Job Context Button - Only visible when expanded */}
                             {isExpanded && draft.recruiter_info?.job_url && (
                               <div onClick={(e) => e.stopPropagation()}>
                                 <JobContextModal
@@ -638,9 +639,29 @@ export default function Drafts() {
                                     />
                                     <label className="block text-sm font-medium text-gray-300">Body</label>
                                     <textarea
-                                      className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                      ref={(textarea) => {
+                                        if (textarea && isEditingEmail) {
+                                          const measureDiv = document.createElement('div')
+                                          measureDiv.style.cssText = 'position: absolute; visibility: hidden; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.5; padding: 0.75rem 1rem; width: ' + textarea.offsetWidth + 'px;'
+                                          measureDiv.textContent = draft.email_body || 'N/A'
+                                          document.body.appendChild(measureDiv)
+                                          
+                                          setTimeout(() => {
+                                            const displayHeight = measureDiv.offsetHeight
+                                            if (displayHeight > 0) {
+                                              textarea.style.height = `${Math.max(displayHeight, 192)}px`
+                                            }
+                                            document.body.removeChild(measureDiv)
+                                          }, 0)
+                                        }
+                                      }}
+                                      className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none resize-y"
                                       value={editValues.email_body}
                                       onChange={(e) => setEditValues({ ...editValues, email_body: e.target.value })}
+                                      style={{ 
+                                        minHeight: '12rem',
+                                        lineHeight: '1.5'
+                                      }}
                                     />
                                   </div>
                                   <div className="flex gap-2">
@@ -711,9 +732,29 @@ export default function Drafts() {
                               {isEditingLinkedIn ? (
                                 <>
                                   <textarea
-                                    className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                    ref={(textarea) => {
+                                      if (textarea && isEditingLinkedIn) {
+                                        const measureDiv = document.createElement('div')
+                                        measureDiv.style.cssText = 'position: absolute; visibility: hidden; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.5; padding: 0.75rem 1rem; width: ' + textarea.offsetWidth + 'px;'
+                                        measureDiv.textContent = draft.linkedin_message || 'N/A'
+                                        document.body.appendChild(measureDiv)
+                                        
+                                        setTimeout(() => {
+                                          const displayHeight = measureDiv.offsetHeight
+                                          if (displayHeight > 0) {
+                                            textarea.style.height = `${Math.max(displayHeight, 256)}px`
+                                          }
+                                          document.body.removeChild(measureDiv)
+                                        }, 0)
+                                      }
+                                    }}
+                                    className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none resize-y"
                                     value={editValues.linkedin_message}
                                     onChange={(e) => setEditValues({ ...editValues, linkedin_message: e.target.value })}
+                                    style={{ 
+                                      minHeight: '16rem',
+                                      lineHeight: '1.5'
+                                    }}
                                   />
                                   <div className="flex gap-2">
                                     <Button

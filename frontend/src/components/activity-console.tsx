@@ -145,9 +145,51 @@ const resolveLogVisual = (
 export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChange }: ActivityConsoleProps) {
   const [isOpen, setIsOpen] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [width, setWidth] = useState(380) // Dynamic width, resizable
+  const [isResizing, setIsResizing] = useState(false)
   const consoleRef = useRef<HTMLDivElement>(null)
   const logsEndRef = useRef<HTMLDivElement>(null)
-  const width = 380 // Fixed width, no resizing
+  const resizeStartX = useRef<number>(0)
+  const resizeStartWidth = useRef<number>(380)
+
+  // Handle resize mouse down
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = width
+  }
+
+  // Handle resize mouse move
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = resizeStartX.current - e.clientX // Inverted because sidebar is on right
+      const newWidth = Math.max(200, Math.min(800, resizeStartWidth.current + deltaX))
+      setWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    // Prevent text selection and set cursor during resize
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isResizing])
 
   // Notify parent of width changes
   useEffect(() => {
@@ -156,7 +198,7 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
     } else {
       onWidthChange?.(0)
     }
-  }, [isOpen, isMinimized, onWidthChange])
+  }, [isOpen, isMinimized, width, onWidthChange])
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -193,9 +235,26 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
       {isOpen && (
         <div
           ref={consoleRef}
-          className="fixed right-0 top-0 z-40 flex h-screen flex-col border-l border-cyan-500/20 bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-gray-900/98 shadow-2xl shadow-cyan-500/10 backdrop-blur-xl transition-all duration-300"
+          className={`fixed right-0 top-0 z-40 flex h-screen flex-col border-l border-cyan-500/20 bg-gradient-to-br from-gray-900/98 via-gray-800/98 to-gray-900/98 shadow-2xl shadow-cyan-500/10 backdrop-blur-xl ${
+            isResizing ? '' : 'transition-all duration-300'
+          }`}
           style={{ width: isMinimized ? '60px' : `${width}px` }}
         >
+          {/* Resize Handle */}
+          {!isMinimized && (
+            <div
+              onMouseDown={handleResizeStart}
+              className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-cyan-500/40 transition-colors z-50 ${
+                isResizing ? 'bg-cyan-500/60' : ''
+              }`}
+              style={{ cursor: 'col-resize' }}
+              title="Drag to resize sidebar"
+            >
+              <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-16 rounded-full transition-opacity ${
+                isResizing ? 'bg-cyan-400/80' : 'bg-cyan-400/20'
+              }`} />
+            </div>
+          )}
 
           {/* Header */}
           <div className="relative flex shrink-0 items-center justify-between border-b border-gray-700/50 bg-gradient-to-r from-gray-800/80 to-gray-900/80 px-4 py-3 backdrop-blur-sm">

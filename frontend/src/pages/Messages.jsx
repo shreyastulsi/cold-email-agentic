@@ -712,15 +712,8 @@ export default function Messages() {
                     </div>
                   </div>
                 </div>
-                {(jobUrl || hasEmailChannel || hasLinkedInChannel) && (
+                {(hasEmailChannel || hasLinkedInChannel) && (
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {jobUrl && (
-                      <JobContextModal
-                        jobUrl={jobUrl}
-                        buttonText="View Job Context"
-                        buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                      />
-                    )}
                     <div className="flex items-center gap-2 flex-wrap text-xs">
                       {hasEmailChannel && (
                         <span className={`px-2 py-1 rounded ${getStatusColor(emailStatus || '')}`}>
@@ -736,6 +729,17 @@ export default function Messages() {
                   </div>
                 )}
               </div>
+
+            {/* View Job Context Button - Only visible when viewing messages */}
+            {jobUrl && (
+              <div className="mb-4 flex justify-start">
+                <JobContextModal
+                  jobUrl={jobUrl}
+                  buttonText="View Job Context"
+                  buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* LinkedIn Message Section */}

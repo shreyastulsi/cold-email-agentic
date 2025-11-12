@@ -1,24 +1,21 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on the candidate profile and the requirements of the jobs listed, here is the ranking of the top 5 most relevant jobs:
+Based on Shreyas Tulsi's candidate profile, I have ranked the top 5 most relevant jobs considering his education, experience, projects, and key technologies.
 
-1. **Job #7** - SDE- ML Engineer at Amazon
-2. **Job #8** - Machine Learning Engineer II, Special Projects at Amazon
-3. **Job #4** - Software Dev. Engineer SDE II, Sponsored Products and Brands at Amazon
-4. **Job #2** - Sr Machine Learning Engineer, Sponsored Products and Brands at Amazon
-5. **Job #1** - Software Development Engineer, WMO at Amazon
+1. **[Job #2] [Sr. Applied Scientist, AGI Info] at [Amazon]**
+   - This position aligns closely with his AI and machine learning experience and research background, as well as his skills in Python, Java, and C++.
 
-### Explanation:
+2. **[Job #3] [Applied Scientist, Books Core Recommendations] at [Amazon]**
+   - This role requires proficiency in algorithms and data structures, which matches Shreyas's experience and projects in machine learning and data mining.
 
-1. **Job #7** is highly relevant due to the emphasis on machine learning, which aligns perfectly with the candidate's internship experience as an ML Engineer and their knowledge of Python and C++. 
-   
-2. **Job #8** also focuses on machine learning and code deployment, which fits well with the candidate's skills and experience in building scalable solutions.
+3. **[Job #4] [Applied Scientist, AGI Info - Web Information Systems] at [Amazon]**
+   - Similar to Job #2, this position focuses on machine learning models, which directly correlates with Shreyas's research and internship experience.
 
-3. **Job #4** requires experience in machine learning and software development, which matches the candidate's background in full-stack development and machine learning.
+4. **[Job #6] [Sr. Software Engineer (ML), AGI Foundations] at [Amazon]**
+   - This job involves leading the development of algorithms for large language models, which ties back to Shreyas's projects involving LLMs.
 
-4. **Job #2** is relevant as it focuses on machine learning models and infrastructure, but it requires more experience than the candidate currently has.
+5. **[Job #8] [Security Engineer II, Amazon Security] at [Amazon]**
+   - While not directly in machine learning, this role leverages his programming skills in Python and his ability to solve complex problems, which is relevant given his strong technical background.
 
-5. **Job #1** involves full-stack development and collaboration, which is aligned with the candidate's skills, though it places a significant emphasis on mobile technologies which is less relevant to this candidate's profile. 
-
-The other jobs, while potentially interesting, either require more experience or focus on areas less aligned with the candidate's specific skills and experiences.
+This ranking prioritizes positions that closely match Shreyas's educational background, relevant experience in machine learning and AI, and his technical skill set.

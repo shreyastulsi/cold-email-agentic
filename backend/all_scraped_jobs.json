@@ -1,68 +1,6 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4335582600",
-    "title": "Software Development Engineer, WMO",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Seattle, WA",
-    "applications": "30 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Build next-generation APIs and rendering frameworks for mobile apps.\n- Own full stack development for iOS and/or Android.\n- Collaborate with diverse engineering teams to enhance customer experiences.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design or architecture.\n- Strong problem-solving skills and leadership qualities.\n\n**KEY TECHNOLOGIES:**\n- Mobile technologies, particularly React Native.\n- Native development for iOS and Android.\n- Experience with software programming languages.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Build next-generation APIs and rendering frameworks for mobile apps.\n- Own full stack development for iOS and/or Android.\n- Collaborate with diverse engineering teams to enhance customer experiences.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design or architecture.\n- Strong problem-solving skills and leadership qualities.\n\n**KEY TECHNOLOGIES:**\n- Mobile technologies, particularly React Native.\n- Native development for iOS and Android.\n- Experience with software programming languages."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4334323149",
-    "title": "Sr Machine Learning Engineer, Sponsored Products and Brands",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Seattle, WA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$151,300.00/yr - $261,500.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop and manage machine learning models and infrastructure.\n- Create scalable real-time ML inference solutions.\n- Identify and deliver operational improvements and resolve production issues.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- 5+ years of programming in at least one language.\n- Experience leading design or architecture of systems.\n\n**KEY TECHNOLOGIES:**\n- Machine learning and natural language processing products.\n- Causal inference and reinforcement learning techniques.\n- Low-latency data transformation and engineering solutions.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop and manage machine learning models and infrastructure.\n- Create scalable real-time ML inference solutions.\n- Identify and deliver operational improvements and resolve production issues.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- 5+ years of programming in at least one language.\n- Experience leading design or architecture of systems.\n\n**KEY TECHNOLOGIES:**\n- Machine learning and natural language processing products.\n- Causal inference and reinforcement learning techniques.\n- Low-latency data transformation and engineering solutions."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4334344793",
+    "url": "https://www.linkedin.com/jobs/view/4335796229",
     "title": "Lab Engineer- Lab Operations, Project Kuiper",
     "company": {
       "name": "Amazon",
@@ -71,7 +9,7 @@
     "location": "Bellevue, WA",
     "applications": "Be among the first 25 applicants",
     "salary": "$73,900.00/yr - $165,200.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n\n**REQUIREMENTS:**\n- 2+ years of software QA testing experience.\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science field.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- Linux or Unix environments.\n- Jenkins for build environments.",
+    "description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n- Set up and maintain automated testing platforms.\n- Manage version control and change management processes.\n- Provide technical support and training for automation users.\n- Create documentation for automated systems and procedures.\n\n**REQUIREMENTS:**\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science.\n- Experience in software QA testing and writing test plans.\n- Familiarity with Linux or Unix environments.\n- Experience with consumer hardware or software products.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- CI/CD pipelines for automation tools.\n- Jenkins for build environments.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -90,19 +28,112 @@
         "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n\n**REQUIREMENTS:**\n- 2+ years of software QA testing experience.\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science field.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- Linux or Unix environments.\n- Jenkins for build environments."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n- Set up and maintain automated testing platforms.\n- Manage version control and change management processes.\n- Provide technical support and training for automation users.\n- Create documentation for automated systems and procedures.\n\n**REQUIREMENTS:**\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science.\n- Experience in software QA testing and writing test plans.\n- Familiarity with Linux or Unix environments.\n- Experience with consumer hardware or software products.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- CI/CD pipelines for automation tools.\n- Jenkins for build environments."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4334294948",
-    "title": "Software Dev. Engineer SDE II, Sponsored Products and Brands",
+    "url": "https://www.linkedin.com/jobs/view/4244515120",
+    "title": "Sr. Applied Scientist, AGI Info",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Bellevue, WA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$150,400.00/yr - $260,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Lead a team to improve RAG applications.\n- Develop novel retrieval and ranking models.\n- Partner with engineering to enhance model performance.\n- Create science roadmaps for web search components.\n- Publish research and engage with academic communities.\n- Coach and develop junior scientists.\n\n**REQUIREMENTS:**\n- 3+ years of machine learning model experience.\n- PhD or Master’s with 6+ years applied research.\n- Proficient in Java, C++, Python, or similar.\n- Experience with large-scale machine learning systems.\n- Familiarity with corporate research settings.\n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods.\n- Modeling tools: R, scikit-learn, TensorFlow.\n- Large-scale distributed systems: Hadoop, Spark.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Research, Science, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Lead a team to improve RAG applications.\n- Develop novel retrieval and ranking models.\n- Partner with engineering to enhance model performance.\n- Create science roadmaps for web search components.\n- Publish research and engage with academic communities.\n- Coach and develop junior scientists.\n\n**REQUIREMENTS:**\n- 3+ years of machine learning model experience.\n- PhD or Master’s with 6+ years applied research.\n- Proficient in Java, C++, Python, or similar.\n- Experience with large-scale machine learning systems.\n- Familiarity with corporate research settings.\n\n**KEY TECHNOLOGIES:**\n- Neural deep learning methods.\n- Modeling tools: R, scikit-learn, TensorFlow.\n- Large-scale distributed systems: Hadoop, Spark."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4241053112",
+    "title": "Applied Scientist, Books Core Recommendations",
     "company": {
       "name": "Amazon",
       "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
     "location": "Seattle, WA",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "RESPONSIBILITIES:\n• Design and develop scalable high-performance systems and services  \n• Build services handling billions of requests daily  \n• Maintain response latencies in milliseconds with strict SLAs  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience  \n• 2+ years of design or architecture experience  \n• Experience with large-scale machine learning and AI solutions  \n\nKEY TECHNOLOGIES:\n• Machine Learning (ML)  \n• Large Language Models (LLM)  \n• Generative AI (GenAI)",
+    "applications": "62 applicants",
+    "salary": "$136,000.00/yr - $223,400.00/yr",
+    "description": "RESPONSIBILITIES:\n• Collaborate with scientists, engineers, and business partners.  \n• Analyze customer behavior and product relationships.  \n• Develop and maintain recommendation models.  \n• Assist in running A/B tests on the retail website.  \n• Improve Amazon's recommendation systems using advanced techniques.  \n\nREQUIREMENTS:\n• PhD or Master's degree with 4+ years experience.  \n• Proficient in Java, C++, Python, or similar languages.  \n• Experience in algorithms, data structures, or data mining.  \n\nKEY TECHNOLOGIES:\n• Natural Language Processing (NLP)  \n• Reinforcement Learning (RL)  \n• Deep learning and graph networks",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Research, Science, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "RESPONSIBILITIES:\n• Collaborate with scientists, engineers, and business partners.  \n• Analyze customer behavior and product relationships.  \n• Develop and maintain recommendation models.  \n• Assist in running A/B tests on the retail website.  \n• Improve Amazon's recommendation systems using advanced techniques.  \n\nREQUIREMENTS:\n• PhD or Master's degree with 4+ years experience.  \n• Proficient in Java, C++, Python, or similar languages.  \n• Experience in algorithms, data structures, or data mining.  \n\nKEY TECHNOLOGIES:\n• Natural Language Processing (NLP)  \n• Reinforcement Learning (RL)  \n• Deep learning and graph networks"
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4240828365",
+    "title": "Applied Scientist, AGI Info - Web Information Systems",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Sunnyvale, CA",
+    "applications": "32 applicants",
+    "salary": "$136,000.00/yr - $223,400.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop and deploy scalable algorithms for web search technology.\n- Conduct experiments and analyze results to inform future work.\n- Collaborate with engineers to implement innovations in production.\n\n**REQUIREMENTS:**\n- 3+ years of experience in building business application models.\n- PhD or Master's with 4+ years in CS, CE, or ML.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Information retrieval and ranking algorithms.\n- Machine learning models for search and recommendations.\n- Unix/Linux environments and high-performance computing.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Research, Science, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop and deploy scalable algorithms for web search technology.\n- Conduct experiments and analyze results to inform future work.\n- Collaborate with engineers to implement innovations in production.\n\n**REQUIREMENTS:**\n- 3+ years of experience in building business application models.\n- PhD or Master's with 4+ years in CS, CE, or ML.\n- Proficiency in Java, C++, Python, or similar languages.\n\n**KEY TECHNOLOGIES:**\n- Information retrieval and ranking algorithms.\n- Machine learning models for search and recommendations.\n- Unix/Linux environments and high-performance computing."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4238990222",
+    "title": "Senior Software Development Engineer, Amazon Ads",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Seattle, WA",
+    "applications": "52 applicants",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "RESPONSIBILITIES:\n• Partner with teams to build scalable ad-serving solutions.  \n• Drive design, development, and improvement of ad-serving systems.  \n• Simplify systems, reduce costs, and improve reliability.  \n\nREQUIREMENTS:\n• 6+ years of professional software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience leading design or architecture of systems.  \n\nKEY TECHNOLOGIES:\n• Modern programming languages (Java, C++, C#).  \n• Experience with distributed systems in UNIX environments.  \n• Familiarity with full software development life cycle.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -121,23 +152,23 @@
         "value": "Software Development"
       }
     ],
-    "condensed_description": "RESPONSIBILITIES:\n• Design and develop scalable high-performance systems and services  \n• Build services handling billions of requests daily  \n• Maintain response latencies in milliseconds with strict SLAs  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience  \n• 2+ years of design or architecture experience  \n• Experience with large-scale machine learning and AI solutions  \n\nKEY TECHNOLOGIES:\n• Machine Learning (ML)  \n• Large Language Models (LLM)  \n• Generative AI (GenAI)"
+    "condensed_description": "RESPONSIBILITIES:\n• Partner with teams to build scalable ad-serving solutions.  \n• Drive design, development, and improvement of ad-serving systems.  \n• Simplify systems, reduce costs, and improve reliability.  \n\nREQUIREMENTS:\n• 6+ years of professional software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience leading design or architecture of systems.  \n\nKEY TECHNOLOGIES:\n• Modern programming languages (Java, C++, C#).  \n• Experience with distributed systems in UNIX environments.  \n• Familiarity with full software development life cycle."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4334550098",
-    "title": "Software Dev Engineer Intern - AI (Summer 2026), Amazon Devices & Services",
+    "url": "https://www.linkedin.com/jobs/view/4238989048",
+    "title": "Sr. Software Engineer (ML), AGI Foundations",
     "company": {
       "name": "Amazon",
       "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Hawthorne, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$47.84/hr - $96.15/hr",
-    "description": "**RESPONSIBILITIES:**\n- Collaborate with teams to design and build innovative products.\n- Develop scalable solutions using cloud-native architectures.\n- Participate in code reviews and maintain technical documentation.\n- Write clean, maintainable code following best practices.\n- Troubleshoot and resolve production issues.\n\n**REQUIREMENTS:**\n- Must be 18 years or older.\n- Experience programming in Java, C++, or C#.\n- Enrolled in a relevant Bachelor's degree program.\n- Experience with AI/ML technologies preferred.\n- Strong problem-solving and analytical skills.\n\n**KEY TECHNOLOGIES:**\n- Cloud-native architectures and microservices.\n- AI and machine learning tools.\n- Agile development practices and CI/CD principles.",
+    "location": "Bellevue, WA",
+    "applications": "55 applicants",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "RESPONSIBILITIES:\n• Lead development of novel algorithms for LLM training.  \n• Collaborate with Applied Scientists on fine-tuning experiments.  \n• Work in Agile/Scrum to deliver high-quality software.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI solutions.  \n• Large Language Models (LLM).  \n• Agile/Scrum methodologies.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Internship"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -152,19 +183,81 @@
         "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Collaborate with teams to design and build innovative products.\n- Develop scalable solutions using cloud-native architectures.\n- Participate in code reviews and maintain technical documentation.\n- Write clean, maintainable code following best practices.\n- Troubleshoot and resolve production issues.\n\n**REQUIREMENTS:**\n- Must be 18 years or older.\n- Experience programming in Java, C++, or C#.\n- Enrolled in a relevant Bachelor's degree program.\n- Experience with AI/ML technologies preferred.\n- Strong problem-solving and analytical skills.\n\n**KEY TECHNOLOGIES:**\n- Cloud-native architectures and microservices.\n- AI and machine learning tools.\n- Agile development practices and CI/CD principles."
+    "condensed_description": "RESPONSIBILITIES:\n• Lead development of novel algorithms for LLM training.  \n• Collaborate with Applied Scientists on fine-tuning experiments.  \n• Work in Agile/Scrum to deliver high-quality software.  \n\nREQUIREMENTS:\n• 5+ years of software development experience.  \n• 5+ years of programming in at least one language.  \n• Experience mentoring or leading engineering teams.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and AI solutions.  \n• Large Language Models (LLM).  \n• Agile/Scrum methodologies."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4334532625",
-    "title": "Checkout Engineering Systems Engineer, GRAISE",
+    "url": "https://www.linkedin.com/jobs/view/4256824332",
+    "title": "Salesforce Engineer , Project Kuiper",
     "company": {
       "name": "Amazon",
       "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Austin, TX",
-    "applications": "Be among the first 25 applicants",
-    "salary": "$94,000.00/yr - $207,900.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Lead technical design discussions for payment and POS systems.\n- Implement critical components of payment and POS systems.\n- Create design specifications for system integrations.\n- Establish automated testing strategies and monitoring solutions.\n- Develop automated alerting systems for payment flows.\n- Collaborate with teams to meet business requirements.\n- Resolve complex production issues and drive improvements.\n- Author technical documentation and conduct retrospectives.\n\n**REQUIREMENTS:**\n- 4+ years in site reliability or systems engineering.\n- 5+ years of Linux experience.\n- Bachelor's degree in relevant field or equivalent experience.\n- Experience in scripting languages like Python or Java.\n- Knowledge of TCP/IP and networking protocols.\n\n**KEY TECHNOLOGIES:**\n- Linux operating systems.\n- Payment and Point-of-Sale (POS) systems.\n- Service-oriented architecture and web services.",
+    "location": "Bellevue, WA",
+    "applications": "109 applicants",
+    "salary": "$104,300.00/yr - $185,000.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Design and architect business workflows for various management processes.\n- Implement solutions using Salesforce technologies like APEX and Service Cloud.\n- Monitor performance, troubleshoot issues, and optimize system configurations.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science, Engineering, or equivalent.\n- 4+ years of software development experience.\n- 2+ years of Salesforce Development experience with Apex and APIs.\n\n**KEY TECHNOLOGIES:**\n- Salesforce platform, including APEX and Lightning components.\n- Deployment technologies like SFDX, Copado, and Gearset.\n- Order Management and Order Orchestration systems.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Sales, Advertising, and Business Development"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Design and architect business workflows for various management processes.\n- Implement solutions using Salesforce technologies like APEX and Service Cloud.\n- Monitor performance, troubleshoot issues, and optimize system configurations.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science, Engineering, or equivalent.\n- 4+ years of software development experience.\n- 2+ years of Salesforce Development experience with Apex and APIs.\n\n**KEY TECHNOLOGIES:**\n- Salesforce platform, including APEX and Lightning components.\n- Deployment technologies like SFDX, Copado, and Gearset.\n- Order Management and Order Orchestration systems."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4255374588",
+    "title": "Security Engineer II, Amazon Security",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Arlington, VA",
+    "applications": "150 applicants",
+    "salary": "$136,000.00/yr - $212,800.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop software proof-of-concepts in Golang, Python, and Javascript.  \n- Create and maintain threat models for software projects.  \n- Conduct manual and automated secure code reviews.  \n- Develop security automation tools and provide security training.  \n- Independently solve complex security problems and influence team processes.  \n\n**REQUIREMENTS:**\n- BS in Computer Science or equivalent experience.  \n- Minimum 3 years in security engineering or related fields.  \n- Experience in threat modeling, secure coding, and cloud security.  \n- Strong application security background and excellent communication skills.  \n\n**KEY TECHNOLOGIES:**\n- Golang, Python, Javascript for software development.  \n- Security engineering, system and network security protocols.  \n- AWS architecture and security solutions.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Quality Assurance, Information Technology, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop software proof-of-concepts in Golang, Python, and Javascript.  \n- Create and maintain threat models for software projects.  \n- Conduct manual and automated secure code reviews.  \n- Develop security automation tools and provide security training.  \n- Independently solve complex security problems and influence team processes.  \n\n**REQUIREMENTS:**\n- BS in Computer Science or equivalent experience.  \n- Minimum 3 years in security engineering or related fields.  \n- Experience in threat modeling, secure coding, and cloud security.  \n- Strong application security background and excellent communication skills.  \n\n**KEY TECHNOLOGIES:**\n- Golang, Python, Javascript for software development.  \n- Security engineering, system and network security protocols.  \n- AWS architecture and security solutions."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4253877285",
+    "title": "RF Sys Dev Engineer , Plexus Lab",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Redmond, WA",
+    "applications": "67 applicants",
+    "salary": "$116,300.00/yr - $201,200.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Design, build, and maintain lab infrastructure for RF testing.\n- Integrate and support RF devices and testing equipment.\n- Liaise between software and hardware teams for testing environments.\n\n**REQUIREMENTS:**\n- 2+ years in software development and test lab support.\n- Experience with Linux-based systems and computer networking.\n- Bachelor's degree in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- RF testing equipment (VSA, VSG, GNSS simulators).\n- Automated testing tools and frameworks.\n- Programming languages: C++, Python, Java, Golang.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -183,23 +276,23 @@
         "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Lead technical design discussions for payment and POS systems.\n- Implement critical components of payment and POS systems.\n- Create design specifications for system integrations.\n- Establish automated testing strategies and monitoring solutions.\n- Develop automated alerting systems for payment flows.\n- Collaborate with teams to meet business requirements.\n- Resolve complex production issues and drive improvements.\n- Author technical documentation and conduct retrospectives.\n\n**REQUIREMENTS:**\n- 4+ years in site reliability or systems engineering.\n- 5+ years of Linux experience.\n- Bachelor's degree in relevant field or equivalent experience.\n- Experience in scripting languages like Python or Java.\n- Knowledge of TCP/IP and networking protocols.\n\n**KEY TECHNOLOGIES:**\n- Linux operating systems.\n- Payment and Point-of-Sale (POS) systems.\n- Service-oriented architecture and web services."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Design, build, and maintain lab infrastructure for RF testing.\n- Integrate and support RF devices and testing equipment.\n- Liaise between software and hardware teams for testing environments.\n\n**REQUIREMENTS:**\n- 2+ years in software development and test lab support.\n- Experience with Linux-based systems and computer networking.\n- Bachelor's degree in Computer Science or related field.\n\n**KEY TECHNOLOGIES:**\n- RF testing equipment (VSA, VSG, GNSS simulators).\n- Automated testing tools and frameworks.\n- Programming languages: C++, Python, Java, Golang."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4334822311",
-    "title": "SDE- ML Engineer, Frontier AI Robotics",
+    "url": "https://www.linkedin.com/jobs/view/4249013698",
+    "title": "SAP Integration Developer, Kuiper",
     "company": {
       "name": "Amazon",
       "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Seattle, WA",
-    "applications": "70 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Build and optimize distributed training infrastructure for ML models.\n- Collaborate with scientists and engineers on scalable systems.\n- Implement parallelism techniques for efficient model training.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design and architecture.\n- Strong understanding of LLM algorithms and deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- Proficient in PyTorch, Python, and C++.\n- Experience with GPU memory optimization techniques.\n- Familiarity with machine learning infrastructure design.",
+    "location": "Bellevue, WA",
+    "applications": "137 applicants",
+    "salary": "$116,300.00/yr - $201,200.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Design and review integration architecture for SAP ERP applications.\n- Develop complex integrations with internal and external systems.\n- Lead integration best practices and production support for failures.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent experience required.\n- 6+ years of SAP experience, including middleware systems.\n- 2+ years of SAP ABAP development experience.\n\n**KEY TECHNOLOGIES:**\n- SAP CPI, SAP PO, ABAP Proxies, and Web Services.\n- Experience with EDI integrations for Supply Chain.\n- Familiarity with AWS integration options and SAP BTP.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Associate"
       },
       {
         "name": "Employment type",
@@ -214,99 +307,6 @@
         "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Build and optimize distributed training infrastructure for ML models.\n- Collaborate with scientists and engineers on scalable systems.\n- Implement parallelism techniques for efficient model training.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design and architecture.\n- Strong understanding of LLM algorithms and deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- Proficient in PyTorch, Python, and C++.\n- Experience with GPU memory optimization techniques.\n- Familiarity with machine learning infrastructure design."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4334931968",
-    "title": "Machine Learning Engineer II, Special Projects",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "New York, United States",
-    "applications": "55 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "RESPONSIBILITIES:\n• Collaborate with scientists and engineers to launch AI solutions.  \n• Write high-quality, maintainable code following best practices.  \n• Own end-to-end deployment of ML models at scale.  \n• Build and optimize automated data processing workflows.  \n• Contribute to architecture decisions and technical strategy.  \n\nREQUIREMENTS:\n• 2+ years of professional software development experience.  \n• 2+ years of design or architecture experience.  \n• Proficient in at least one programming language.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine Learning models and frameworks.  \n• Software development tools and practices.  \n• Automated data processing workflows.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "RESPONSIBILITIES:\n• Collaborate with scientists and engineers to launch AI solutions.  \n• Write high-quality, maintainable code following best practices.  \n• Own end-to-end deployment of ML models at scale.  \n• Build and optimize automated data processing workflows.  \n• Contribute to architecture decisions and technical strategy.  \n\nREQUIREMENTS:\n• 2+ years of professional software development experience.  \n• 2+ years of design or architecture experience.  \n• Proficient in at least one programming language.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine Learning models and frameworks.  \n• Software development tools and practices.  \n• Automated data processing workflows."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4334927496",
-    "title": "Software Development Engineer- Simulation, Frontier AI Robotics",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "San Francisco, CA",
-    "applications": "33 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop simulations for reinforcement learning and synthetic data generation.\n- Implement robotics features like sensor and actuator modeling.\n- Create asset toolchains supporting industry-standard formats.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- Extensive experience in physics simulation and rigid body simulation.\n- Proficiency in Python and C++ programming languages.\n\n**KEY TECHNOLOGIES:**\n- Experience with Isaac Sim, Unity, or Unreal Engine.\n- Familiarity with 3D formats: URDF, MJCF, USD.\n- Understanding of modern ML frameworks like PyTorch.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Mid-Senior level"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop simulations for reinforcement learning and synthetic data generation.\n- Implement robotics features like sensor and actuator modeling.\n- Create asset toolchains supporting industry-standard formats.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- Extensive experience in physics simulation and rigid body simulation.\n- Proficiency in Python and C++ programming languages.\n\n**KEY TECHNOLOGIES:**\n- Experience with Isaac Sim, Unity, or Unreal Engine.\n- Familiarity with 3D formats: URDF, MJCF, USD.\n- Understanding of modern ML frameworks like PyTorch."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4334682879",
-    "title": "SDE- ML Engineer, Frontier AI Robotics",
-    "company": {
-      "name": "Amazon",
-      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
-    },
-    "location": "San Francisco, CA",
-    "applications": "88 applicants",
-    "salary": "$129,300.00/yr - $223,600.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Build and optimize distributed training infrastructure for ML models.  \n• Collaborate with scientists and engineers on scalable systems.  \n• Monitor and optimize GPU memory and throughput for training.  \n\n**REQUIREMENTS:**\n• 3+ years of software development experience.  \n• 2+ years in system design and architecture.  \n• Strong understanding of LLM algorithms and deep learning frameworks.  \n\n**KEY TECHNOLOGIES:**\n• Proficient in PyTorch, Python, and C++.  \n• Experience with parallelism techniques in ML.  \n• Knowledge of linear algebra, calculus, and statistics.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology, Consulting, and Engineering"
-      },
-      {
-        "name": "Industries",
-        "value": "Software Development"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Build and optimize distributed training infrastructure for ML models.  \n• Collaborate with scientists and engineers on scalable systems.  \n• Monitor and optimize GPU memory and throughput for training.  \n\n**REQUIREMENTS:**\n• 3+ years of software development experience.  \n• 2+ years in system design and architecture.  \n• Strong understanding of LLM algorithms and deep learning frameworks.  \n\n**KEY TECHNOLOGIES:**\n• Proficient in PyTorch, Python, and C++.  \n• Experience with parallelism techniques in ML.  \n• Knowledge of linear algebra, calculus, and statistics."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Design and review integration architecture for SAP ERP applications.\n- Develop complex integrations with internal and external systems.\n- Lead integration best practices and production support for failures.\n\n**REQUIREMENTS:**\n- Bachelor's degree or equivalent experience required.\n- 6+ years of SAP experience, including middleware systems.\n- 2+ years of SAP ABAP development experience.\n\n**KEY TECHNOLOGIES:**\n- SAP CPI, SAP PO, ABAP Proxies, and Web Services.\n- Experience with EDI integrations for Supply Chain.\n- Familiarity with AWS integration options and SAP BTP."
   }
 ]

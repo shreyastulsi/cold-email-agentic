@@ -2471,15 +2471,6 @@ export default function Search() {
                             </div>
                             
                             <div className="flex items-center gap-3 text-sm text-gray-400">
-                              {(mapItem.job_url || recruiter.job_url) && (
-                                <div onClick={(e) => e.stopPropagation()}>
-                                  <JobContextModal
-                                    jobUrl={mapItem.job_url || recruiter.job_url}
-                                    buttonText="View Job Context"
-                                    buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                                  />
-                                </div>
-                              )}
                               <div className="flex items-center gap-2">
                                 {recruiter.extracted_email || recruiter.email ? (
                                   <span className={`text-xs px-2 py-1 rounded ${
@@ -2508,6 +2499,16 @@ export default function Search() {
                                   </span>
                                 )}
                               </div>
+                              {/* View Job Context Button - Only visible when expanded */}
+                              {isExpanded && (mapItem.job_url || recruiter.job_url) && (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <JobContextModal
+                                    jobUrl={mapItem.job_url || recruiter.job_url}
+                                    buttonText="View Job Context"
+                                    buttonClassName="px-3 py-1 text-xs bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                                  />
+                                </div>
+                              )}
                               <svg
                                 className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                 fill="none"
@@ -2530,6 +2531,25 @@ export default function Search() {
                               const isEditingEmail = editingMessage?.index === index && editingMessage?.part === 'email'
                               const emailSubject = messageData.editedEmailSubject || messageData.email?.subject || ''
                               const emailBody = messageData.editedEmailBody || messageData.email?.body || messageData.email?.content || ''
+                              
+                              // Measure display text height and sync to textarea
+                              const handleTextareaRef = (textarea) => {
+                                if (textarea && isEditingEmail) {
+                                  // Create a hidden measurement div
+                                  const measureDiv = document.createElement('div')
+                                  measureDiv.style.cssText = 'position: absolute; visibility: hidden; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.5; padding: 0.75rem 1rem; width: ' + textarea.offsetWidth + 'px;'
+                                  measureDiv.textContent = emailBody || 'N/A'
+                                  document.body.appendChild(measureDiv)
+                                  
+                                  setTimeout(() => {
+                                    const displayHeight = measureDiv.offsetHeight
+                                    if (displayHeight > 0) {
+                                      textarea.style.height = `${Math.max(displayHeight, 192)}px` // min 12rem
+                                    }
+                                    document.body.removeChild(measureDiv)
+                                  }, 0)
+                                }
+                              }
                               
                               return (
                                 <div className="space-y-3">
@@ -2554,9 +2574,14 @@ export default function Search() {
                                         />
                                         <label className="block text-sm font-medium text-gray-300">Body</label>
                                         <textarea
-                                          className="h-48 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                          ref={handleTextareaRef}
+                                          className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none resize-y"
                                           value={editValues.email_body || ''}
                                           onChange={(e) => setEditValues({ ...editValues, email_body: e.target.value })}
+                                          style={{ 
+                                            minHeight: '12rem',
+                                            lineHeight: '1.5'
+                                          }}
                                         />
                                       </div>
                                       <div className="flex gap-2">
@@ -2618,6 +2643,25 @@ export default function Search() {
                               const isEditingLinkedIn = editingMessage?.index === index && editingMessage?.part === 'linkedin'
                               const linkedinMessage = messageData.editedLinkedInMessage || messageData.linkedinMessage || ''
                               
+                              // Measure display text height and sync to textarea
+                              const handleLinkedInTextareaRef = (textarea) => {
+                                if (textarea && isEditingLinkedIn) {
+                                  // Create a hidden measurement div
+                                  const measureDiv = document.createElement('div')
+                                  measureDiv.style.cssText = 'position: absolute; visibility: hidden; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.5; padding: 0.75rem 1rem; width: ' + textarea.offsetWidth + 'px;'
+                                  measureDiv.textContent = linkedinMessage || 'N/A'
+                                  document.body.appendChild(measureDiv)
+                                  
+                                  setTimeout(() => {
+                                    const displayHeight = measureDiv.offsetHeight
+                                    if (displayHeight > 0) {
+                                      textarea.style.height = `${Math.max(displayHeight, 256)}px` // min 16rem
+                                    }
+                                    document.body.removeChild(measureDiv)
+                                  }, 0)
+                                }
+                              }
+                              
                               return (
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
@@ -2632,9 +2676,14 @@ export default function Search() {
                                   {isEditingLinkedIn ? (
                                     <>
                                       <textarea
-                                        className="h-64 w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none"
+                                        ref={handleLinkedInTextareaRef}
+                                        className="w-full rounded-lg border border-gray-700/50 bg-gray-900/50 text-white placeholder-gray-400 px-4 py-3 font-sans text-sm focus:border-blue-500 focus:outline-none resize-y"
                                         value={editValues.linkedin_message || ''}
                                         onChange={(e) => setEditValues({ ...editValues, linkedin_message: e.target.value })}
+                                        style={{ 
+                                          minHeight: '16rem',
+                                          lineHeight: '1.5'
+                                        }}
                                       />
                                       <div className="flex gap-2">
                                         <Button
