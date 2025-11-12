@@ -714,7 +714,7 @@ async def map_jobs_to_recruiters(
     logger = logging.getLogger(__name__)
     
     logger.info(f"🔍 DEBUG: adapter.map_jobs_to_recruiters called with {len(jobs)} jobs, {len(recruiters)} recruiters, max_pairs={max_pairs}")
-    
+
     if not jobs:
         await emit_verbose_log("❌ No jobs provided for mapping", "error", "❌")
         logger.warning("⚠️ DEBUG: No jobs provided to map_jobs_to_recruiters")
@@ -725,8 +725,6 @@ async def map_jobs_to_recruiters(
         logger.warning("⚠️ DEBUG: No recruiters provided to map_jobs_to_recruiters")
         return {"mapping": [], "selected_recruiters": []}
     
-    # **NEW: Store job contexts for manually-selected jobs before mapping**
-    # This ensures email generation can use job-specific details
     try:
         messenger = get_messenger()
         
@@ -806,7 +804,12 @@ async def generate_email(
     Returns:
         Dict with subject and body
     """
+    from app.services.verbose_logger import verbose_logger
+    
     messenger = get_messenger()
+    recruiter_name = recruiter.get('name', 'recruiter')
+    
+    await verbose_logger.log(f"Constructing email for {recruiter_name}", "info", "✉️")
     
     # Use provided resume content, or fallback to loading from PDF
     if not resume_content and messenger.resume_generator:
@@ -825,6 +828,8 @@ async def generate_email(
         resume_content,
         job_url,
     )
+    
+    await verbose_logger.log(f"Email content generated for {recruiter_name}", "success", "✅")
     
     return {
         "subject": subject,
@@ -1006,10 +1011,81 @@ async def generate_linkedin_message(
     Returns:
         Generated LinkedIn message (280-295 characters)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    from app.services.verbose_logger import verbose_logger
+    
     messenger = get_messenger()
+    recruiter_name = recruiter.get('name', 'recruiter')
+    
+    await verbose_logger.log(f"Constructing LinkedIn message for {recruiter_name}", "info", "💼")
     
     if not messenger.resume_generator:
         raise ValueError("Resume generator not available")
+    
+    # Check if job_url is available and ensure context is stored
+    job_url = recruiter.get('job_url')
+    if job_url:
+        logger.info(f"🔍 Checking job context for URL: {job_url}")
+        try:
+            from app.db.base import AsyncSessionLocal
+            async with AsyncSessionLocal() as db:
+                from app.services.unified_messenger.job_context_tracker import JobContextTracker
+                tracker = JobContextTracker(db)
+                
+                # Check if context exists
+                existing_context = await tracker.fetch_job_context(job_url)
+                
+                if not existing_context or not existing_context.get('requirements'):
+                    logger.info(f"📝 Job context not found for {job_url}, creating now...")
+                    
+                    # Create a minimal job dict with the URL
+                    job_dict = {
+                        'url': job_url,
+                        'title': job_title,
+                        'company': {'name': company_name} if isinstance(company_name, str) else company_name
+                    }
+                    
+                    # Scrape and condense the job
+                    from app.services.unified_messenger.scraper import scrape_job
+                    from app.services.unified_messenger.job_condenser import JobCondenser
+                    
+                    loop = asyncio.get_event_loop()
+                    scraped = await loop.run_in_executor(None, scrape_job, job_url)
+                    
+                    if scraped and scraped.get('description'):
+                        logger.info(f"✅ Scraped job successfully, condensing...")
+                        condenser = JobCondenser()
+                        
+                        # Use condense_job_description method
+                        description = scraped.get('description', '')
+                        title = scraped.get('title', job_title)
+                        condensed_desc = await loop.run_in_executor(
+                            None, 
+                            condenser.condense_job_description,
+                            description,
+                            title
+                        )
+                        
+                        if condensed_desc:
+                            job_dict['condensed_description'] = condensed_desc
+                            # Also update the scraped job's description
+                            job_dict['description'] = condensed_desc
+                            
+                            # Store the context
+                            await tracker.store_job_context(job_url, job_dict)
+                            logger.info(f"✅ Stored job context for {job_url}")
+                        else:
+                            logger.warning(f"⚠️ Failed to condense job {job_url}")
+                    else:
+                        logger.warning(f"⚠️ Failed to scrape job {job_url}")
+                else:
+                    logger.info(f"✅ Job context already exists for {job_url}")
+        except Exception as e:
+            logger.error(f"⚠️ Error ensuring job context: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            # Continue anyway - message generation can still work without context
     
     # Use provided resume content, or fallback to loading from PDF
     if not resume_content:
@@ -1035,17 +1111,19 @@ async def generate_linkedin_message(
             recruiter_name = recruiter.get('name', 'Hiring Manager')
             return f"Dear {recruiter_name}, I'm interested in {job_title} opportunities at {company_name}. I'd love to connect and discuss potential roles that align with my background."
     
-    recruiter_name = recruiter.get('name', 'Hiring Manager')
+    recruiter_name_for_generation = recruiter.get('name', 'Hiring Manager')
     
     loop = asyncio.get_event_loop()
     message = await loop.run_in_executor(
         None,
         messenger.resume_generator.generate_message,
         resume_content,
-        recruiter_name,
+        recruiter_name_for_generation,
         job_title,
         company_name
     )
+    
+    await verbose_logger.log(f"LinkedIn message generated for {recruiter_name}", "success", "✅")
     
     return message
 

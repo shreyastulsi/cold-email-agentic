@@ -854,12 +854,15 @@ class UnifiedMessenger:
         
         return False
 
-    def _score_recruiter_for_job(self, job, recruiter):
+    def _score_recruiter_for_job(self, job, recruiter, debug_logs=None):
         """
         Compute a heuristic score indicating how suitable this recruiter is for the given job.
         Uses recruiter's headline/title and company alignment with the job's company/title.
         """
+        import logging
+        logger = logging.getLogger(__name__)
         score = 0
+        events = []
         job_title = (job.get('title') or '').lower()
         job_company = (self._get_company_name_from_job(job) or '').lower()
 
@@ -869,24 +872,64 @@ class UnifiedMessenger:
 
         if any(k in headline for k in ['recruiter', 'talent', 'ta', 'sourcer', 'acquisition', 'people', 'hr']):
             score += 2
+            events.append("headline indicates recruiting role (+2)")
 
         if any(k in job_title for k in ['software', 'engineer', 'developer', 'data', 'ml', 'ai', 'product', 'design']):
             if any(k in headline for k in ['technical recruiter', 'engineering', 'tech', 'data', 'ml', 'ai', 'product', 'design']):
                 score += 2
+                events.append("technical recruiter headline (+2)")
 
         if job_company:
             if rec_company and job_company == rec_company:
                 score += 5
+                events.append(f"exact company match with {job_company} (+5)")
             elif job_company and job_company in keywords_match:
                 score += 3
+                events.append(f"company appears in recruiter keywords ({job_company}) (+3)")
 
+        keyword_hits = []
         for kw in ['software', 'engineer', 'data', 'science', 'ml', 'ai', 'backend', 'frontend', 'full stack', 'product', 'designer']:
             if kw in job_title and kw in headline:
                 score += 1
+                keyword_hits.append(kw)
+        if keyword_hits:
+            events.append(f"keyword overlap {keyword_hits} (+{len(keyword_hits)})")
 
-        if any(k in job_title for k in ['senior', 'lead', 'staff', 'principal']):
-            if any(k in headline for k in ['senior', 'lead', 'staff', 'principal']):
+        senior_signals = ['senior', 'lead', 'staff', 'principal']
+        newgrad_signals = ['new grad', 'university', 'campus', 'early career', 'college']
+
+        if any(k in job_title for k in senior_signals):
+            if any(k in headline for k in senior_signals):
                 score += 1
+                events.append("seniority alignment (+1)")
+        elif any(k in job_title for k in newgrad_signals):
+            if any(k in headline for k in newgrad_signals):
+                score += 1
+                events.append("university/early-career focus (+1)")
+
+        recruiter_name = recruiter.get('name', 'Unknown')
+        recruiter_inputs = {
+            "recruiter_name": recruiter_name,
+            "headline": recruiter.get('headline'),
+            "recruiter_company": self._recruiter_company_name(recruiter) or recruiter.get('company'),
+            "keywords_match": recruiter.get('keywords_match'),
+            "job_title": job.get('title'),
+            "job_company": self._get_company_name_from_job(job),
+            "job_url": job.get('job_url') or job.get('url') or job.get('link') or job.get('canonical_url'),
+            "recruiter_profile_url": recruiter.get('profile_url'),
+        }
+        if debug_logs is not None:
+            debug_logs.append({
+                "recruiter": recruiter_name,
+                "score": score,
+                "events": events,
+                "inputs": recruiter_inputs
+            })
+
+        logger.info(
+            f"[RecruiterScore] {recruiter_name} | job '{job_title}' @ '{job_company}' "
+            f"| contributions: {', '.join(events) if events else 'none'} | total={score} | inputs: {recruiter_inputs}"
+        )
 
         return score
 
@@ -983,7 +1026,8 @@ class UnifiedMessenger:
                 matching_indices = list(range(len(recruiters)))
             
             # Score only the matching recruiters
-            scored = [(matching_indices[idx], self._score_recruiter_for_job(job, rec)) for idx, rec in enumerate(matching_recruiters)]
+            debug_records = []
+            scored = [(matching_indices[idx], self._score_recruiter_for_job(job, rec, debug_records)) for idx, rec in enumerate(matching_recruiters)]
             scored.sort(key=lambda x: (x[1], recruiters[x[0]].get('followers_count', 0) or 0), reverse=True)
             
             if scored:
@@ -1024,8 +1068,64 @@ class UnifiedMessenger:
             
             recruiter_name = chosen.get('name', 'Unknown')
             recruiter_company = self._recruiter_company_name(chosen) or chosen.get('company', 'Unknown')
+            recruiter_headline = chosen.get('headline', '')
             logger.info(f"🔍 DEBUG: Mapped {job_title} -> {recruiter_name} ({recruiter_company})")
             logger.info(f"🔗 DEBUG: Job URL attached to recruiter: {job_url}")
+            
+            # Build a specific, detailed reason from the scoring events and actual data
+            chosen_record = next((r for r in debug_records if r['recruiter'] == recruiter_name), None)
+            if chosen_record and chosen_record.get('events'):
+                reasons = []
+                events = chosen_record['events']
+                
+                for event in events:
+                    if 'headline indicates recruiting role' in event:
+                        # Extract specific recruiting keywords from headline
+                        recruiting_words = [w for w in ['recruiter', 'talent', 'sourcer', 'acquisition', 'people', 'hr'] 
+                                           if w in recruiter_headline.lower()]
+                        if recruiting_words:
+                            reasons.append(f'their headline mentions "{recruiting_words[0]}"')
+                    elif 'technical recruiter' in event:
+                        # Extract specific technical recruiting keywords
+                        tech_words = [w for w in ['technical recruiter', 'engineering', 'tech', 'data', 'ml', 'ai', 'product', 'design'] 
+                                     if w in recruiter_headline.lower()]
+                        if tech_words:
+                            reasons.append(f'they mention "{tech_words[0]}" in their profile which matches technical roles')
+                    elif 'exact company match' in event:
+                        reasons.append(f'they currently work at {job_company}')
+                    elif 'company appears in recruiter keywords' in event:
+                        reasons.append(f'they have recruiting experience with {job_company}')
+                    elif 'keyword overlap' in event:
+                        # Extract the actual keywords that matched
+                        keywords_found = []
+                        for kw in ['software', 'engineer', 'data', 'science', 'ml', 'ai', 'backend', 'frontend', 'full stack', 'product', 'designer', 'firmware', 'validation']:
+                            if kw in job_title.lower() and kw in recruiter_headline.lower():
+                                keywords_found.append(kw)
+                        if keywords_found:
+                            reasons.append(f'their headline includes "{keywords_found[0]}" which aligns with the {job_title} role')
+                    elif 'seniority alignment' in event:
+                        senior_words = [w for w in ['senior', 'lead', 'staff', 'principal'] 
+                                       if w in recruiter_headline.lower() or w in job_title.lower()]
+                        if senior_words:
+                            reasons.append(f'both mention "{senior_words[0]}" level positions')
+                    elif 'university/early-career' in event or 'early-career focus' in event:
+                        newgrad_words = [w for w in ['new grad', 'university', 'campus', 'early career', 'college'] 
+                                        if w in recruiter_headline.lower()]
+                        if newgrad_words:
+                            reasons.append(f'their profile mentions "{newgrad_words[0]}" recruiting')
+                
+                if reasons:
+                    reason_text = ', '.join(reasons)
+                else:
+                    reason_text = 'they are the best match based on their profile and experience'
+            else:
+                reason_text = 'they are the best available match for this position'
+            
+            emit_verbose_log_sync(
+                f"{recruiter_name} was chosen for {job_title} at {job_company} because {reason_text}",
+                "info",
+                "✅"
+            )
 
             selected.append(chosen)
             mapping.append({
@@ -1491,47 +1591,8 @@ class UnifiedMessenger:
         technologies = safe_extract_list(job_context, 'technologies')
         responsibilities = safe_extract_list(job_context, 'responsibilities')
 
-        resume_details = self._extract_resume_details(resume_content)
-        education_text = resume_details.get('education') or 'Not specified'
-        graduation_text = resume_details.get('graduation') or 'Not specified'
-        experience_highlights = resume_details.get('experience', [])
-        experience_text = '; '.join(experience_highlights[:4]) if experience_highlights else 'Not specified'
-        
-        # Extract key technologies from resume - CRITICAL for preventing fabrication
-        resume_technologies = []
-        if resume_content and self.resume_generator and self.resume_generator.resume_parser:
-            try:
-                structured_data = self.resume_generator.resume_parser.extract_structured_data(resume_content)
-                resume_technologies = structured_data.get('key_technologies', [])
-            except Exception as e:
-                print(f"⚠️  Could not extract technologies from resume: {e}")
-                # Fallback: try to extract from bullet format
-                if 'Key Technologies:' in resume_content or 'key_technologies' in resume_content.lower():
-                    lines = resume_content.splitlines()
-                    for line in lines:
-                        if 'Key Technologies:' in line or 'key technologies:' in line.lower():
-                            tech_part = line.split(':', 1)[1] if ':' in line else line
-                            resume_technologies = [t.strip() for t in tech_part.split(',') if t.strip()]
-                            break
-        
-        # If still no technologies found, try parsing from raw resume content
-        if not resume_technologies and resume_content:
-            # Look for common technology patterns in the resume
-            tech_keywords = ['python', 'java', 'javascript', 'react', 'node', 'sql', 'aws', 'docker', 'kubernetes', 
-                           'cassandra', 'mongodb', 'postgresql', 'redis', 'kafka', 'spark', 'tensorflow', 'pytorch',
-                           'machine learning', 'deep learning', 'data science', 'backend', 'frontend', 'full stack']
-            found_techs = []
-            resume_lower = resume_content.lower()
-            for tech in tech_keywords:
-                if tech in resume_lower:
-                    found_techs.append(tech)
-            if found_techs:
-                resume_technologies = found_techs[:10]  # Limit to 10
-        
-        technologies_list_text = ', '.join(resume_technologies) if resume_technologies else 'None explicitly listed'
-        
-        # Extract the person's name from the resume
-        person_name = self._extract_resume_name(resume_content)
+        # Simply use the resume content text directly - no parsing needed
+        print("✅ Using resume content from database (no parsing needed)")
 
         email_prompt = f"""
 You are writing a professional outreach email. Follow these instructions carefully and return ONLY the content between <<<BEGIN>>> and <<<END>>>.
@@ -1543,40 +1604,23 @@ CONTEXT:
 - Job Requirements: {requirements or 'Not specified'}
 - Job Technologies: {technologies or 'Not specified'}
 - Job Responsibilities: {responsibilities or 'Not specified'}
-- Education Summary: {education_text}
-- Graduation Detail: {graduation_text}
-- Resume Experience Highlights: {experience_text}
-- Resume Technologies (ONLY use these): {technologies_list_text}
+
+RESUME CONTENT:
+{resume_content}
 
 STRUCTURE:
 1. Open with a greeting that includes a courteous introduction (e.g., "I hope you're doing well") and clearly state the role at {company_name} you are pursuing.
-2. Provide a short paragraph introducing yourself, focusing on education and explicitly mentioning university and graduation date when available.
-3. Write a paragraph with 3-4 sentences that creates DIRECT, SPECIFIC mappings between the job requirements/technologies and your experience. For EACH requirement or technology listed, create a connection following this template: "My experience at [SPECIFIC COMPANY] helped me master fundamentals in [SPECIFIC TECHNOLOGY/SKILL], which is directly applicable to this position because [SPECIFIC REASON from requirements]." DO NOT use general statements. MUST reference specific companies from experience highlights and specific technologies/requirements from the job posting.
-4. Conclude with a warm, professional closing inviting a conversation. End with "Best regards," and "{person_name}" exactly.
+2. Provide a short paragraph introducing yourself, focusing on education from the RESUME CONTENT above.
+3. Write a paragraph with 3-4 sentences that creates DIRECT, SPECIFIC mappings between the job requirements/technologies and your experience FROM THE RESUME CONTENT. For EACH requirement or technology listed, create a connection following this template: "My experience at [SPECIFIC COMPANY from resume] helped me master fundamentals in [SPECIFIC TECHNOLOGY/SKILL from resume], which is directly applicable to this position because [SPECIFIC REASON from requirements]."
+4. Conclude with a warm, professional closing inviting a conversation. Sign with the name from the resume content.
 
-CRITICAL REQUIREMENTS FOR PARAGRAPH 3:
-- ONLY mention technologies, skills, or tools that are EXPLICITLY listed in "Resume Technologies" above
-- If a job requirement or technology is NOT in the "Resume Technologies" list, DO NOT mention it in the email - skip it entirely
-- Pick 2-3 specific requirements or technologies from the job posting that ACTUALLY EXIST in your resume
-- For EACH one you mention, it MUST be in the "Resume Technologies" list - verify this before writing
-- For EACH one, mention a specific company/role from experience highlights where you used that skill
-- Explain the direct connection: "My [experience at X] → developed [specific skill Y] → useful for [specific requirement Z]"
-- Be concrete: mention actual technologies, actual companies, actual outcomes
-- Avoid vague phrases like "strong background" or "extensive experience" - use specific examples only
-- DO NOT fabricate, infer, or assume any technologies or skills not explicitly in the resume
-- DO NOT mention technologies just because they appear in the job posting - they must be in your resume
-
-EXAMPLE OF GOOD PARAGRAPH 3 (if job requires Python and ML, AND both are in resume):
-"My internship at Amazon provided hands-on experience with Python for building data processing pipelines, which directly aligns with your requirement for Python proficiency. Additionally, my research at UCLA Data Mining Lab helped me master machine learning fundamentals through implementing classification models, skills that would be valuable for developing the ML features mentioned in the role. At Anvi Cybernetics, I applied these technologies to real-world problems, strengthening my ability to translate technical requirements into production solutions."
-
-EXAMPLE OF BAD PARAGRAPH 3 (too vague):
-"I have strong experience in software development and have worked with various technologies. My background includes internships at leading companies where I gained valuable skills. I'm confident these experiences would be beneficial for this role."
-
-EXAMPLE OF BAD PARAGRAPH 3 (fabricating skills not in resume):
-"My experience at Amazon helped me master Cassandra database systems..." [WRONG if Cassandra is NOT in resume technologies]
-
-EXAMPLE OF GOOD PARAGRAPH 3 (when job requires Cassandra but resume doesn't have it):
-"My internship at Amazon provided hands-on experience with Python for building data processing pipelines, which directly aligns with your requirement for scalable backend systems. Additionally, my research at UCLA Data Mining Lab helped me master machine learning fundamentals through implementing classification models, skills that would be valuable for developing the ML features mentioned in the role." [CORRECT - only mentions technologies actually in resume]
+CRITICAL REQUIREMENTS:
+- ONLY mention technologies, skills, or tools that are EXPLICITLY in the RESUME CONTENT above
+- DO NOT fabricate, infer, or assume any technologies or skills not in the resume
+- Pick 2-3 specific requirements or technologies from the job posting that match what's in the resume
+- Reference specific companies and roles from the resume
+- Be concrete: mention actual technologies, actual companies, actual outcomes from the resume
+- Avoid vague phrases like "strong background" - use specific examples from resume only
 
 RULES:
 - Use ASCII characters only.
@@ -1584,7 +1628,6 @@ RULES:
 - Keep the email between 180 and 240 words.
 - Mention {company_name} at least twice.
 - Maintain a polished yet friendly tone.
-- Paragraph 3 must contain specific mappings, not general claims.
 
 OUTPUT TEMPLATE:
 <<<BEGIN>>>

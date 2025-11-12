@@ -75,6 +75,12 @@ async def upload_resume(
             extracted_content = resume_parser.extract_key_bullets(raw_resume_content)
             print(f"✅ Extracted resume bullets ({len(extracted_content)} characters)")
             
+            # Also extract structured data (parse once and store)
+            structured_data = resume_parser.extract_structured_data(raw_resume_content)
+            print(f"✅ Parsed resume into structured data:")
+            import json
+            print(json.dumps(structured_data, indent=2))
+            
             # Clear cache so it doesn't interfere
             messenger.resume_generator.clear_resume_cache()
     except Exception as e:
@@ -93,22 +99,24 @@ async def upload_resume(
             existing = result.scalar_one_or_none()
             
             if existing:
-                # Update existing content
+                # Update existing content and structured data
                 existing.content = extracted_content
+                existing.structured_data = structured_data if 'structured_data' in locals() else None
                 from datetime import datetime
                 existing.updated_at = datetime.utcnow()
                 print(f"✅ Updated existing resume content for user {current_user.id}")
             else:
-                # Create new content
+                # Create new content with structured data
                 resume_content = ResumeContent(
                     owner_id=current_user.id,
-                    content=extracted_content
+                    content=extracted_content,
+                    structured_data=structured_data if 'structured_data' in locals() else None
                 )
                 db.add(resume_content)
                 print(f"✅ Created new resume content for user {current_user.id}")
             
             await db.commit()
-            print("✅ Resume content saved to database")
+            print("✅ Resume content and structured data saved to database")
         except Exception as e:
             await db.rollback()
             print(f"⚠️  Could not save resume content to database: {e}")
@@ -158,16 +166,28 @@ async def update_resume_content(
     )
     resume_content = result.scalar_one_or_none()
     
+    # Re-parse the edited content to update structured data
+    structured_data = None
+    try:
+        from app.services.unified_messenger.resume_parser import ResumeParser
+        resume_parser = ResumeParser()
+        structured_data = resume_parser.extract_structured_data(request.content)
+        print(f"✅ Re-parsed edited resume into structured data")
+    except Exception as e:
+        print(f"⚠️  Could not parse edited resume content: {e}")
+    
     if not resume_content:
         # Create new if doesn't exist
         resume_content = ResumeContent(
             owner_id=current_user.id,
-            content=request.content
+            content=request.content,
+            structured_data=structured_data
         )
         db.add(resume_content)
     else:
         # Update existing
         resume_content.content = request.content
+        resume_content.structured_data = structured_data
         from datetime import datetime
         resume_content.updated_at = datetime.utcnow()
     

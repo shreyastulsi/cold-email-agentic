@@ -304,6 +304,7 @@ export default function Search() {
   const [isFiltering, setIsFiltering] = useState(false)
   const [jobResults, setJobResults] = useState(null)
   const [mappedJobs, setMappedJobs] = useState([]) // Jobs in recruiter mapping placeholders (dynamic slots)
+  const [visibleMappingSlots, setVisibleMappingSlots] = useState(5)
   const [isMappingToRecruiters, setIsMappingToRecruiters] = useState(false)
   const [mapping, setMapping] = useState([])
   const [mappedRecruiters, setMappedRecruiters] = useState([])
@@ -659,6 +660,7 @@ export default function Search() {
       // Initialize mappedJobs array with nulls matching the number of jobs
       const jobCount = jobsData.jobs.length
       setMappedJobs(Array(jobCount).fill(null))
+      setVisibleMappingSlots(Math.min(5, jobCount || 0))
     }
   }, [jobsData, onboardingReady])
 
@@ -2160,7 +2162,7 @@ export default function Search() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {jobResults?.jobs?.map((_, index) => (
+                  {mappedJobs.slice(0, visibleMappingSlots).map((_, index) => (
                     <div
                       key={index}
                       onDrop={(e) => handleDrop(e, index)}
@@ -2202,6 +2204,21 @@ export default function Search() {
                       )}
                     </div>
                   ))}
+                  {mappedJobs.length > visibleMappingSlots && (
+                    <button
+                      onClick={() =>
+                        setVisibleMappingSlots((prev) =>
+                          Math.min(prev + 1, mappedJobs.length)
+                        )
+                      }
+                      className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600/50 bg-gray-900/10 px-4 py-3 text-sm text-gray-300 hover:bg-gray-900/30 transition-colors"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add another slot
+                    </button>
+                  )}
           </div>
                 {mappedJobs.some(j => j !== null) && (
                   <button

@@ -71,7 +71,7 @@ async def generate_email_endpoint(
     db: AsyncSession = Depends(get_db)
 ) -> dict:
     """Generate email content."""
-    # Get resume content from database (user's edited version)
+    # Get resume content from database (just the text content)
     resume_content = await get_resume_content_from_db(current_user.id, db)
     
     return await generate_email(
