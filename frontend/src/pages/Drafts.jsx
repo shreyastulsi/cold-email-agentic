@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { JobContextModal } from '../components/JobContextModal'
 import { Button } from '../components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
-import { JobContextModal } from '../components/JobContextModal'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 
@@ -332,36 +332,62 @@ export default function Drafts() {
     })
   }
 
-  const handleSendToSelected = async () => {
+  const getEligibleDrafts = (channel) =>
+    drafts.filter((draft) => {
+      if (!selectedDrafts.has(draft.id)) return false
+      if (channel === 'email') {
+        return (draft.draft_type === 'email' || draft.draft_type === 'both') && !draft.email_sent
+      }
+      if (channel === 'linkedin') {
+        return (draft.draft_type === 'linkedin' || draft.draft_type === 'both') && !draft.linkedin_sent
+      }
+      return false
+    })
+
+  const handleSendEmailsToSelected = async () => {
     if (selectedDrafts.size === 0) {
       alert('Please select at least one draft to send')
       return
     }
 
-    const confirmMessage = `Are you sure you want to send ${selectedDrafts.size} draft(s)?`
+    const draftsToSend = getEligibleDrafts('email')
+
+    if (draftsToSend.length === 0) {
+      alert('No selected drafts have an unsent email to send')
+      return
+    }
+
+    const confirmMessage = `Send emails for ${draftsToSend.length} selected draft${draftsToSend.length !== 1 ? 's' : ''}?`
     if (!confirm(confirmMessage)) {
       return
     }
 
-    // Send all selected drafts
-    for (const draftId of selectedDrafts) {
-      const draft = drafts.find(d => d.id === draftId)
-      if (!draft) continue
+    for (const draft of draftsToSend) {
+      await handleSendEmail(draft.id)
+    }
+  }
 
-      // Send email if available and not sent
-      if ((draft.draft_type === 'email' || draft.draft_type === 'both') && !draft.email_sent) {
-        await handleSendEmail(draftId)
-      }
-
-      // Send LinkedIn if available and not sent
-      if ((draft.draft_type === 'linkedin' || draft.draft_type === 'both') && !draft.linkedin_sent) {
-        await handleSendLinkedIn(draftId)
-      }
+  const handleSendLinkedInToSelected = async () => {
+    if (selectedDrafts.size === 0) {
+      alert('Please select at least one draft to send')
+      return
     }
 
-    // Clear selection after sending
-    setSelectedDrafts(new Set())
-    await loadDrafts()
+    const draftsToSend = getEligibleDrafts('linkedin')
+
+    if (draftsToSend.length === 0) {
+      alert('No selected drafts have an unsent LinkedIn message to send')
+      return
+    }
+
+    const confirmMessage = `Send LinkedIn messages for ${draftsToSend.length} selected draft${draftsToSend.length !== 1 ? 's' : ''}?`
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    for (const draft of draftsToSend) {
+      await handleSendLinkedIn(draft.id)
+    }
   }
 
   const handleDeleteSelected = async () => {
@@ -396,6 +422,11 @@ export default function Drafts() {
       </div>
     )
   }
+
+  const isAnyEmailSending = Object.values(sendingStatus).some(status => status?.email === 'sending')
+  const isAnyLinkedInSending = Object.values(sendingStatus).some(status => status?.linkedin === 'sending')
+  const emailEligibleCount = getEligibleDrafts('email').length
+  const linkedinEligibleCount = getEligibleDrafts('linkedin').length
 
   return (
     <div className="p-6">
@@ -454,11 +485,22 @@ export default function Drafts() {
                 </span>
                 <div className="ml-auto flex gap-2">
                   <Button
-                    onClick={handleSendToSelected}
-                    variant="default"
+                    onClick={handleSendEmailsToSelected}
                     size="sm"
+                    disabled={emailEligibleCount === 0 || isAnyEmailSending}
+                    className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                    variant="ghost"
                   >
-                    Send to All Selected ({selectedDrafts.size})
+                    Send Emails to Selected ({emailEligibleCount})
+                  </Button>
+                  <Button
+                    onClick={handleSendLinkedInToSelected}
+                    size="sm"
+                    disabled={linkedinEligibleCount === 0 || isAnyLinkedInSending}
+                    className="bg-white text-gray-900 hover:bg-gray-100 border border-white/50 disabled:opacity-60"
+                    variant="ghost"
+                  >
+                    Send Messages to Selected ({linkedinEligibleCount})
                   </Button>
                   <Button
                     onClick={handleDeleteSelected}
@@ -523,7 +565,7 @@ export default function Drafts() {
                           </div>
                           
                           <div className="flex items-center gap-3 text-sm text-gray-400">
-                            {draft.recruiter_info?.job_url && (
+                            {isExpanded && draft.recruiter_info?.job_url && (
                               <div onClick={(e) => e.stopPropagation()}>
                                 <JobContextModal
                                   jobUrl={draft.recruiter_info.job_url}

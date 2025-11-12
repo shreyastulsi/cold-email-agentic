@@ -136,7 +136,7 @@ export default function Dashboard() {
           containerClassName="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 shadow-lg"
           className="p-6"
         >
-          <h3 className="text-sm font-medium text-muted-foreground">Unique Companies Reached</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Companies Reached</h3>
           <div className="mt-2">
             <p className="text-3xl font-semibold text-white">
               {stats.uniqueCompaniesReached}

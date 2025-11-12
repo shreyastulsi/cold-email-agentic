@@ -1,6 +1,24 @@
-import { X, ChevronLeft, ChevronRight, Terminal, Zap, Minimize2, Maximize2 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  FlaskConical,
+  Info,
+  Loader2,
+  Microscope,
+  Pencil,
+  Search,
+  Sparkles,
+  Terminal,
+  X,
+  Zap,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/libs/utils'
+import { ChainOfThought, ChainOfThoughtContent, ChainOfThoughtHeader, ChainOfThoughtStep } from './ui/chain-of-thought'
 
 interface LogEntry {
   id?: string
@@ -65,27 +83,63 @@ const resolveMessage = (log: LogEntry) => {
   }
 }
 
-const resolveToneClass = (log: LogEntry) => {
+const resolveLogVisual = (
+  log: LogEntry,
+  message: string
+): { icon: LucideIcon; iconClassName?: string } => {
   const rawType =
     (log.type as string | undefined) ??
     (log.level as string | undefined) ??
     (log.status as string | undefined) ??
     ''
   const type = rawType.toLowerCase()
+  const text = message.toLowerCase()
 
-  if (type.includes('error') || type.includes('fail')) {
-    return 'text-red-400 border-l-red-500'
+  const matches = (...keywords: string[]) =>
+    keywords.some((keyword) => type.includes(keyword) || text.includes(keyword))
+
+  if (matches('error', 'fail', 'failed', 'fatal')) {
+    return { icon: AlertTriangle, iconClassName: 'text-red-400' }
   }
-  if (type.includes('success') || type.includes('done') || type.includes('complete')) {
-    return 'text-emerald-400 border-l-emerald-500'
+  if (matches('success', 'done', 'complete', 'completed', 'finished')) {
+    return { icon: CheckCircle2, iconClassName: 'text-emerald-400' }
   }
-  if (type.includes('warn') || type.includes('pending')) {
-    return 'text-amber-400 border-l-amber-500'
+  if (matches('warn', 'caution', 'alert')) {
+    return { icon: AlertTriangle, iconClassName: 'text-amber-400' }
   }
-  if (type.includes('info') || type.includes('start')) {
-    return 'text-cyan-400 border-l-cyan-500'
+  if (matches('pending', 'loading', 'waiting', 'queued')) {
+    return { icon: Loader2, iconClassName: 'text-amber-300 animate-spin' }
   }
-  return 'text-gray-300 border-l-gray-600'
+  if (matches('search', 'lookup', 'query', 'discover', 'scan', 'explore')) {
+    return { icon: Search, iconClassName: 'text-sky-300' }
+  }
+  if (matches('scrap', 'crawl', 'fetch data', 'http', 'request', 'spider')) {
+    return { icon: Pencil, iconClassName: 'text-blue-300' }
+  }
+  if (matches('extract', 'parse', 'collect', 'ingest', 'pull', 'harvest')) {
+    return { icon: Pencil, iconClassName: 'text-blue-300' }
+  }
+  if (matches('analyz', 'analyse', 'inspect', 'interpret', 'reason about', 'diagnos')) {
+    return { icon: Microscope, iconClassName: 'text-amber-300' }
+  }
+  if (matches('evaluate', 'score', 'rank', 'assess', 'compare', 'measure')) {
+    return { icon: BarChart3, iconClassName: 'text-emerald-300' }
+  }
+  if (matches('validate', 'verify', 'confirm', 'check', 'test', 'experiment')) {
+    return { icon: FlaskConical, iconClassName: 'text-rose-300' }
+  }
+  if (matches('generate', 'compose', 'draft', 'synthesiz', 'write', 'produce', 'create')) {
+    return { icon: Sparkles, iconClassName: 'text-fuchsia-300' }
+  }
+  if (matches('final', 'ready', 'prepared', 'saved', 'complete output')) {
+    return { icon: ClipboardCheck, iconClassName: 'text-emerald-300' }
+  }
+
+  if (type.includes('info') || type.includes('start') || type.includes('init')) {
+    return { icon: Info, iconClassName: 'text-cyan-300' }
+  }
+
+  return { icon: Sparkles, iconClassName: 'text-white/70' }
 }
 
 export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChange }: ActivityConsoleProps) {
@@ -232,36 +286,42 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
                   </div>
                 </div>
               ) : (
-                <div className="space-y-0.5 p-3">
-                  {logs.map((log, index) => (
-                    <div
-                      key={log.id ?? `${log.timestamp}-${index}`}
-                      className={cn(
-                        'group relative animate-in fade-in slide-in-from-right-2 duration-300 rounded-lg border-l-2 bg-gray-800/40 px-3 py-2 text-xs font-mono leading-relaxed transition-all hover:bg-gray-800/60 hover:border-l-4',
-                        resolveToneClass(log)
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {log.emoji && (
-                          <span className="flex-shrink-0 text-base leading-none animate-in zoom-in duration-200">
-                            {log.emoji}
-                          </span>
-                        )}
-                        <div className="flex-1">
-                          <span className="text-[10px] text-gray-500">
-                            {resolveTimestamp(log.timestamp)}
-                          </span>
-                          <p className="mt-0.5">{resolveMessage(log)}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Subtle glow effect on hover */}
-                      <div className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/5 to-blue-500/5" />
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={logsEndRef} />
+                <div className="p-3">
+                  <ChainOfThought defaultOpen className="space-y-2">
+                    <ChainOfThoughtHeader>Assistant reasoning</ChainOfThoughtHeader>
+                    <ChainOfThoughtContent className="space-y-4">
+                      {logs.map((log, index) => {
+                        const message = resolveMessage(log)
+                        const meta = [
+                          resolveTimestamp(log.timestamp),
+                          (log.type as string | undefined) ?? (log.level as string | undefined),
+                        ]
+                          .filter(Boolean)
+                          .join(' • ')
+
+                        const { icon, iconClassName } = resolveLogVisual(log, message)
+
+                        return (
+                          <ChainOfThoughtStep
+                            key={log.id ?? `${log.timestamp}-${index}`}
+                            status={index === logs.length - 1 ? 'active' : 'complete'}
+                            icon={icon}
+                            iconClassName={iconClassName}
+                            className="text-sm leading-relaxed"
+                            label={
+                              <div className="flex items-start gap-2">
+                                <span className="whitespace-pre-wrap text-foreground">
+                                  {message}
+                                </span>
+                              </div>
+                            }
+                            description={meta}
+                          />
+                        )
+                      })}
+                      <div ref={logsEndRef} />
+                    </ChainOfThoughtContent>
+                  </ChainOfThought>
                 </div>
               )}
 

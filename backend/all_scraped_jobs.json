@@ -1,15 +1,139 @@
 [
   {
-    "url": "https://www.linkedin.com/jobs/view/4314987113",
-    "title": "Research Scientist Intern, Audio, Numerical Acoustics (PhD)",
+    "url": "https://www.linkedin.com/jobs/view/4335582600",
+    "title": "Software Development Engineer, WMO",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Redmond, WA",
+    "location": "Seattle, WA",
+    "applications": "30 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Build next-generation APIs and rendering frameworks for mobile apps.\n- Own full stack development for iOS and/or Android.\n- Collaborate with diverse engineering teams to enhance customer experiences.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design or architecture.\n- Strong problem-solving skills and leadership qualities.\n\n**KEY TECHNOLOGIES:**\n- Mobile technologies, particularly React Native.\n- Native development for iOS and Android.\n- Experience with software programming languages.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology, Consulting, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Build next-generation APIs and rendering frameworks for mobile apps.\n- Own full stack development for iOS and/or Android.\n- Collaborate with diverse engineering teams to enhance customer experiences.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design or architecture.\n- Strong problem-solving skills and leadership qualities.\n\n**KEY TECHNOLOGIES:**\n- Mobile technologies, particularly React Native.\n- Native development for iOS and Android.\n- Experience with software programming languages."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4334323149",
+    "title": "Sr Machine Learning Engineer, Sponsored Products and Brands",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Seattle, WA",
     "applications": "Be among the first 25 applicants",
-    "salary": "$7,650.00/mo - $12,134.00/mo",
-    "description": "**RESPONSIBILITIES:**\n• Design and optimize algorithms for audio research problems.  \n• Execute experimental design for new audio technologies.  \n• Collaborate with researchers and software engineers.  \n\n**REQUIREMENTS:**\n• 1+ years experience in wave phenomena and acoustic simulation.  \n• Proficient in C/C++, Python, or MATLAB.  \n• Currently pursuing a PhD in relevant STEM fields.  \n\n**KEY TECHNOLOGIES:**\n• Numerical simulation of acoustics and wave-based modeling.  \n• Machine learning and deep learning techniques.  \n• Psychoacoustics and digital signal processing fundamentals.",
+    "salary": "$151,300.00/yr - $261,500.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop and manage machine learning models and infrastructure.\n- Create scalable real-time ML inference solutions.\n- Identify and deliver operational improvements and resolve production issues.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- 5+ years of programming in at least one language.\n- Experience leading design or architecture of systems.\n\n**KEY TECHNOLOGIES:**\n- Machine learning and natural language processing products.\n- Causal inference and reinforcement learning techniques.\n- Low-latency data transformation and engineering solutions.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology, Consulting, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop and manage machine learning models and infrastructure.\n- Create scalable real-time ML inference solutions.\n- Identify and deliver operational improvements and resolve production issues.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- 5+ years of programming in at least one language.\n- Experience leading design or architecture of systems.\n\n**KEY TECHNOLOGIES:**\n- Machine learning and natural language processing products.\n- Causal inference and reinforcement learning techniques.\n- Low-latency data transformation and engineering solutions."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4334344793",
+    "title": "Lab Engineer- Lab Operations, Project Kuiper",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Bellevue, WA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$73,900.00/yr - $165,200.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n\n**REQUIREMENTS:**\n- 2+ years of software QA testing experience.\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science field.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- Linux or Unix environments.\n- Jenkins for build environments.",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Not Applicable"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "General Business, Management, and Strategy/Planning"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "**RESPONSIBILITIES:**\n- Implement and maintain automated test systems and frameworks.\n- Perform hardware/software integration and troubleshooting on the manufacturing floor.\n- Configure and integrate test equipment with automation systems.\n\n**REQUIREMENTS:**\n- 2+ years of software QA testing experience.\n- 1+ years in consumer electronics lab environments.\n- Bachelor's degree in relevant engineering or computer science field.\n\n**KEY TECHNOLOGIES:**\n- TestStand and LabVIEW for automated testing.\n- Linux or Unix environments.\n- Jenkins for build environments."
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4334294948",
+    "title": "Software Dev. Engineer SDE II, Sponsored Products and Brands",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Seattle, WA",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "RESPONSIBILITIES:\n• Design and develop scalable high-performance systems and services  \n• Build services handling billions of requests daily  \n• Maintain response latencies in milliseconds with strict SLAs  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience  \n• 2+ years of design or architecture experience  \n• Experience with large-scale machine learning and AI solutions  \n\nKEY TECHNOLOGIES:\n• Machine Learning (ML)  \n• Large Language Models (LLM)  \n• Generative AI (GenAI)",
+    "criteria": [
+      {
+        "name": "Seniority level",
+        "value": "Mid-Senior level"
+      },
+      {
+        "name": "Employment type",
+        "value": "Full-time"
+      },
+      {
+        "name": "Job function",
+        "value": "Information Technology, Consulting, and Engineering"
+      },
+      {
+        "name": "Industries",
+        "value": "Software Development"
+      }
+    ],
+    "condensed_description": "RESPONSIBILITIES:\n• Design and develop scalable high-performance systems and services  \n• Build services handling billions of requests daily  \n• Maintain response latencies in milliseconds with strict SLAs  \n\nREQUIREMENTS:\n• 3+ years of professional software development experience  \n• 2+ years of design or architecture experience  \n• Experience with large-scale machine learning and AI solutions  \n\nKEY TECHNOLOGIES:\n• Machine Learning (ML)  \n• Large Language Models (LLM)  \n• Generative AI (GenAI)"
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/4334550098",
+    "title": "Software Dev Engineer Intern - AI (Summer 2026), Amazon Devices & Services",
+    "company": {
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
+    },
+    "location": "Hawthorne, CA",
+    "applications": "Over 200 applicants",
+    "salary": "$47.84/hr - $96.15/hr",
+    "description": "**RESPONSIBILITIES:**\n- Collaborate with teams to design and build innovative products.\n- Develop scalable solutions using cloud-native architectures.\n- Participate in code reviews and maintain technical documentation.\n- Write clean, maintainable code following best practices.\n- Troubleshoot and resolve production issues.\n\n**REQUIREMENTS:**\n- Must be 18 years or older.\n- Experience programming in Java, C++, or C#.\n- Enrolled in a relevant Bachelor's degree program.\n- Experience with AI/ML technologies preferred.\n- Strong problem-solving and analytical skills.\n\n**KEY TECHNOLOGIES:**\n- Cloud-native architectures and microservices.\n- AI and machine learning tools.\n- Agile development practices and CI/CD principles.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -21,57 +145,26 @@
       },
       {
         "name": "Job function",
-        "value": "Other"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Design and optimize algorithms for audio research problems.  \n• Execute experimental design for new audio technologies.  \n• Collaborate with researchers and software engineers.  \n\n**REQUIREMENTS:**\n• 1+ years experience in wave phenomena and acoustic simulation.  \n• Proficient in C/C++, Python, or MATLAB.  \n• Currently pursuing a PhD in relevant STEM fields.  \n\n**KEY TECHNOLOGIES:**\n• Numerical simulation of acoustics and wave-based modeling.  \n• Machine learning and deep learning techniques.  \n• Psychoacoustics and digital signal processing fundamentals."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Collaborate with teams to design and build innovative products.\n- Develop scalable solutions using cloud-native architectures.\n- Participate in code reviews and maintain technical documentation.\n- Write clean, maintainable code following best practices.\n- Troubleshoot and resolve production issues.\n\n**REQUIREMENTS:**\n- Must be 18 years or older.\n- Experience programming in Java, C++, or C#.\n- Enrolled in a relevant Bachelor's degree program.\n- Experience with AI/ML technologies preferred.\n- Strong problem-solving and analytical skills.\n\n**KEY TECHNOLOGIES:**\n- Cloud-native architectures and microservices.\n- AI and machine learning tools.\n- Agile development practices and CI/CD principles."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4299543513",
-    "title": "Software Engineer, Intern/Co-op",
+    "url": "https://www.linkedin.com/jobs/view/4334532625",
+    "title": "Checkout Engineering Systems Engineer, GRAISE",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Menlo Park, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$7,313.00/mo - $12,134.00/mo",
-    "description": "**RESPONSIBILITIES:**\n- Develop and push production-ready code quickly.\n- Complete tasks efficiently with minimal iterations.\n- Identify problems and outline optimal solutions.\n\n**REQUIREMENTS:**\n- Enrolled in a full-time degree program in computer science.\n- Experience coding in Java, Python, C++, or JavaScript.\n- Must have work authorization in the employment country.\n\n**KEY TECHNOLOGIES:**\n- Java\n- Python\n- C++ \n- JavaScript \n- Objective-C",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Internship"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Engineering and Information Technology"
-      },
-      {
-        "name": "Industries",
-        "value": "Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop and push production-ready code quickly.\n- Complete tasks efficiently with minimal iterations.\n- Identify problems and outline optimal solutions.\n\n**REQUIREMENTS:**\n- Enrolled in a full-time degree program in computer science.\n- Experience coding in Java, Python, C++, or JavaScript.\n- Must have work authorization in the employment country.\n\n**KEY TECHNOLOGIES:**\n- Java\n- Python\n- C++ \n- JavaScript \n- Objective-C"
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4312031480",
-    "title": "Cloud Security Engineer",
-    "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Menlo Park, CA",
-    "applications": "135 applicants",
-    "salary": "$147,000.00/yr - $208,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Design and implement AI-driven security systems for Meta’s products.  \n• Develop security-focused code and frameworks for engineering teams.  \n• Collaborate with partners to deliver scalable security solutions.  \n\n**REQUIREMENTS:**\n• B.S. or M.S. in Computer Science or related field.  \n• 5+ years of experience in security systems design.  \n• Proficiency in coding languages like Python, C/C++, or Go.  \n\n**KEY TECHNOLOGIES:**\n• Cloud security and Infrastructure as Code (Terraform).  \n• AI-driven security technologies for threat mitigation.  \n• Metrics for measuring service effectiveness and consistency.",
+    "location": "Austin, TX",
+    "applications": "Be among the first 25 applicants",
+    "salary": "$94,000.00/yr - $207,900.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Lead technical design discussions for payment and POS systems.\n- Implement critical components of payment and POS systems.\n- Create design specifications for system integrations.\n- Establish automated testing strategies and monitoring solutions.\n- Develop automated alerting systems for payment flows.\n- Collaborate with teams to meet business requirements.\n- Resolve complex production issues and drive improvements.\n- Author technical documentation and conduct retrospectives.\n\n**REQUIREMENTS:**\n- 4+ years in site reliability or systems engineering.\n- 5+ years of Linux experience.\n- Bachelor's degree in relevant field or equivalent experience.\n- Experience in scripting languages like Python or Java.\n- Knowledge of TCP/IP and networking protocols.\n\n**KEY TECHNOLOGIES:**\n- Linux operating systems.\n- Payment and Point-of-Sale (POS) systems.\n- Service-oriented architecture and web services.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -83,26 +176,26 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology"
+        "value": "Quality Assurance, Information Technology, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Design and implement AI-driven security systems for Meta’s products.  \n• Develop security-focused code and frameworks for engineering teams.  \n• Collaborate with partners to deliver scalable security solutions.  \n\n**REQUIREMENTS:**\n• B.S. or M.S. in Computer Science or related field.  \n• 5+ years of experience in security systems design.  \n• Proficiency in coding languages like Python, C/C++, or Go.  \n\n**KEY TECHNOLOGIES:**\n• Cloud security and Infrastructure as Code (Terraform).  \n• AI-driven security technologies for threat mitigation.  \n• Metrics for measuring service effectiveness and consistency."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Lead technical design discussions for payment and POS systems.\n- Implement critical components of payment and POS systems.\n- Create design specifications for system integrations.\n- Establish automated testing strategies and monitoring solutions.\n- Develop automated alerting systems for payment flows.\n- Collaborate with teams to meet business requirements.\n- Resolve complex production issues and drive improvements.\n- Author technical documentation and conduct retrospectives.\n\n**REQUIREMENTS:**\n- 4+ years in site reliability or systems engineering.\n- 5+ years of Linux experience.\n- Bachelor's degree in relevant field or equivalent experience.\n- Experience in scripting languages like Python or Java.\n- Knowledge of TCP/IP and networking protocols.\n\n**KEY TECHNOLOGIES:**\n- Linux operating systems.\n- Payment and Point-of-Sale (POS) systems.\n- Service-oriented architecture and web services."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4289670562",
-    "title": "Software Engineer (Robotics)",
+    "url": "https://www.linkedin.com/jobs/view/4334822311",
+    "title": "SDE- ML Engineer, Frontier AI Robotics",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Burlingame, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$85.10/yr - $251,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Collaborate with researchers to define technical goals and lead implementation.  \n- Design and implement AI algorithms on robotic hardware and simulations.  \n- Evaluate AI models on robotic systems, proposing performance improvements.  \n- Communicate complex systems to diverse stakeholders.  \n- Publish research impacting Meta product development.  \n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.  \n- 5+ years of experience in robotics or related field.  \n- Experience in robotics research areas like reinforcement learning.  \n- Proficiency in programming languages like Python or C++.  \n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks such as PyTorch and TensorFlow.  \n- Robotics fundamentals: perception, planning, and control.  \n- Experience with robot simulations and real-world hardware.",
+    "location": "Seattle, WA",
+    "applications": "70 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Build and optimize distributed training infrastructure for ML models.\n- Collaborate with scientists and engineers on scalable systems.\n- Implement parallelism techniques for efficient model training.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design and architecture.\n- Strong understanding of LLM algorithms and deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- Proficient in PyTorch, Python, and C++.\n- Experience with GPU memory optimization techniques.\n- Familiarity with machine learning infrastructure design.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -114,30 +207,30 @@
       },
       {
         "name": "Job function",
-        "value": "Engineering and Information Technology"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Collaborate with researchers to define technical goals and lead implementation.  \n- Design and implement AI algorithms on robotic hardware and simulations.  \n- Evaluate AI models on robotic systems, proposing performance improvements.  \n- Communicate complex systems to diverse stakeholders.  \n- Publish research impacting Meta product development.  \n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.  \n- 5+ years of experience in robotics or related field.  \n- Experience in robotics research areas like reinforcement learning.  \n- Proficiency in programming languages like Python or C++.  \n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks such as PyTorch and TensorFlow.  \n- Robotics fundamentals: perception, planning, and control.  \n- Experience with robot simulations and real-world hardware."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Build and optimize distributed training infrastructure for ML models.\n- Collaborate with scientists and engineers on scalable systems.\n- Implement parallelism techniques for efficient model training.\n\n**REQUIREMENTS:**\n- 3+ years of professional software development experience.\n- 2+ years in system design and architecture.\n- Strong understanding of LLM algorithms and deep learning frameworks.\n\n**KEY TECHNOLOGIES:**\n- Proficient in PyTorch, Python, and C++.\n- Experience with GPU memory optimization techniques.\n- Familiarity with machine learning infrastructure design."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4312038309",
-    "title": "Global Systems Engineer",
+    "url": "https://www.linkedin.com/jobs/view/4334931968",
+    "title": "Machine Learning Engineer II, Special Projects",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "Fort Worth, TX",
-    "applications": "95 applicants",
-    "salary": "$132,000.00/yr - $191,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Maximize server fleet uptime and utilization rates.\n- Identify trends and resolve systemic issues.\n- Collaborate with stakeholders to interpret operational needs.\n- Mentor team members on issue resolution and tool updates.\n- Write, review code, and debug complex systems.\n- Define diagnostic tooling requirements with cross-functional teams.\n- Execute validation for new product integration.\n\n**REQUIREMENTS:**\n- Engineering degree or equivalent experience.\n- 7+ years in systems infrastructure operations.\n- Experience with application configuration and maintenance.\n- Proficient in higher-level programming languages.\n- Familiarity with Linux systems.\n\n**KEY TECHNOLOGIES:**\n- Python, PHP, C++, Java.\n- Web servers, load balancers, relational databases.\n- Storage systems and messaging systems.",
+    "location": "New York, United States",
+    "applications": "55 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "RESPONSIBILITIES:\n• Collaborate with scientists and engineers to launch AI solutions.  \n• Write high-quality, maintainable code following best practices.  \n• Own end-to-end deployment of ML models at scale.  \n• Build and optimize automated data processing workflows.  \n• Contribute to architecture decisions and technical strategy.  \n\nREQUIREMENTS:\n• 2+ years of professional software development experience.  \n• 2+ years of design or architecture experience.  \n• Proficient in at least one programming language.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine Learning models and frameworks.  \n• Software development tools and practices.  \n• Automated data processing workflows.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -145,30 +238,30 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Maximize server fleet uptime and utilization rates.\n- Identify trends and resolve systemic issues.\n- Collaborate with stakeholders to interpret operational needs.\n- Mentor team members on issue resolution and tool updates.\n- Write, review code, and debug complex systems.\n- Define diagnostic tooling requirements with cross-functional teams.\n- Execute validation for new product integration.\n\n**REQUIREMENTS:**\n- Engineering degree or equivalent experience.\n- 7+ years in systems infrastructure operations.\n- Experience with application configuration and maintenance.\n- Proficient in higher-level programming languages.\n- Familiarity with Linux systems.\n\n**KEY TECHNOLOGIES:**\n- Python, PHP, C++, Java.\n- Web servers, load balancers, relational databases.\n- Storage systems and messaging systems."
+    "condensed_description": "RESPONSIBILITIES:\n• Collaborate with scientists and engineers to launch AI solutions.  \n• Write high-quality, maintainable code following best practices.  \n• Own end-to-end deployment of ML models at scale.  \n• Build and optimize automated data processing workflows.  \n• Contribute to architecture decisions and technical strategy.  \n\nREQUIREMENTS:\n• 2+ years of professional software development experience.  \n• 2+ years of design or architecture experience.  \n• Proficient in at least one programming language.  \n• Bachelor's degree in computer science or equivalent.  \n\nKEY TECHNOLOGIES:\n• Machine Learning models and frameworks.  \n• Software development tools and practices.  \n• Automated data processing workflows."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4318488305",
-    "title": "Software Engineer, Android",
+    "url": "https://www.linkedin.com/jobs/view/4334927496",
+    "title": "Software Development Engineer- Simulation, Frontier AI Robotics",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
     "location": "San Francisco, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$56.25/yr - $173,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Collaborate with cross-functional teams to build innovative applications.\n- Implement custom user interfaces using modern programming techniques.\n- Analyze and optimize code for quality and performance.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- 2+ years programming experience in relevant languages.\n- Experience building maintainable and testable code bases.\n\n**KEY TECHNOLOGIES:**\n- Android SDK, Java, Kotlin for Android applications.\n- Multithreading programming and mobile memory management.\n- API design and unit testing techniques.",
+    "applications": "33 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "**RESPONSIBILITIES:**\n- Develop simulations for reinforcement learning and synthetic data generation.\n- Implement robotics features like sensor and actuator modeling.\n- Create asset toolchains supporting industry-standard formats.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- Extensive experience in physics simulation and rigid body simulation.\n- Proficiency in Python and C++ programming languages.\n\n**KEY TECHNOLOGIES:**\n- Experience with Isaac Sim, Unity, or Unreal Engine.\n- Familiarity with 3D formats: URDF, MJCF, USD.\n- Understanding of modern ML frameworks like PyTorch.",
     "criteria": [
       {
         "name": "Seniority level",
-        "value": "Not Applicable"
+        "value": "Mid-Senior level"
       },
       {
         "name": "Employment type",
@@ -176,26 +269,26 @@
       },
       {
         "name": "Job function",
-        "value": "Engineering and Information Technology"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Collaborate with cross-functional teams to build innovative applications.\n- Implement custom user interfaces using modern programming techniques.\n- Analyze and optimize code for quality and performance.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- 2+ years programming experience in relevant languages.\n- Experience building maintainable and testable code bases.\n\n**KEY TECHNOLOGIES:**\n- Android SDK, Java, Kotlin for Android applications.\n- Multithreading programming and mobile memory management.\n- API design and unit testing techniques."
+    "condensed_description": "**RESPONSIBILITIES:**\n- Develop simulations for reinforcement learning and synthetic data generation.\n- Implement robotics features like sensor and actuator modeling.\n- Create asset toolchains supporting industry-standard formats.\n\n**REQUIREMENTS:**\n- 5+ years of professional software development experience.\n- Extensive experience in physics simulation and rigid body simulation.\n- Proficiency in Python and C++ programming languages.\n\n**KEY TECHNOLOGIES:**\n- Experience with Isaac Sim, Unity, or Unreal Engine.\n- Familiarity with 3D formats: URDF, MJCF, USD.\n- Understanding of modern ML frameworks like PyTorch."
   },
   {
-    "url": "https://www.linkedin.com/jobs/view/4318430062",
-    "title": "Connectivity Engineer, Leased - Data Center Design, Engineering, & Construction",
+    "url": "https://www.linkedin.com/jobs/view/4334682879",
+    "title": "SDE- ML Engineer, Frontier AI Robotics",
     "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
+      "name": "Amazon",
+      "url": "https://www.linkedin.com/company/amazon?trk=public_jobs_topcard-org-name"
     },
-    "location": "United States",
-    "applications": "66 applicants",
-    "salary": "$122,000.00/yr - $169,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Manage full project life-cycle from kick-off to operations.\n- Create and maintain project scope, schedules, and milestones.\n- Coordinate with cross-functional partners and vendors.\n- Conduct quality assurance inspections and validate installations.\n- Track project progress, risks, and change orders.\n- Ensure adherence to safety regulations and best practices.\n\n**REQUIREMENTS:**\n- 5+ years of project management experience.\n- Experience in construction-related problem-solving.\n- Proficient in MS Office and Google Suites.\n\n**KEY TECHNOLOGIES:**\n- Primavera 6 for project management.\n- Fiber optic testing and troubleshooting tools.\n- Outside plant cabling (OSP) deployment technologies.",
+    "location": "San Francisco, CA",
+    "applications": "88 applicants",
+    "salary": "$129,300.00/yr - $223,600.00/yr",
+    "description": "**RESPONSIBILITIES:**\n• Build and optimize distributed training infrastructure for ML models.  \n• Collaborate with scientists and engineers on scalable systems.  \n• Monitor and optimize GPU memory and throughput for training.  \n\n**REQUIREMENTS:**\n• 3+ years of software development experience.  \n• 2+ years in system design and architecture.  \n• Strong understanding of LLM algorithms and deep learning frameworks.  \n\n**KEY TECHNOLOGIES:**\n• Proficient in PyTorch, Python, and C++.  \n• Experience with parallelism techniques in ML.  \n• Knowledge of linear algebra, calculus, and statistics.",
     "criteria": [
       {
         "name": "Seniority level",
@@ -207,323 +300,13 @@
       },
       {
         "name": "Job function",
-        "value": "Information Technology"
+        "value": "Information Technology, Consulting, and Engineering"
       },
       {
         "name": "Industries",
-        "value": "Technology, Information and Internet"
+        "value": "Software Development"
       }
     ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Manage full project life-cycle from kick-off to operations.\n- Create and maintain project scope, schedules, and milestones.\n- Coordinate with cross-functional partners and vendors.\n- Conduct quality assurance inspections and validate installations.\n- Track project progress, risks, and change orders.\n- Ensure adherence to safety regulations and best practices.\n\n**REQUIREMENTS:**\n- 5+ years of project management experience.\n- Experience in construction-related problem-solving.\n- Proficient in MS Office and Google Suites.\n\n**KEY TECHNOLOGIES:**\n- Primavera 6 for project management.\n- Fiber optic testing and troubleshooting tools.\n- Outside plant cabling (OSP) deployment technologies."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4120826396",
-    "title": "Software Engineer, Systems ML - SW/HW Co-design",
-    "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Sunnyvale, CA",
-    "applications": "94 applicants",
-    "salary": "$70.67/yr - $208,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Apply AI infrastructure and hardware acceleration techniques.\n- Drive large efforts across multiple teams.\n- Mentor engineers and improve engineering quality.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- Specialized experience in machine learning or AI infrastructure.\n- 3+ years of experience in AI framework development.\n\n**KEY TECHNOLOGIES:**\n- C/C++ or Python for AI systems.\n- Machine learning frameworks like PyTorch.\n- Hardware accelerators and GPU architecture.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Engineering and Information Technology"
-      },
-      {
-        "name": "Industries",
-        "value": "Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Apply AI infrastructure and hardware acceleration techniques.\n- Drive large efforts across multiple teams.\n- Mentor engineers and improve engineering quality.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- Specialized experience in machine learning or AI infrastructure.\n- 3+ years of experience in AI framework development.\n\n**KEY TECHNOLOGIES:**\n- C/C++ or Python for AI systems.\n- Machine learning frameworks like PyTorch.\n- Hardware accelerators and GPU architecture."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4120827322",
-    "title": "Data Engineer, Product Analytics",
-    "company": {
-      "name": "Meta",
-      "url": "https://www.linkedin.com/company/meta?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Los Angeles, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$145,000.00/yr - $204,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Conceptualize and own data architecture for large-scale projects.\n- Create frameworks to improve logging data efficacy.\n- Collaborate with teams to understand data needs and insights.\n- Define and manage Service Level Agreements for data sets.\n- Implement security models based on privacy requirements.\n- Design and launch sophisticated data models and visualizations.\n- Solve complex data integration problems using ETL patterns.\n- Optimize existing processes and complex code.\n- Influence teams to identify impactful data opportunities.\n- Mentor team members with actionable feedback.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- 4+ years of data-related experience.\n- 4+ years of experience with SQL and ETL.\n- Proficiency in at least one programming language.\n\n**KEY TECHNOLOGIES:**\n- SQL\n- ETL frameworks\n- Data modeling techniques\n- Programming languages (e.g., Python, C++, C#, Scala)",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Information Technology"
-      },
-      {
-        "name": "Industries",
-        "value": "Technology, Information and Internet"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Conceptualize and own data architecture for large-scale projects.\n- Create frameworks to improve logging data efficacy.\n- Collaborate with teams to understand data needs and insights.\n- Define and manage Service Level Agreements for data sets.\n- Implement security models based on privacy requirements.\n- Design and launch sophisticated data models and visualizations.\n- Solve complex data integration problems using ETL patterns.\n- Optimize existing processes and complex code.\n- Influence teams to identify impactful data opportunities.\n- Mentor team members with actionable feedback.\n\n**REQUIREMENTS:**\n- Bachelor's degree in Computer Science or related field.\n- 4+ years of data-related experience.\n- 4+ years of experience with SQL and ETL.\n- Proficiency in at least one programming language.\n\n**KEY TECHNOLOGIES:**\n- SQL\n- ETL frameworks\n- Data modeling techniques\n- Programming languages (e.g., Python, C++, C#, Scala)"
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4295854496",
-    "title": "Senior Software Engineer - Developer Automation Platform",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Los Gatos, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$100,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Build and support automated test and device management applications.\n- Research to improve user experience and reduce manual toil.\n- Drive cross-functional projects and integrate new use cases.\n\n**REQUIREMENTS:**\n- Strong understanding of client and server-side JavaScript.\n- Experience building scalable and reliable tools and services.\n- Excellent communication skills and collaborative mindset.\n\n**KEY TECHNOLOGIES:**\n- JavaScript and TypeScript.\n- React for enterprise applications (bonus).\n- MongoDB and Linux operating systems.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Build and support automated test and device management applications.\n- Research to improve user experience and reduce manual toil.\n- Drive cross-functional projects and integrate new use cases.\n\n**REQUIREMENTS:**\n- Strong understanding of client and server-side JavaScript.\n- Experience building scalable and reliable tools and services.\n- Excellent communication skills and collaborative mindset.\n\n**KEY TECHNOLOGIES:**\n- JavaScript and TypeScript.\n- React for enterprise applications (bonus).\n- MongoDB and Linux operating systems."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4324735308",
-    "title": "Analytics Engineer (L5) - Ads DSE, Privacy & Consent Analytics",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$400,000.00/yr - $960,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Drive analytics strategy for consent management across Netflix Ads.\n- Build metrics, dashboards, and frameworks for user consent analysis.\n- Collaborate with cross-functional teams on consent flows and compliance.\n- Deliver predictive models for proactive consent optimization.\n- Act as a subject matter expert on consent analytics.\n\n**REQUIREMENTS:**\n- Extensive experience in programmatic adtech analytics.\n- Strong communication skills to influence stakeholders.\n- Proficiency in SQL and at least one scripting language.\n\n**KEY TECHNOLOGIES:**\n- SQL\n- Apache Airflow\n- Python",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Drive analytics strategy for consent management across Netflix Ads.\n- Build metrics, dashboards, and frameworks for user consent analysis.\n- Collaborate with cross-functional teams on consent flows and compliance.\n- Deliver predictive models for proactive consent optimization.\n- Act as a subject matter expert on consent analytics.\n\n**REQUIREMENTS:**\n- Extensive experience in programmatic adtech analytics.\n- Strong communication skills to influence stakeholders.\n- Proficiency in SQL and at least one scripting language.\n\n**KEY TECHNOLOGIES:**\n- SQL\n- Apache Airflow\n- Python"
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4146780828",
-    "title": "Machine Learning Engineer (L5 - Senior) , Ads Inventory Management & Forecasting",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$100,000.00/yr - $720,000.00/yr",
-    "description": "RESPONSIBILITIES:\n• Build real-time inventory forecasting solutions using ML models.  \n• Develop systems for publisher inventory management and monetization strategies.  \n• Collaborate with cross-functional teams to deploy models at scale.  \n\nREQUIREMENTS:\n• Experience in end-to-end ML model deployment for ad systems.  \n• Proficient in handling large data volumes with big data tools.  \n• Familiarity with advertising marketplace and publisher-side challenges.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and predictive modeling.  \n• Big data tools like Spark.  \n• Lucene index and ad tech systems.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "RESPONSIBILITIES:\n• Build real-time inventory forecasting solutions using ML models.  \n• Develop systems for publisher inventory management and monetization strategies.  \n• Collaborate with cross-functional teams to deploy models at scale.  \n\nREQUIREMENTS:\n• Experience in end-to-end ML model deployment for ad systems.  \n• Proficient in handling large data volumes with big data tools.  \n• Familiarity with advertising marketplace and publisher-side challenges.  \n\nKEY TECHNOLOGIES:\n• Machine Learning and predictive modeling.  \n• Big data tools like Spark.  \n• Lucene index and ad tech systems."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4298031983",
-    "title": "Software Engineer L7, Content Promotion & Distribution",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Los Angeles, CA",
-    "applications": "82 applicants",
-    "salary": null,
-    "description": "**RESPONSIBILITIES:**\n- Cultivate technical vision for content product ecosystem.\n- Lead re-architecture of AI-native products and automated pipelines.\n- Collaborate with teams to transform AI models into products.\n- Prototype new capabilities and iterate based on evaluations.\n- Optimize performance and reliability of AI-native applications.\n\n**REQUIREMENTS:**\n- Proven experience in architecting machine learning solutions.\n- Strong technical leadership and project management skills.\n- Exceptional communication and collaboration abilities.\n- Passion for innovation and pushing boundaries.\n- Strong judgment in fast-paced environments.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks (e.g., TensorFlow, PyTorch).\n- Generative AI and automated workflows.\n- AI-native application development and deployment.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Cultivate technical vision for content product ecosystem.\n- Lead re-architecture of AI-native products and automated pipelines.\n- Collaborate with teams to transform AI models into products.\n- Prototype new capabilities and iterate based on evaluations.\n- Optimize performance and reliability of AI-native applications.\n\n**REQUIREMENTS:**\n- Proven experience in architecting machine learning solutions.\n- Strong technical leadership and project management skills.\n- Exceptional communication and collaboration abilities.\n- Passion for innovation and pushing boundaries.\n- Strong judgment in fast-paced environments.\n\n**KEY TECHNOLOGIES:**\n- Machine learning frameworks (e.g., TensorFlow, PyTorch).\n- Generative AI and automated workflows.\n- AI-native application development and deployment."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4297798643",
-    "title": "Security Engineer (L4), Identity",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$100,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Design and build Identity and Access security solutions.\n- Collaborate with stakeholders on federated authentication and access management.\n- Partner with vendors to enhance third-party Identity capabilities.\n\n**REQUIREMENTS:**\n- Proven experience in architecting Identity Lifecycle solutions.\n- Strong communication skills to explain IAM concepts clearly.\n- Experience with authentication and authorization standards and protocols.\n\n**KEY TECHNOLOGIES:**\n- Familiarity with Okta, Auth0, or similar IAM solutions.\n- Proficient in Java or Python for CI/CD processes.\n- Experience with AWS cloud computing platform.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Design and build Identity and Access security solutions.\n- Collaborate with stakeholders on federated authentication and access management.\n- Partner with vendors to enhance third-party Identity capabilities.\n\n**REQUIREMENTS:**\n- Proven experience in architecting Identity Lifecycle solutions.\n- Strong communication skills to explain IAM concepts clearly.\n- Experience with authentication and authorization standards and protocols.\n\n**KEY TECHNOLOGIES:**\n- Familiarity with Okta, Auth0, or similar IAM solutions.\n- Proficient in Java or Python for CI/CD processes.\n- Experience with AWS cloud computing platform."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4220344508",
-    "title": "Software Engineer (L5), Content & Business Products",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "Los Gatos, CA",
-    "applications": "Over 200 applicants",
-    "salary": "$170,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Build and optimize content production products and services.  \n• Support enterprise needs for Finance, Talent, and Customer Support.  \n• Participate in on-call rotation and lead incident reviews.  \n\n**REQUIREMENTS:**\n• 5+ years of experience with distributed microservices.  \n• Proficient in Java, C#, or other OO programming languages.  \n• Strong communication skills for technical concepts with stakeholders.  \n\n**KEY TECHNOLOGIES:**\n• gRPC, GraphQL, RESTful API design.  \n• Distributed systems architecture and performance tuning.  \n• Familiarity with cloud platforms like AWS.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Build and optimize content production products and services.  \n• Support enterprise needs for Finance, Talent, and Customer Support.  \n• Participate in on-call rotation and lead incident reviews.  \n\n**REQUIREMENTS:**\n• 5+ years of experience with distributed microservices.  \n• Proficient in Java, C#, or other OO programming languages.  \n• Strong communication skills for technical concepts with stakeholders.  \n\n**KEY TECHNOLOGIES:**\n• gRPC, GraphQL, RESTful API design.  \n• Distributed systems architecture and performance tuning.  \n• Familiarity with cloud platforms like AWS."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4304718041",
-    "title": "Distributed Systems Engineer (L4) - Cloud Engineering",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$170,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n• Build and operate services, APIs, and tooling for various use cases.  \n• Engage with engineering users to understand and improve their experience.  \n• Solve business needs at scale with high-quality solutions.  \n\n**REQUIREMENTS:**\n• 3-6 years of professional Software Engineering experience.  \n• Proficient in Java, C++, Go, Python, or similar languages.  \n• Experience with reliable distributed systems in cloud environments.  \n\n**KEY TECHNOLOGIES:**\n• Open-source technologies like Envoy for service communication.  \n• Titus for compute resource management and APIs.  \n• Storage solutions for object/block/file resources at exabyte scale.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n• Build and operate services, APIs, and tooling for various use cases.  \n• Engage with engineering users to understand and improve their experience.  \n• Solve business needs at scale with high-quality solutions.  \n\n**REQUIREMENTS:**\n• 3-6 years of professional Software Engineering experience.  \n• Proficient in Java, C++, Go, Python, or similar languages.  \n• Experience with reliable distributed systems in cloud environments.  \n\n**KEY TECHNOLOGIES:**\n• Open-source technologies like Envoy for service communication.  \n• Titus for compute resource management and APIs.  \n• Storage solutions for object/block/file resources at exabyte scale."
-  },
-  {
-    "url": "https://www.linkedin.com/jobs/view/4315480236",
-    "title": "Software Engineer Frontend (L5) - Data Experience",
-    "company": {
-      "name": "Netflix",
-      "url": "https://www.linkedin.com/company/netflix?trk=public_jobs_topcard-org-name"
-    },
-    "location": "United States",
-    "applications": "Over 200 applicants",
-    "salary": "$100,000.00/yr - $720,000.00/yr",
-    "description": "**RESPONSIBILITIES:**\n- Develop user-centered software products for data discovery and visualization.\n- Collaborate with stakeholders to diagnose and address technical issues.\n- Mentor engineers on UI design and technical approaches.\n\n**REQUIREMENTS:**\n- Experience building enterprise-grade products across multiple release cycles.\n- Strong communication skills for technical and non-technical audiences.\n- Ability to manage priorities and work independently.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in JavaScript, HTML5, CSS, React, and Typescript.\n- Familiarity with GraphQL and Web Components.\n- Experience with UI libraries and shared components in multi-app environments.",
-    "criteria": [
-      {
-        "name": "Seniority level",
-        "value": "Not Applicable"
-      },
-      {
-        "name": "Employment type",
-        "value": "Full-time"
-      },
-      {
-        "name": "Job function",
-        "value": "Other"
-      },
-      {
-        "name": "Industries",
-        "value": "Entertainment Providers"
-      }
-    ],
-    "condensed_description": "**RESPONSIBILITIES:**\n- Develop user-centered software products for data discovery and visualization.\n- Collaborate with stakeholders to diagnose and address technical issues.\n- Mentor engineers on UI design and technical approaches.\n\n**REQUIREMENTS:**\n- Experience building enterprise-grade products across multiple release cycles.\n- Strong communication skills for technical and non-technical audiences.\n- Ability to manage priorities and work independently.\n\n**KEY TECHNOLOGIES:**\n- Proficiency in JavaScript, HTML5, CSS, React, and Typescript.\n- Familiarity with GraphQL and Web Components.\n- Experience with UI libraries and shared components in multi-app environments."
+    "condensed_description": "**RESPONSIBILITIES:**\n• Build and optimize distributed training infrastructure for ML models.  \n• Collaborate with scientists and engineers on scalable systems.  \n• Monitor and optimize GPU memory and throughput for training.  \n\n**REQUIREMENTS:**\n• 3+ years of software development experience.  \n• 2+ years in system design and architecture.  \n• Strong understanding of LLM algorithms and deep learning frameworks.  \n\n**KEY TECHNOLOGIES:**\n• Proficient in PyTorch, Python, and C++.  \n• Experience with parallelism techniques in ML.  \n• Knowledge of linear algebra, calculus, and statistics."
   }
 ]

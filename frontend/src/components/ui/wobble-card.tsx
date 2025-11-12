@@ -1,19 +1,23 @@
 "use client";
 import { cn } from "@/libs/utils";
 import { motion } from "motion/react";
-import React, { useState } from "react";
+import React, { ComponentPropsWithoutRef, useState } from "react";
+
+type MotionSectionProps = ComponentPropsWithoutRef<typeof motion.section>;
 
 export const WobbleCard = ({
   children,
   containerClassName,
   className,
   minimal = false,
+  style,
+  ...props
 }: {
   children: React.ReactNode;
   containerClassName?: string;
   className?: string;
   minimal?: boolean;
-}) => {
+} & MotionSectionProps) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
 
@@ -33,6 +37,7 @@ export const WobbleCard = ({
         setMousePosition({ x: 0, y: 0 });
       }}
       style={{
+        ...style,
         transform: isHovering
           ? `translate3d(${mousePosition.x}px, ${mousePosition.y}px, 0) scale3d(1, 1, 1)`
           : "translate3d(0px, 0px, 0) scale3d(1, 1, 1)",
@@ -43,6 +48,7 @@ export const WobbleCard = ({
         minimal ? "rounded-lg" : "rounded-2xl",
         containerClassName
       )}
+      {...props}
     >
       <div
         className={cn(

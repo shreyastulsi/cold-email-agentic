@@ -5,11 +5,12 @@ import { motion } from 'motion/react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ActivityConsole } from '../components/activity-console'
+import { JobContextModal } from '../components/JobContextModal'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { LoaderOne } from '../components/ui/loader'
-import { JobContextModal } from '../components/JobContextModal'
+import { WobbleCard } from '../components/ui/wobble-card'
 import { useActivityConsole } from '../context/activity-console-context'
 import { useSidebarLogger } from '../context/sidebar-logger-context'
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
@@ -1589,19 +1590,23 @@ export default function Search() {
           {/* Initial Search Card - Keep visible during search */}
           {(!jobResults && mapping.length === 0 && generatedMessages.length === 0) && (
             <div className="mx-auto max-w-2xl">
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
-                <CardHeader className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-white">Search for Jobs</CardTitle>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleClearFilters}
-                    disabled={!hasActiveFilters}
-                  >
-                    Clear
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <WobbleCard
+                minimal
+                containerClassName="bg-transparent overflow-visible"
+              >
+                <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                  <CardHeader className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-white">Search for Jobs</CardTitle>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleClearFilters}
+                      disabled={!hasActiveFilters}
+                    >
+                      Clear
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                   <CollapsibleSection
                     title="Popular Companies"
                     description="Quick add companies from cache. Use search to add more."
@@ -2025,8 +2030,9 @@ export default function Search() {
                   {isSearchingJobs ? 'Searching...' : 'Search for Jobs'}
                 </button>
               )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              </WobbleCard>
                 </div>
       )}
 
@@ -2056,23 +2062,27 @@ export default function Search() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
         >
             {/* Jobs List Card */}
-            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">Jobs</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleSelectAll}
-                      disabled={!jobResults?.jobs || jobResults.jobs.length === 0}
-                      className="text-sm rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      Select All
-                    </button>
+            <WobbleCard
+              minimal
+              containerClassName="bg-transparent overflow-visible"
+            >
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white">Jobs</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSelectAll}
+                        disabled={!jobResults?.jobs || jobResults.jobs.length === 0}
+                        className="text-sm rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Select All
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
                   {jobResults?.jobs?.map((job, index) => {
                         const companyName = typeof job.company === 'string' 
                           ? job.company 
@@ -2129,39 +2139,44 @@ export default function Search() {
                     Back
                   </button>
                 </div>
-                <div className="mt-6 border-t border-gray-700/40 pt-4">
-                  <button
-                    onClick={handleFilterJobs}
-                    disabled={isFiltering || !jobResults?.jobs}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-base font-semibold text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Bot className="h-5 w-5" />
-                    {isFiltering ? 'Filtering...' : 'AI Filter'}
-                  </button>
-                  <p className="mt-2 text-xs text-gray-400 text-center">
-                    Let AI rank these jobs against your resume and preferences automatically.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="mt-6 border-t border-gray-700/40 pt-4">
+                    <button
+                      onClick={handleFilterJobs}
+                      disabled={isFiltering || !jobResults?.jobs}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-base font-semibold text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Bot className="h-5 w-5" />
+                      {isFiltering ? 'Filtering...' : 'AI Filter'}
+                    </button>
+                    <p className="mt-2 text-xs text-gray-400 text-center">
+                      Let AI rank these jobs against your resume and preferences automatically.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </WobbleCard>
 
             {/* Recruiter Mapping Placeholders */}
-            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">Recruiter Mapping</CardTitle>
-                  {mappedJobs.some(j => j !== null) && (
-                    <button
-                      onClick={handleClearAll}
-                      className="text-sm rounded-lg bg-red-600 px-3 py-1.5 text-white hover:bg-red-700"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+            <WobbleCard
+              minimal
+              containerClassName="bg-transparent overflow-visible"
+            >
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white">Recruiter Mapping</CardTitle>
+                    {mappedJobs.some(j => j !== null) && (
+                      <button
+                        onClick={handleClearAll}
+                        className="text-sm rounded-lg bg-red-600 px-3 py-1.5 text-white hover:bg-red-700"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
                   {mappedJobs.slice(0, visibleMappingSlots).map((_, index) => (
                     <div
                       key={index}
@@ -2231,6 +2246,7 @@ export default function Search() {
                 )}
               </CardContent>
             </Card>
+          </WobbleCard>
           </motion.div>
       )}
 
@@ -2258,12 +2274,16 @@ export default function Search() {
             className="relative grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
           >
             {/* Jobs Section */}
-            <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
-                <CardHeader>
-                  <CardTitle className="text-white">Selected Jobs</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+            <WobbleCard
+              minimal
+              containerClassName="bg-transparent overflow-visible"
+            >
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
+                  <CardHeader>
+                    <CardTitle className="text-white">Selected Jobs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
                     {mappedJobs.filter(j => j !== null).map((job, index) => (
                       <motion.div
                           key={index}
@@ -2300,86 +2320,95 @@ export default function Search() {
                         )}
                       </motion.div>
                       ))}
+                      </div>
+                      {/* Back button at bottom right */}
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={handleBackToJobs}
+                          className="text-sm rounded-lg bg-gray-700 px-3 py-1.5 text-white hover:bg-gray-600 transition-colors flex items-center gap-1"
+                          title="Back to job selection"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                          </svg>
+                          Back
+                        </button>
                     </div>
-                    {/* Back button at bottom right */}
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={handleBackToJobs}
-                        className="text-sm rounded-lg bg-gray-700 px-3 py-1.5 text-white hover:bg-gray-600 transition-colors flex items-center gap-1"
-                        title="Back to job selection"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Back
-                      </button>
-                    </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+            </WobbleCard>
 
               {/* Recruiters Section */}
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
-                <CardHeader>
-                  <CardTitle className="text-white">Mapped Recruiters</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <WobbleCard
+                minimal
+                containerClassName="bg-transparent overflow-visible"
+              >
+                <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Mapped Recruiters</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                   <div className="space-y-3">
                     {mapping.map((mapItem, index) => {
                       const job = mappedJobs.filter(j => j !== null)[index]
-                        return (
-                      <motion.div
-                            key={index}
-                        draggable
-                        onDragStart={(e) => {
-                          setDraggedJob({ type: 'recruiter', data: mapItem, index })
-                          e.dataTransfer.effectAllowed = 'move'
-                        }}
-                        onDragEnd={() => setDraggedJob(null)}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          if (draggedJob && draggedJob.type === 'recruiter' && draggedJob.index !== index) {
-                            handleRearrangeRecruiter(draggedJob.index, index)
-                          }
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          e.dataTransfer.dropEffect = 'move'
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        className="relative p-3 rounded-lg border border-gray-700/50 bg-gray-900/50 cursor-move min-h-[80px]"
+                      return (
+                        <WobbleCard
+                          key={index}
+                          minimal
+                          containerClassName="bg-gray-900/50 border border-gray-700/50 cursor-move min-h-[80px]"
+                          className="p-3"
+                          draggable
+                          onDragStart={(e) => {
+                            setDraggedJob({ type: 'recruiter', data: mapItem, index })
+                            e.dataTransfer.effectAllowed = 'move'
+                          }}
+                          onDragEnd={() => setDraggedJob(null)}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            if (draggedJob && draggedJob.type === 'recruiter' && draggedJob.index !== index) {
+                              handleRearrangeRecruiter(draggedJob.index, index)
+                            }
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.dataTransfer.dropEffect = 'move'
+                          }}
+                          whileHover={{ scale: 1.02 }}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="font-medium text-sm text-white">
                                 {mapItem.recruiter_name || 'Unknown Recruiter'}
-                          </div>
+                              </div>
                               <div className="text-xs text-gray-300 mt-1">
                                 {mapItem.job_company || mapItem.recruiter_company || 'Unknown Company'}
-                    </div>
+                              </div>
                               <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-700/50">
                                 💼 Matched for: <span className="font-medium">{mapItem.job_title}</span> at {mapItem.job_company}
-                    </div>
-                    </div>
-                          {job && (
-                            <div className="absolute left-[-32px] top-1/2 -translate-y-1/2 hidden lg:flex items-center">
-                              <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                              </svg>
+                              </div>
                             </div>
-                          )}
-          </div>
-                      </motion.div>
-                    )})}
-        </div>
-                          <button
-                    onClick={handleGenerateMessages}
-                    disabled={isGeneratingMessages}
-                    className="w-full mt-4 rounded-lg bg-green-600 px-4 py-3 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {isGeneratingMessages ? 'Generating Messages...' : 'Generate Messages'}
-                          </button>
-                </CardContent>
-              </Card>
+                            {job && (
+                              <div className="absolute left-[-32px] top-1/2 -translate-y-1/2 hidden lg:flex items-center">
+                                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </WobbleCard>
+                      )
+                    })}
+                  </div>
+                            <button
+                      onClick={handleGenerateMessages}
+                      disabled={isGeneratingMessages}
+                      className="w-full mt-4 rounded-lg bg-green-600 px-4 py-3 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    >
+                      {isGeneratingMessages ? 'Generating Messages...' : 'Generate Messages'}
+                            </button>
+                  </CardContent>
+                </Card>
+              </WobbleCard>
           </motion.div>
         </AnimatePresence>
       )}
@@ -2762,7 +2791,7 @@ export default function Search() {
                     }}
                     disabled={isSending || Object.values(sendingStatus).some(s => s?.email === 'sending')}
                     variant="default"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
                     Send All Emails
                   </Button>

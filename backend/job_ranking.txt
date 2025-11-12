@@ -1,21 +1,24 @@
 JOB RELEVANCE RANKING ANALYSIS
 ==================================================
 
-Based on Shreyas Tulsi's candidate profile, including his education, experience, and skills, here are the top 5 most relevant job rankings:
+Based on the candidate profile and the requirements of the jobs listed, here is the ranking of the top 5 most relevant jobs:
 
-1. **[Job #12] Machine Learning Engineer (L5 - Senior), Ads Inventory Management & Forecasting at Netflix**  
-   - This position aligns well with Shreyas's experience in machine learning and his projects related to AI and data management.
+1. **Job #7** - SDE- ML Engineer at Amazon
+2. **Job #8** - Machine Learning Engineer II, Special Projects at Amazon
+3. **Job #4** - Software Dev. Engineer SDE II, Sponsored Products and Brands at Amazon
+4. **Job #2** - Sr Machine Learning Engineer, Sponsored Products and Brands at Amazon
+5. **Job #1** - Software Development Engineer, WMO at Amazon
 
-2. **[Job #4] Software Engineer (Robotics) at Meta**  
-   - This role includes designing AI algorithms and working with machine learning frameworks like PyTorch, which is relevant to his background in generative AI and machine learning.
+### Explanation:
 
-3. **[Job #8] Software Engineer, Systems ML - SW/HW Co-design at Meta**  
-   - This position requires experience with machine learning frameworks and aligns with his experience in AI and software development.
+1. **Job #7** is highly relevant due to the emphasis on machine learning, which aligns perfectly with the candidate's internship experience as an ML Engineer and their knowledge of Python and C++. 
+   
+2. **Job #8** also focuses on machine learning and code deployment, which fits well with the candidate's skills and experience in building scalable solutions.
 
-4. **[Job #2] Software Engineer, Intern/Co-op at Meta**  
-   - As an intern, this role would allow Shreyas to leverage his software development skills in various programming languages, which he has experience with.
+3. **Job #4** requires experience in machine learning and software development, which matches the candidate's background in full-stack development and machine learning.
 
-5. **[Job #9] Data Engineer, Product Analytics at Meta**  
-   - This job suits his experience with data and analytics, especially considering his involvement in projects and competitions that emphasize analytical skills.
+4. **Job #2** is relevant as it focuses on machine learning models and infrastructure, but it requires more experience than the candidate currently has.
 
-These rankings prioritize positions that leverage Shreyas's strong background in AI, machine learning, software development, and data analytics, while also considering the level of experience required.
+5. **Job #1** involves full-stack development and collaboration, which is aligned with the candidate's skills, though it places a significant emphasis on mobile technologies which is less relevant to this candidate's profile. 
+
+The other jobs, while potentially interesting, either require more experience or focus on areas less aligned with the candidate's specific skills and experiences.

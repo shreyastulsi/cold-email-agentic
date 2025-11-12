@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import React, { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { WobbleCard } from '../components/ui/wobble-card'
 
 const STEPS = ['Find Companies', 'Find Jobs', 'Find Recruiters', 'Map to Best Recruiters', 'Outreach']
 const CURRENT_STEP_INDEX = 3
@@ -103,69 +104,75 @@ const SearchMapping = ({
         transition={{ delay: index * 0.05 }}
         className="col-span-1"
       >
-        <Card className="h-full bg-gray-800/50 border border-gray-700/60 shadow-lg">
-          <CardHeader className="border-b border-gray-700/60 pb-3 min-h-[112px]">
-            <div className="flex items-start justify-between gap-3">
-              <CardTitle className="text-white text-base leading-tight">
-                {mappingItem.job_title || jobDetails.title || 'Untitled Role'}
-              </CardTitle>
-              {jobUrl && (
-                <a
-                  href={jobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-400 hover:text-blue-300"
-                >
-                  View Posting
-                </a>
+        <WobbleCard
+          minimal
+          containerClassName="h-full bg-transparent overflow-visible"
+          className="h-full"
+        >
+          <Card className="h-full bg-gray-800/50 border border-gray-700/60 shadow-lg">
+            <CardHeader className="border-b border-gray-700/60 pb-3 min-h-[112px]">
+              <div className="flex items-start justify-between gap-3">
+                <CardTitle className="text-white text-base leading-tight">
+                  {mappingItem.job_title || jobDetails.title || 'Untitled Role'}
+                </CardTitle>
+                {jobUrl && (
+                  <a
+                    href={jobUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-400 hover:text-blue-300"
+                  >
+                    View Posting
+                  </a>
+                )}
+              </div>
+              <p className="text-sm text-gray-300 mt-1">
+                {mappingItem.job_company || jobDetails.company?.name || jobDetails.company_name || 'Unknown company'}
+              </p>
+              {jobDetails.location && (
+                <p className="text-xs text-gray-400">
+                  {typeof jobDetails.location === 'string' ? jobDetails.location : jobDetails.location?.name}
+                </p>
               )}
-            </div>
-            <p className="text-sm text-gray-300 mt-1">
-              {mappingItem.job_company || jobDetails.company?.name || jobDetails.company_name || 'Unknown company'}
-            </p>
-            {jobDetails.location && (
-              <p className="text-xs text-gray-400">
-                {typeof jobDetails.location === 'string' ? jobDetails.location : jobDetails.location?.name}
-              </p>
-            )}
-          </CardHeader>
-          <CardContent className="pt-4 space-y-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-400">Assigned Recruiter</p>
-              <p className="text-sm font-medium text-blue-200">
-                {recruiterDetails.name || mappingItem.recruiter_name || 'Unknown recruiter'}
-              </p>
-              {recruiterDetails.profile_url || mappingItem.recruiter_profile_url ? (
-                <a
-                  href={recruiterDetails.profile_url || mappingItem.recruiter_profile_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-400 hover:text-blue-300"
-                >
-                  View LinkedIn Profile
-                </a>
-              ) : null}
-            </div>
-
-            {mappingItem.match_reason && (
-              <div className="rounded-lg bg-blue-900/20 border border-blue-700/40 p-3">
-                <p className="text-xs uppercase tracking-wide text-blue-300 mb-1">Match Reason</p>
-                <p className="text-sm text-blue-100 whitespace-pre-line">
-                  {mappingItem.match_reason}
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400">Assigned Recruiter</p>
+                <p className="text-sm font-medium text-blue-200">
+                  {recruiterDetails.name || mappingItem.recruiter_name || 'Unknown recruiter'}
                 </p>
+                {recruiterDetails.profile_url || mappingItem.recruiter_profile_url ? (
+                  <a
+                    href={recruiterDetails.profile_url || mappingItem.recruiter_profile_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-400 hover:text-blue-300"
+                  >
+                    View LinkedIn Profile
+                  </a>
+                ) : null}
               </div>
-            )}
 
-            {mappingItem.notes && (
-              <div className="rounded-lg bg-gray-900/40 border border-gray-700/40 p-3">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Notes</p>
-                <p className="text-sm text-gray-200 whitespace-pre-line">
-                  {mappingItem.notes}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {mappingItem.match_reason && (
+                <div className="rounded-lg bg-blue-900/20 border border-blue-700/40 p-3">
+                  <p className="text-xs uppercase tracking-wide text-blue-300 mb-1">Match Reason</p>
+                  <p className="text-sm text-blue-100 whitespace-pre-line">
+                    {mappingItem.match_reason}
+                  </p>
+                </div>
+              )}
+
+              {mappingItem.notes && (
+                <div className="rounded-lg bg-gray-900/40 border border-gray-700/40 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Notes</p>
+                  <p className="text-sm text-gray-200 whitespace-pre-line">
+                    {mappingItem.notes}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </WobbleCard>
       </motion.div>
     )
   }
