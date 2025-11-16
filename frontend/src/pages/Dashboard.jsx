@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { WobbleCard } from '../components/ui/wobble-card'
+import { useToast } from '../context/toast-context'
 import { apiRequest } from '../utils/api'
 
 export default function Dashboard() {
+  const { showToast } = useToast()
   const [stats, setStats] = useState({
     linkedinInvitesSent: 0,
     emailsSent: 0,
@@ -73,10 +75,10 @@ export default function Dashboard() {
         await apiRequest('/api/v1/user-stats/reset', { method: 'POST' })
         await fetchStats()
         setShowResetConfirm(false)
-        alert('All statistics have been reset to 0')
+        showToast('All statistics have been reset to 0', 'success')
       } catch (error) {
         console.error('Error resetting stats:', error)
-        alert('Failed to reset statistics')
+        showToast('Failed to reset statistics', 'error')
       }
     } else {
       setShowResetConfirm(true)

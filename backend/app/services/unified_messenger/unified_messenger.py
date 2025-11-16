@@ -341,7 +341,13 @@ class UnifiedMessenger:
                 return True, result
             else:
                 print(f"❌ Failed to send invitation")
-                return False, response.text
+                # Try to parse JSON error response
+                try:
+                    error_response = response.json()
+                    return False, error_response
+                except (ValueError, TypeError):
+                    # If not JSON, return as string
+                    return False, response.text
                 
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -1025,6 +1031,13 @@ class UnifiedMessenger:
                 matching_recruiters = recruiters
                 matching_indices = list(range(len(recruiters)))
             
+            # Log how many recruiters are being filtered through for this position
+            emit_verbose_log_sync(
+                f"Filtered through {len(matching_recruiters)} recruiters",
+                "info",
+                "🔍"
+            )
+            
             # Score only the matching recruiters
             debug_records = []
             scored = [(matching_indices[idx], self._score_recruiter_for_job(job, rec, debug_records)) for idx, rec in enumerate(matching_recruiters)]
@@ -1068,61 +1081,12 @@ class UnifiedMessenger:
             
             recruiter_name = chosen.get('name', 'Unknown')
             recruiter_company = self._recruiter_company_name(chosen) or chosen.get('company', 'Unknown')
-            recruiter_headline = chosen.get('headline', '')
             logger.info(f"🔍 DEBUG: Mapped {job_title} -> {recruiter_name} ({recruiter_company})")
             logger.info(f"🔗 DEBUG: Job URL attached to recruiter: {job_url}")
             
-            # Build a specific, detailed reason from the scoring events and actual data
-            chosen_record = next((r for r in debug_records if r['recruiter'] == recruiter_name), None)
-            if chosen_record and chosen_record.get('events'):
-                reasons = []
-                events = chosen_record['events']
-                
-                for event in events:
-                    if 'headline indicates recruiting role' in event:
-                        # Extract specific recruiting keywords from headline
-                        recruiting_words = [w for w in ['recruiter', 'talent', 'sourcer', 'acquisition', 'people', 'hr'] 
-                                           if w in recruiter_headline.lower()]
-                        if recruiting_words:
-                            reasons.append(f'their headline mentions "{recruiting_words[0]}"')
-                    elif 'technical recruiter' in event:
-                        # Extract specific technical recruiting keywords
-                        tech_words = [w for w in ['technical recruiter', 'engineering', 'tech', 'data', 'ml', 'ai', 'product', 'design'] 
-                                     if w in recruiter_headline.lower()]
-                        if tech_words:
-                            reasons.append(f'they mention "{tech_words[0]}" in their profile which matches technical roles')
-                    elif 'exact company match' in event:
-                        reasons.append(f'they currently work at {job_company}')
-                    elif 'company appears in recruiter keywords' in event:
-                        reasons.append(f'they have recruiting experience with {job_company}')
-                    elif 'keyword overlap' in event:
-                        # Extract the actual keywords that matched
-                        keywords_found = []
-                        for kw in ['software', 'engineer', 'data', 'science', 'ml', 'ai', 'backend', 'frontend', 'full stack', 'product', 'designer', 'firmware', 'validation']:
-                            if kw in job_title.lower() and kw in recruiter_headline.lower():
-                                keywords_found.append(kw)
-                        if keywords_found:
-                            reasons.append(f'their headline includes "{keywords_found[0]}" which aligns with the {job_title} role')
-                    elif 'seniority alignment' in event:
-                        senior_words = [w for w in ['senior', 'lead', 'staff', 'principal'] 
-                                       if w in recruiter_headline.lower() or w in job_title.lower()]
-                        if senior_words:
-                            reasons.append(f'both mention "{senior_words[0]}" level positions')
-                    elif 'university/early-career' in event or 'early-career focus' in event:
-                        newgrad_words = [w for w in ['new grad', 'university', 'campus', 'early career', 'college'] 
-                                        if w in recruiter_headline.lower()]
-                        if newgrad_words:
-                            reasons.append(f'their profile mentions "{newgrad_words[0]}" recruiting')
-                
-                if reasons:
-                    reason_text = ', '.join(reasons)
-                else:
-                    reason_text = 'they are the best match based on their profile and experience'
-            else:
-                reason_text = 'they are the best available match for this position'
-            
+            # Simple, clean summary log
             emit_verbose_log_sync(
-                f"{recruiter_name} was chosen for {job_title} at {job_company} because {reason_text}",
+                f"Determined best recruiter for {job_title} at {job_company}: {recruiter_name}",
                 "info",
                 "✅"
             )
@@ -1609,10 +1573,10 @@ RESUME CONTENT:
 {resume_content}
 
 STRUCTURE:
-1. Open with a greeting that includes a courteous introduction (e.g., "I hope you're doing well") and clearly state the role at {company_name} you are pursuing.
+1. Open with "Dear {recruiter_name}," followed by a courteous introduction (e.g., "I hope you're doing well") and clearly state the role at {company_name} you are pursuing.
 2. Provide a short paragraph introducing yourself, focusing on education from the RESUME CONTENT above.
 3. Write a paragraph with 3-4 sentences that creates DIRECT, SPECIFIC mappings between the job requirements/technologies and your experience FROM THE RESUME CONTENT. For EACH requirement or technology listed, create a connection following this template: "My experience at [SPECIFIC COMPANY from resume] helped me master fundamentals in [SPECIFIC TECHNOLOGY/SKILL from resume], which is directly applicable to this position because [SPECIFIC REASON from requirements]."
-4. Conclude with a warm, professional closing inviting a conversation. Sign with the name from the resume content.
+4. Conclude with a warm, professional closing inviting a conversation. Use ONLY ONE closing phrase (e.g., "Best regards," OR "Sincerely,") followed by the name from the resume content on a new line. Do NOT include multiple closing phrases.
 
 CRITICAL REQUIREMENTS:
 - ONLY mention technologies, skills, or tools that are EXPLICITLY in the RESUME CONTENT above
@@ -1671,7 +1635,20 @@ BODY:
 
                 # Extract name from resume for signature
                 person_name = self._extract_resume_name(resume_content)
-                if 'Best regards' not in body:
+                
+                # Check if body already has a complete signature at the end
+                body_lines = body.rstrip().split('\n')
+                # Look at last 3-4 lines for closing phrase and name
+                last_lines_text = ' '.join(body_lines[-4:] if len(body_lines) >= 4 else body_lines).lower()
+                closing_phrases = [
+                    'best regards', 'sincerely', 'regards', 'yours sincerely', 
+                    'yours truly', 'warm regards', 'kind regards', 'best'
+                ]
+                has_closing_at_end = any(closing in last_lines_text for closing in closing_phrases)
+                has_name_at_end = person_name.lower() in last_lines_text
+                
+                # Only add signature if there's no complete closing (both closing phrase AND name at the end)
+                if not (has_closing_at_end and has_name_at_end):
                     body = body.rstrip() + f"\n\nBest regards,\n{person_name}"
 
                 return subject, body

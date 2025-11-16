@@ -18,6 +18,10 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isSignUp, setIsSignUp] = useState(location.pathname === '/signup')
+
+  useEffect(() => {
+    document.title = isSignUp ? 'Sign Up - Keryx' : 'Login - Keryx'
+  }, [isSignUp])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

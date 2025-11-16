@@ -30,6 +30,7 @@ class LinkedInAccount(Base):
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)  # Default account for sending
+    is_premium: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)  # LinkedIn Premium status (None = unknown, True = premium, False = free)
     
     # Metadata
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

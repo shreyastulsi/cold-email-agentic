@@ -143,21 +143,18 @@ export const ChainOfThoughtStep = memo(
         )}
         {...props}
       >
-        <div className="relative mt-0.5 flex flex-col items-center">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/10 text-xs font-semibold text-foreground/70">
+        <div className="relative flex flex-col items-center flex-shrink-0 self-stretch pt-0.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/10 text-xs font-semibold text-foreground/70 flex-shrink-0 z-10">
             <Icon className={cn("size-4", iconClassName)} />
           </div>
-          <div
-            className={cn(
-              "mt-2 h-full w-px bg-white/25 dark:bg-white/25",
-              status === "active" && "hidden"
-            )}
-          />
+          {status !== "active" && (
+            <div className="mt-2 flex-1 w-px bg-white/20 dark:bg-white/20" style={{ minHeight: '100%' }} />
+          )}
         </div>
-        <div className="flex-1 space-y-2">
-          <div>{label}</div>
+        <div className="flex-1 space-y-1 min-w-0 py-0.5">
+          <div className="break-words">{label}</div>
           {description && (
-            <div className="text-muted-foreground text-xs">{description}</div>
+            <div className="text-muted-foreground text-xs break-words">{description}</div>
           )}
           {children}
         </div>

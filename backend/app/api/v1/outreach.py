@@ -239,7 +239,9 @@ async def generate_linkedin_message_endpoint(
             request.job_title,
             request.company_name,
             resume_content=resume_content,
-            resume_file=request.resume_file  # Fallback if DB content not available
+            resume_file=request.resume_file,  # Fallback if DB content not available
+            user_id=current_user.id,  # Pass user_id to fetch premium status
+            db=db  # Pass db session to fetch premium status
         )
         return {
             "message": message,

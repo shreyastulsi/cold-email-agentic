@@ -271,7 +271,27 @@ async def send_invitation(provider_id: str, text: str, user_id: Optional[str] = 
             print(f"❌ Failed to send LinkedIn invitation via Unipile: {error_msg}")
             # Try to extract more details from the error
             if isinstance(result, dict):
-                error_msg = result.get("error", result.get("message", str(result)))
+                error_detail = result.get("detail", result.get("error", result.get("message", str(result))))
+                error_type = result.get("type", "")
+                
+                # Convert technical errors to user-friendly messages
+                if "cannot_resend_yet" in error_type.lower() or "temporary provider limit" in error_detail.lower():
+                    user_friendly_error = "You have hit your LinkedIn monthly cap for connection requests. The limit will reset at the start of next month."
+                elif "too_many_characters" in error_type.lower() or "character limit" in error_detail.lower():
+                    user_friendly_error = "Your LinkedIn message is too long. LinkedIn connection requests have a character limit of 300 characters (or 200 for free accounts). Please shorten your message and try again."
+                elif "not_connected" in error_type.lower() or "connection" in error_detail.lower():
+                    user_friendly_error = "Unable to connect with this person. They may have restricted connection requests or you may already be connected."
+                elif "rate_limit" in error_type.lower() or "too many" in error_detail.lower():
+                    user_friendly_error = "You've sent too many LinkedIn requests recently. Please wait a few minutes before trying again."
+                elif "invalid" in error_type.lower() or "not found" in error_detail.lower():
+                    user_friendly_error = "This LinkedIn profile could not be found or is invalid. Please check the profile URL and try again."
+                else:
+                    # Default: use the error detail but remove technical jargon
+                    user_friendly_error = error_detail
+                    # Remove common technical prefixes
+                    user_friendly_error = user_friendly_error.replace("errors/", "").replace("error:", "").strip()
+                
+                error_msg = user_friendly_error
             return {
                 "success": False,
                 "error": error_msg,
@@ -996,7 +1016,9 @@ async def generate_linkedin_message(
     job_title: str,
     company_name: str,
     resume_content: Optional[str] = None,
-    resume_file: str = "Resume-Tulsi,Shreyas.pdf"
+    resume_file: str = "Resume-Tulsi,Shreyas.pdf",
+    user_id: Optional[str] = None,
+    db: Optional[Any] = None
 ) -> str:
     """
     Generate personalized LinkedIn message for a recruiter-job pair.
@@ -1007,9 +1029,11 @@ async def generate_linkedin_message(
         company_name: Company name string
         resume_content: Resume content from database (preferred over PDF)
         resume_file: Path to resume file (fallback if resume_content not provided)
+        user_id: Optional user ID to fetch LinkedIn account premium status
+        db: Optional database session to fetch LinkedIn account premium status
         
     Returns:
-        Generated LinkedIn message (280-295 characters)
+        Generated LinkedIn message (targets close to character limit based on premium status)
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -1019,6 +1043,33 @@ async def generate_linkedin_message(
     recruiter_name = recruiter.get('name', 'recruiter')
     
     await verbose_logger.log(f"Constructing LinkedIn message for {recruiter_name}", "info", "💼")
+    
+    # Determine character limit based on user's LinkedIn account premium status
+    # Default to 300 (premium) if unknown, 200 if free account
+    char_limit = 300  # Default to premium limit
+    if user_id and db:
+        try:
+            from sqlalchemy import select
+            from app.db.models.linkedin_account import LinkedInAccount
+            from app.services.user_settings_service import get_or_create_user_settings
+            
+            # Get user settings to find active LinkedIn account
+            user_settings = await get_or_create_user_settings(user_id, db)
+            if user_settings and user_settings.active_linkedin_account_id:
+                result = await db.execute(
+                    select(LinkedInAccount)
+                    .where(LinkedInAccount.id == user_settings.active_linkedin_account_id)
+                    .where(LinkedInAccount.owner_id == user_id)
+                )
+                linkedin_account = result.scalar_one_or_none()
+                if linkedin_account and linkedin_account.is_premium is False:
+                    char_limit = 200  # Free account
+                    logger.info(f"Using free account character limit (200) for user {user_id}")
+                else:
+                    logger.info(f"Using premium account character limit (300) for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not fetch LinkedIn account premium status: {e}, defaulting to premium limit")
+            # Continue with default premium limit
     
     if not messenger.resume_generator:
         raise ValueError("Resume generator not available")
@@ -1120,10 +1171,11 @@ async def generate_linkedin_message(
         resume_content,
         recruiter_name_for_generation,
         job_title,
-        company_name
+        company_name,
+        char_limit  # Pass character limit based on premium status
     )
     
-    await verbose_logger.log(f"LinkedIn message generated for {recruiter_name}", "success", "✅")
+    await verbose_logger.log(f"LinkedIn message generated for {recruiter_name} ({len(message) if message else 0}/{char_limit} chars)", "success", "✅")
     
     return message
 

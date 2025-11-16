@@ -119,6 +119,7 @@ async def list_linkedin_accounts(
                     "unipile_account_id": acc.unipile_account_id,
                     "is_active": True,  # Always true - only one account allowed
                     "is_default": True,  # Always true - only one account allowed
+                    "is_premium": acc.is_premium,  # LinkedIn Premium status (None = unknown, True = premium, False = free)
                     "created_at": acc.created_at.isoformat(),
                     "last_used_at": acc.last_used_at.isoformat() if acc.last_used_at else None,
                 }
@@ -523,6 +524,30 @@ async def sync_unipile_accounts(
                     logger.info(f"Deleted {len(account_ids_to_delete)} existing LinkedIn account(s) for user {current_user.id} before creating new one")
                     await db.flush()
                 
+                # Try to extract premium status from Unipile account data
+                # Check various possible fields where premium status might be stored
+                account_data = candidate.get('account_data', {})
+                is_premium = None  # Default to unknown
+                
+                # Try to find premium/subscription info in account_data
+                if account_data:
+                    # Check for explicit premium/subscription fields
+                    premium_status = (
+                        account_data.get('is_premium') or
+                        account_data.get('premium') or
+                        account_data.get('subscription_type') or
+                        account_data.get('account_type')
+                    )
+                    
+                    if premium_status is not None:
+                        # Convert to boolean if it's a string
+                        if isinstance(premium_status, str):
+                            is_premium = premium_status.lower() in ['premium', 'true', '1', 'yes', 'paid']
+                        elif isinstance(premium_status, bool):
+                            is_premium = premium_status
+                        elif isinstance(premium_status, (int, float)):
+                            is_premium = bool(premium_status)
+                
                 # Now create the new account with data from Unipile (always use the newest one)
                 active_linkedin_account = LinkedInAccount(
                     owner_id=current_user.id,
@@ -532,6 +557,7 @@ async def sync_unipile_accounts(
                     display_name=candidate['display_name'],  # Always use the name from Unipile
                     is_active=True,
                     is_default=True,
+                    is_premium=is_premium,  # LinkedIn Premium status (None = unknown)
                 )
                 db.add(active_linkedin_account)
                 created_count += 1
@@ -1162,6 +1188,7 @@ async def complete_linkedin_oauth_setup(
 
 class LinkedInAccountUpdateRequest(BaseModel):
     display_name: Optional[str] = None
+    is_premium: Optional[bool] = None  # Allow manually setting premium status
     # Removed is_active and is_default - users can only have one account, no need for enable/disable
 
 
@@ -1185,10 +1212,13 @@ async def update_linkedin_account(
     if not account:
         raise HTTPException(status_code=404, detail="LinkedIn account not found")
     
-    # Only allow updating display_name - users can only have one account, so no enable/disable needed
+    # Allow updating display_name and is_premium
     if request.display_name is not None:
         account.display_name = request.display_name
-        account.updated_at = datetime.utcnow()
+    if request.is_premium is not None:
+        account.is_premium = request.is_premium
+    
+    account.updated_at = datetime.utcnow()
     
     await db.commit()
     await db.refresh(account)
@@ -1198,6 +1228,7 @@ async def update_linkedin_account(
         "linkedin_profile_url": account.linkedin_profile_url,
         "profile_id": account.profile_id,
         "display_name": account.display_name,
+        "is_premium": account.is_premium,
         "is_active": True,  # Always true since there's only one account
         "is_default": True,  # Always true since there's only one account
     }

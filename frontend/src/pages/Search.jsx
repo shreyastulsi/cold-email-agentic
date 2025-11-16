@@ -13,6 +13,7 @@ import { LoaderOne } from '../components/ui/loader'
 import { WobbleCard } from '../components/ui/wobble-card'
 import { useActivityConsole } from '../context/activity-console-context'
 import { useSidebarLogger } from '../context/sidebar-logger-context'
+import { useToast } from '../context/toast-context'
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
@@ -99,7 +100,6 @@ const EXPERIENCE_LEVEL_OPTIONS = [
 const QUICK_COMPANIES = [
   'Amazon',
   'Apple',
-  'Alphabet',
   'Microsoft',
   'Meta',
   'Netflix',
@@ -288,6 +288,7 @@ async function saveDraft(draftData) {
 export default function Search() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const { data: onboardingStatus, isLoading: onboardingStatusLoading } = useOnboardingStatus()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedCompanies, setSelectedCompanies] = useState([]) // Array of company objects {name, id}
@@ -332,12 +333,32 @@ export default function Search() {
   const [editingMessage, setEditingMessage] = useState(null) // { index: number, part: 'email' | 'linkedin' }
   const [editValues, setEditValues] = useState({}) // Temporary edit values
   const { setConsoleWidth } = useActivityConsole()
-  const [localConsoleWidth, setLocalConsoleWidth] = useState(0) // Track console width for this page only
   const salaryMinRef = useRef('')
   const salaryMaxRef = useRef('')
+  const [linkedInAccount, setLinkedInAccount] = useState(null) // Store LinkedIn account info
   const onboardingReady = onboardingStatus?.isReadyForSearch ?? false
   const missingResume = onboardingStatus ? !onboardingStatus.hasResume : false
   const missingChannels = onboardingStatus ? !onboardingStatus.hasEmail && !onboardingStatus.hasLinkedIn : false
+  
+  // Fetch LinkedIn account info to determine premium status
+  useEffect(() => {
+    const fetchLinkedInAccount = async () => {
+      try {
+        const result = await apiRequest('/api/v1/linkedin-accounts')
+        const accounts = result.accounts || []
+        if (accounts.length > 0) {
+          setLinkedInAccount(accounts[0]) // Use first account
+        }
+      } catch (err) {
+        console.error('Failed to fetch LinkedIn account:', err)
+      }
+    }
+    fetchLinkedInAccount()
+  }, [])
+  
+  // Determine character limit based on premium status
+  // Default to 300 (premium) if unknown, 200 if free account
+  const linkedInCharLimit = linkedInAccount?.is_premium === false ? 200 : 300
 
   const logFilterEvent = useCallback(
     (message, emoji = '🧩') => {
@@ -353,10 +374,9 @@ export default function Search() {
     [appendLog]
   )
 
-  // Update both global context and local state
+  // Update global context
   const handleConsoleWidthChange = (width) => {
     setConsoleWidth(width)
-    setLocalConsoleWidth(width)
   }
 
   useEffect(() => {
@@ -383,13 +403,15 @@ export default function Search() {
     if (!onboardingReady) return
 
     let isMounted = true
+    let reconnectTimeoutId = null
+    
     const connectSSE = async () => {
       try {
         const { getSessionToken } = await import('../utils/supabase')
         const token = await getSessionToken()
         
-        if (!token) {
-          console.log('No token available for verbose logger')
+        if (!token || !isMounted) {
+          console.log('No token available for verbose logger or component unmounted')
           return
         }
         
@@ -450,10 +472,14 @@ export default function Search() {
               }
             }
           } catch (error) {
+            if (error.name === 'AbortError') {
+              console.log('Stream read cancelled')
+              return
+            }
             console.error('Error reading stream:', error)
+            // Only reconnect if still mounted and no explicit cancellation
             if (isMounted) {
-              // Try to reconnect after 3 seconds
-              setTimeout(() => {
+              reconnectTimeoutId = setTimeout(() => {
                 if (isMounted) connectSSE()
               }, 3000)
             }
@@ -461,15 +487,17 @@ export default function Search() {
         }
         
         readStream()
-        eventSourceRef.current = { close: () => {
-          isMounted = false
-          reader.cancel()
-        } }
+        eventSourceRef.current = { 
+          close: () => {
+            isMounted = false
+            reader.cancel().catch(() => {}) // Ignore cancellation errors
+          } 
+        }
       } catch (error) {
         console.error('Error connecting to verbose logger:', error)
-        // Try to reconnect after 3 seconds
+        // Only reconnect if still mounted
         if (isMounted) {
-          setTimeout(() => {
+          reconnectTimeoutId = setTimeout(() => {
             if (isMounted) connectSSE()
           }, 3000)
         }
@@ -479,7 +507,11 @@ export default function Search() {
     connectSSE()
 
     return () => {
+      console.log('Cleaning up SSE connection')
       isMounted = false
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId)
+      }
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
@@ -514,7 +546,10 @@ export default function Search() {
       return await searchJobs(companyIds, titles, types, options)
     },
     enabled: !!(jobSearchTrigger && jobSearchTrigger.companyIds && jobSearchTrigger.companyIds.length > 0 && jobSearchTrigger.titles && jobSearchTrigger.titles.length > 0),
-    retry: false
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false
   })
 
   // Update step based on progress
@@ -586,11 +621,11 @@ export default function Search() {
           logFilterEvent(`Added ${displayName} to company filters`, '🏢')
         }
       } else {
-        alert(`Could not find ${companyName}. Try searching manually.`)
+        showToast(`Could not find ${companyName}. Try searching manually.`, 'warning')
       }
     } catch (error) {
       console.error(`Error selecting ${companyName}:`, error)
-      alert(`Failed to add ${companyName}. Check logs for details.`)
+      showToast(`Failed to add ${companyName}. Check logs for details.`, 'error')
     } finally {
       setQuickCompanyStatus((prev) => {
         const { [companyName]: _, ...rest } = prev
@@ -789,7 +824,7 @@ export default function Search() {
       const companyIds = selectedCompanies.map(c => c.id)
       const recruiterResult = await searchRecruiters(companyIds)
         if (!recruiterResult.recruiters || recruiterResult.recruiters.length === 0) {
-        alert('No recruiters found')
+        showToast('No recruiters found', 'warning')
         setIsMappingToRecruiters(false)
           return
         }
@@ -890,11 +925,12 @@ export default function Search() {
 
         navigate('/dashboard/search/mapping')
       } else {
-        alert('No mappings were created. Try selecting different jobs.')
+        showToast('No mappings were created. Try selecting different jobs.', 'warning')
       }
     } catch (error) {
       console.error('Error mapping to recruiters:', error)
-      alert('Failed to map jobs to recruiters')
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to map jobs to recruiters'
+      showToast(`Failed to map jobs to recruiters: ${errorMessage}`, 'error')
     } finally {
       setIsMappingToRecruiters(false)
     }
@@ -973,7 +1009,8 @@ export default function Search() {
       localStorage.setItem('outreachMessages', JSON.stringify(messages))
     } catch (error) {
       console.error('Error generating messages:', error)
-      alert(`Error generating messages: ${error.message}`)
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to generate messages'
+      showToast(`Error generating messages: ${errorMessage}`, 'error')
     } finally {
       setIsGeneratingMessages(false)
     }
@@ -997,7 +1034,7 @@ export default function Search() {
     const linkedinUrl = messageData.recruiter?.profile_url || messageData.mapItem?.recruiter_profile_url
     
     if (!linkedinUrl) {
-      alert('LinkedIn URL not found for this recruiter')
+      showToast('LinkedIn URL not found for this recruiter', 'error')
       return
     }
 
@@ -1023,20 +1060,26 @@ export default function Search() {
       if (result.success) {
         setSendingStatus(prev => ({
           ...prev,
-          [index]: { ...prev[index], linkedin: 'sent' }
+          [index]: { ...prev[index], linkedin: 'sent', error: null }
         }))
         
         // Track in dashboard stats (trigger refresh event)
         trackLinkedInInvite(role, company, recruiterName)
       } else {
-        throw new Error(result.message || 'Failed to send LinkedIn message')
+        const errorMsg = result.error || result.message || 'Failed to send LinkedIn message'
+        setSendingStatus(prev => ({
+          ...prev,
+          [index]: { ...prev[index], linkedin: 'error', error: errorMsg }
+        }))
+        showToast(`Failed to send LinkedIn message: ${errorMsg}`, 'error')
       }
     } catch (error) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to send LinkedIn message'
       setSendingStatus(prev => ({
         ...prev,
-        [index]: { ...prev[index], linkedin: 'error', error: error.message }
+        [index]: { ...prev[index], linkedin: 'error', error: errorMessage }
       }))
-      alert(`Failed to send LinkedIn message: ${error.message}`)
+      showToast(`Failed to send LinkedIn message: ${errorMessage}`, 'error')
     } finally {
       setIsSending(false)
     }
@@ -1048,7 +1091,7 @@ export default function Search() {
     const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
     
     if (!email) {
-      alert('Email address not found for this recruiter')
+      showToast('Email address not found for this recruiter', 'error')
       return
     }
 
@@ -1088,12 +1131,12 @@ export default function Search() {
         throw new Error(errorMsg)
       }
     } catch (error) {
-      const errorMessage = error.message || 'Failed to send email'
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to send email'
       setSendingStatus(prev => ({
         ...prev,
         [index]: { ...prev[index], email: 'error', error: errorMessage }
       }))
-      alert(`Failed to send email: ${errorMessage}`)
+      showToast(`Failed to send email: ${errorMessage}`, 'error')
     } finally {
       setIsSending(false)
     }
@@ -1388,11 +1431,11 @@ export default function Search() {
     const linkedinStatus = sendingStatus[index]?.linkedin
     
     if (part === 'email' && emailStatus === 'sent') {
-      alert('Email has already been sent. Cannot edit.')
+      showToast('Email has already been sent. Cannot edit.', 'warning')
       return
     }
     if (part === 'linkedin' && linkedinStatus === 'sent') {
-      alert('LinkedIn message has already been sent. Cannot edit.')
+      showToast('LinkedIn message has already been sent. Cannot edit.', 'warning')
       return
     }
     
@@ -1518,9 +1561,12 @@ export default function Search() {
             onWidthChange={handleConsoleWidthChange}
           />
         )}
-        <div 
-          className="transition-all duration-300"
-          style={{ marginRight: `${localConsoleWidth}px` }}
+        <div
+          className="transition-all duration-300 overflow-hidden w-full"
+          style={{
+            maxWidth: '100%',
+            minWidth: '560px'
+          }}
         >
           <SearchMapping
             mapping={mapping}
@@ -1558,11 +1604,14 @@ export default function Search() {
           onWidthChange={handleConsoleWidthChange}
         />
       )}
-      <div 
-        className="min-h-screen pb-20 transition-all duration-300"
-        style={{ marginRight: `${localConsoleWidth}px` }}
+      <div
+        className="min-h-screen pb-20 transition-all duration-300 overflow-hidden w-full"
+        style={{
+          maxWidth: '100%',
+          minWidth: '560px'
+        }}
       >
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ maxWidth: '100%' }}>
           {/* Progressive Step Indicator */}
           <div className="flex items-center justify-center space-x-4 py-4">
             {steps.map((step, index) => (
@@ -1594,9 +1643,9 @@ export default function Search() {
                 minimal
                 containerClassName="bg-transparent overflow-visible"
               >
-                <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+                <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 overflow-hidden">
                   <CardHeader className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-white">Search for Jobs</CardTitle>
+                    <CardTitle className="text-white break-words">Search for Jobs</CardTitle>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -1692,8 +1741,8 @@ export default function Search() {
                   {selectedCompanies.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedCompanies.map((company) => (
-                        <span key={company.id} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200">
-                          {company.name}
+                        <span key={company.id} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200 max-w-full overflow-hidden">
+                          <span className="break-words truncate">{company.name}</span>
                           <button
                             onClick={() => handleRemoveCompany(company.id)}
                             className="text-blue-300 hover:text-blue-100"
@@ -1785,8 +1834,8 @@ export default function Search() {
                   {selectedJobTitles.size > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {Array.from(selectedJobTitles).map((title) => (
-                        <span key={title} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200">
-                          {title}
+                        <span key={title} className="inline-flex items-center gap-2 rounded-full border border-blue-700/40 bg-blue-900/40 px-3 py-1 text-xs text-blue-200 max-w-full overflow-hidden">
+                          <span className="break-words truncate">{title}</span>
                           <button
                             onClick={() => {
                               logFilterEvent(`Removed ${title} from job title filters`, '💼')
@@ -2066,10 +2115,10 @@ export default function Search() {
               minimal
               containerClassName="bg-transparent overflow-visible"
             >
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative">
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 relative overflow-hidden">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white">Jobs</CardTitle>
+                    <CardTitle className="text-white break-words">Jobs</CardTitle>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleSelectAll}
@@ -2096,14 +2145,14 @@ export default function Search() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, job)}
                         onDragEnd={handleDragEnd}
-                        className={`p-3 rounded-lg border cursor-move transition-all ${
+                        className={`p-3 rounded-lg border cursor-move transition-all overflow-hidden ${
                           isMapped 
                             ? 'bg-gray-700/50 border-gray-600/50' 
                             : 'bg-gray-900/50 border-gray-700/50 hover:bg-gray-800/50'
                         }`}
                           >
-                            <div className="font-medium text-sm text-white">{job.title || 'Untitled'}</div>
-                            <div className="text-xs text-gray-300 mt-1">{companyName}</div>
+                            <div className="font-medium text-sm text-white break-words line-clamp-2">{job.title || 'Untitled'}</div>
+                            <div className="text-xs text-gray-300 mt-1 break-words">{companyName}</div>
                             {jobUrl && (
                               <a
                                 href={jobUrl}
@@ -2161,10 +2210,10 @@ export default function Search() {
               minimal
               containerClassName="bg-transparent overflow-visible"
             >
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50">
+              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 overflow-hidden">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white">Recruiter Mapping</CardTitle>
+                    <CardTitle className="text-white break-words">Recruiter Mapping</CardTitle>
                     {mappedJobs.some(j => j !== null) && (
                       <button
                         onClick={handleClearAll}
@@ -2196,11 +2245,11 @@ export default function Search() {
                       }`}
                     >
                       {mappedJobs[index] ? (
-                        <div className="relative">
-                          <div className="font-medium text-sm text-white">
+                        <div className="relative overflow-hidden">
+                          <div className="font-medium text-sm text-white break-words line-clamp-2 pr-6">
                             {mappedJobs[index].title || 'Untitled'}
                     </div>
-                          <div className="text-xs text-gray-300 mt-1">
+                          <div className="text-xs text-gray-300 mt-1 break-words">
                             {typeof mappedJobs[index].company === 'string' 
                               ? mappedJobs[index].company 
                               : mappedJobs[index].company?.name || 'Unknown'}
@@ -2583,6 +2632,11 @@ export default function Search() {
                                             lineHeight: '1.5'
                                           }}
                                         />
+                                        <div className="flex justify-end text-xs">
+                                          <span className="text-gray-400">
+                                            {(editValues.email_body || '').length} characters
+                                          </span>
+                                        </div>
                                       </div>
                                       <div className="flex gap-2">
                                         <Button
@@ -2685,6 +2739,20 @@ export default function Search() {
                                           lineHeight: '1.5'
                                         }}
                                       />
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-400">
+                                          LinkedIn connection requests have a limit of {linkedInCharLimit} characters{linkedInAccount?.is_premium === false ? ' (free account)' : linkedInAccount?.is_premium === true ? ' (premium account)' : ''}
+                                        </span>
+                                        <span className={`font-medium ${
+                                          (editValues.linkedin_message || '').length > linkedInCharLimit 
+                                            ? 'text-red-400' 
+                                            : (editValues.linkedin_message || '').length > (linkedInCharLimit * 0.83) 
+                                            ? 'text-amber-400' 
+                                            : 'text-gray-400'
+                                        }`}>
+                                          {(editValues.linkedin_message || '').length} / {linkedInCharLimit}
+                                        </span>
+                                      </div>
                                       <div className="flex gap-2">
                                         <Button
                                           onClick={() => handleSaveEdit(index)}

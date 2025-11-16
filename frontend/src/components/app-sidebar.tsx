@@ -61,10 +61,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
   const { data: onboardingStatus, isLoading: onboardingLoading } = useOnboardingStatus()
 
+  // Only compute these when data is actually loaded (not undefined)
   const hasResume = onboardingStatus?.hasResume ?? false
   const hasEmail = onboardingStatus?.hasEmail ?? false
   const hasLinkedIn = onboardingStatus?.hasLinkedIn ?? false
   const isReadyForSearch = onboardingStatus?.isReadyForSearch ?? false
+  
+  // Only show indicators when data has fully loaded AND onboardingStatus exists
+  const showIndicators = !onboardingLoading && onboardingStatus !== undefined
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -102,29 +106,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navWithStatus = navMainWithActive.map((item) => {
     const enriched = { ...item }
 
-    if (item.url === '/dashboard/resume') {
-      if (!onboardingLoading && !hasResume) {
-        enriched.indicator = 'warning'
-        enriched.indicatorTooltip = 'Resume required'
+    // Only show indicators when data has fully loaded
+    if (showIndicators) {
+      if (item.url === '/dashboard/resume') {
+        if (!hasResume) {
+          enriched.indicator = 'warning'
+          enriched.indicatorTooltip = 'Resume required'
+        }
       }
-    }
 
-    if (item.url === '/dashboard/settings') {
-      if (!onboardingLoading && !hasEmail && !hasLinkedIn) {
-        enriched.indicator = 'warning'
-        enriched.indicatorTooltip = 'Connect email or LinkedIn'
+      if (item.url === '/dashboard/settings') {
+        if (!hasEmail && !hasLinkedIn) {
+          enriched.indicator = 'warning'
+          enriched.indicatorTooltip = 'Connect email or LinkedIn'
+        }
       }
-    }
 
-    if (item.url === '/dashboard/search') {
-      const disabled = onboardingLoading ? true : !isReadyForSearch
-      enriched.disabled = disabled
-      if (disabled) {
-        enriched.disabledReason = onboardingLoading
-          ? 'Checking onboarding status...'
-          : 'Upload a resume and connect email or LinkedIn to use search'
-        enriched.indicator = 'warning'
-        enriched.indicatorTooltip = enriched.disabledReason
+      if (item.url === '/dashboard/search') {
+        const disabled = !isReadyForSearch
+        enriched.disabled = disabled
+        if (disabled) {
+          enriched.disabledReason = 'Upload a resume and connect email or LinkedIn to use search'
+          enriched.indicator = 'warning'
+          enriched.indicatorTooltip = enriched.disabledReason
+        }
+      }
+    } else {
+      // While loading, disable search but don't show indicators yet
+      if (item.url === '/dashboard/search') {
+        enriched.disabled = true
+        enriched.disabledReason = 'Checking onboarding status...'
       }
     }
 

@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
+import { useToast } from '../context/toast-context'
 
 // API functions
 async function fetchDrafts() {
@@ -38,6 +39,7 @@ async function updateDraft(draftId, updateData) {
 
 export default function Drafts() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [drafts, setDrafts] = useState([])
   const [loading, setLoading] = useState(true)
   const [sendingStatus, setSendingStatus] = useState({})
@@ -46,6 +48,27 @@ export default function Drafts() {
   const [selectedDrafts, setSelectedDrafts] = useState(new Set()) // Set of draft IDs
   const [expandedDrafts, setExpandedDrafts] = useState(new Set()) // Set of expanded draft IDs
   const selectAllCheckboxRef = useRef(null)
+  const [linkedInAccount, setLinkedInAccount] = useState(null) // Store LinkedIn account info
+  
+  // Fetch LinkedIn account info to determine premium status
+  useEffect(() => {
+    const fetchLinkedInAccount = async () => {
+      try {
+        const result = await apiRequest('/api/v1/linkedin-accounts')
+        const accounts = result.accounts || []
+        if (accounts.length > 0) {
+          setLinkedInAccount(accounts[0]) // Use first account
+        }
+      } catch (err) {
+        console.error('Failed to fetch LinkedIn account:', err)
+      }
+    }
+    fetchLinkedInAccount()
+  }, [])
+  
+  // Determine character limit based on premium status
+  // Default to 300 (premium) if unknown, 200 if free account
+  const linkedInCharLimit = linkedInAccount?.is_premium === false ? 200 : 300
 
   useEffect(() => {
     loadDrafts()
@@ -60,7 +83,7 @@ export default function Drafts() {
       }
     } catch (error) {
       console.error('Error loading drafts:', error)
-      alert(`Failed to load drafts: ${error.message}`)
+      showToast(`Failed to load drafts: ${error.message}`, 'error')
     } finally {
       setLoading(false)
     }
@@ -100,22 +123,25 @@ export default function Drafts() {
         ...prev,
         [draftId]: { ...prev[draftId], email: 'error', error: error.message }
       }))
-      alert(`Failed to send email: ${error.message}`)
+      showToast(`Failed to send email: ${error.message}`, 'error')
     }
   }
 
   const handleSendLinkedIn = async (draftId) => {
     setSendingStatus(prev => ({
       ...prev,
-      [draftId]: { ...prev[draftId], linkedin: 'sending' }
+      [draftId]: { ...prev[draftId], linkedin: 'sending', error: null }
     }))
 
     try {
       const result = await sendDraft(draftId, false, true)
-      if (result.success) {
+      
+      // Check if LinkedIn send was successful
+      const linkedinResult = result.results?.linkedin
+      if (linkedinResult && linkedinResult.success) {
         setSendingStatus(prev => ({
           ...prev,
-          [draftId]: { ...prev[draftId], linkedin: 'sent' }
+          [draftId]: { ...prev[draftId], linkedin: 'sent', error: null }
         }))
         
         // Track LinkedIn invite
@@ -131,14 +157,21 @@ export default function Drafts() {
         // Reload drafts to update status
         await loadDrafts()
       } else {
-        throw new Error(result.error || 'Failed to send LinkedIn message')
+        // LinkedIn send failed - extract user-friendly error message
+        const errorMsg = linkedinResult?.error || result.error || 'Failed to send LinkedIn message'
+        setSendingStatus(prev => ({
+          ...prev,
+          [draftId]: { ...prev[draftId], linkedin: 'error', error: errorMsg }
+        }))
+        showToast(`Failed to send LinkedIn message: ${errorMsg}`, 'error')
       }
     } catch (error) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to send LinkedIn message'
       setSendingStatus(prev => ({
         ...prev,
-        [draftId]: { ...prev[draftId], linkedin: 'error', error: error.message }
+        [draftId]: { ...prev[draftId], linkedin: 'error', error: errorMessage }
       }))
-      alert(`Failed to send LinkedIn message: ${error.message}`)
+      showToast(`Failed to send LinkedIn message: ${errorMessage}`, 'error')
     }
   }
 
@@ -151,7 +184,7 @@ export default function Drafts() {
       await deleteDraft(draftId)
       await loadDrafts()
     } catch (error) {
-      alert(`Failed to delete draft: ${error.message}`)
+      showToast(`Failed to delete draft: ${error.message}`, 'error')
     }
   }
 
@@ -164,7 +197,7 @@ export default function Drafts() {
     const canSendLinkedIn = (draft.draft_type === 'linkedin' || draft.draft_type === 'both') && !draft.linkedin_sent
 
     if (!canSendEmail && !canSendLinkedIn) {
-      alert('Both email and LinkedIn have already been sent for this draft')
+      showToast('Both email and LinkedIn have already been sent for this draft', 'info')
       return
     }
 
@@ -175,25 +208,34 @@ export default function Drafts() {
 
     try {
       const result = await sendDraft(draftId, canSendEmail, canSendLinkedIn)
-      if (result.success) {
+      
+      // Check individual results
+      const emailResult = result.results?.email
+      const linkedinResult = result.results?.linkedin
+      
+      const emailSuccess = canSendEmail && emailResult && emailResult.success
+      const linkedinSuccess = canSendLinkedIn && linkedinResult && linkedinResult.success
+      
+      if (emailSuccess || linkedinSuccess) {
         setSendingStatus(prev => ({
           ...prev,
           [draftId]: { 
             ...prev[draftId], 
-            email: canSendEmail ? 'sent' : prev[draftId]?.email,
-            linkedin: canSendLinkedIn ? 'sent' : prev[draftId]?.linkedin
+            email: emailSuccess ? 'sent' : (canSendEmail && !emailSuccess ? 'error' : prev[draftId]?.email),
+            linkedin: linkedinSuccess ? 'sent' : (canSendLinkedIn && !linkedinSuccess ? 'error' : prev[draftId]?.linkedin),
+            error: null
           }
         }))
 
         // Track sent messages
-        if (canSendEmail) {
+        if (emailSuccess) {
           trackEmailSent(
             draft.job_title || 'Unknown Role',
             draft.company_name || 'Unknown Company',
             draft.recipient_name || 'Unknown Recruiter'
           )
         }
-        if (canSendLinkedIn) {
+        if (linkedinSuccess) {
           trackLinkedInInvite(
             draft.job_title || 'Unknown Role',
             draft.company_name || 'Unknown Company',
@@ -203,20 +245,42 @@ export default function Drafts() {
 
         // Reload drafts to update status
         await loadDrafts()
-      } else {
-        throw new Error(result.error || 'Failed to send messages')
       }
-    } catch (error) {
+      
+      // Show errors if any failed
+      const errors = []
+      if (canSendEmail && (!emailResult || !emailResult.success)) {
+        errors.push(`Email: ${emailResult?.error || 'Failed to send email'}`)
+      }
+      if (canSendLinkedIn && (!linkedinResult || !linkedinResult.success)) {
+        errors.push(`LinkedIn: ${linkedinResult?.error || 'Failed to send LinkedIn message'}`)
+      }
+      
+      if (errors.length > 0) {
+        const errorMsg = errors.join(' | ')
+        setSendingStatus(prev => ({
+          ...prev,
+          [draftId]: { 
+            ...prev[draftId], 
+            email: canSendEmail && (!emailResult || !emailResult.success) ? 'error' : prev[draftId]?.email,
+            linkedin: canSendLinkedIn && (!linkedinResult || !linkedinResult.success) ? 'error' : prev[draftId]?.linkedin,
+            error: errorMsg
+          }
+        }))
+        showToast(`Failed to send messages: ${errorMsg}`, 'error')
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || err.message || 'Failed to send messages'
       setSendingStatus(prev => ({
         ...prev,
         [draftId]: { 
           ...prev[draftId], 
           email: canSendEmail ? 'error' : prev[draftId]?.email,
           linkedin: canSendLinkedIn ? 'error' : prev[draftId]?.linkedin,
-          error: error.message 
+          error: errorMessage 
         }
       }))
-      alert(`Failed to send messages: ${error.message}`)
+      showToast(`Failed to send messages: ${errorMessage}`, 'error')
     }
   }
 
@@ -226,11 +290,11 @@ export default function Drafts() {
     if (!draft) return
     
     if (part === 'email' && draft.email_sent) {
-      alert('Email has already been sent. Cannot edit.')
+      showToast('Email has already been sent. Cannot edit.', 'warning')
       return
     }
     if (part === 'linkedin' && draft.linkedin_sent) {
-      alert('LinkedIn message has already been sent. Cannot edit.')
+      showToast('LinkedIn message has already been sent. Cannot edit.', 'warning')
       return
     }
     
@@ -259,7 +323,7 @@ export default function Drafts() {
       setEditingDraft(null)
       setEditValues({})
     } catch (error) {
-      alert(`Failed to update draft: ${error.message}`)
+      showToast(`Failed to update draft: ${error.message}`, 'error')
     }
   }
 
@@ -346,14 +410,14 @@ export default function Drafts() {
 
   const handleSendEmailsToSelected = async () => {
     if (selectedDrafts.size === 0) {
-      alert('Please select at least one draft to send')
+      showToast('Please select at least one draft to send', 'warning')
       return
     }
 
     const draftsToSend = getEligibleDrafts('email')
 
     if (draftsToSend.length === 0) {
-      alert('No selected drafts have an unsent email to send')
+      showToast('No selected drafts have an unsent email to send', 'info')
       return
     }
 
@@ -369,14 +433,14 @@ export default function Drafts() {
 
   const handleSendLinkedInToSelected = async () => {
     if (selectedDrafts.size === 0) {
-      alert('Please select at least one draft to send')
+      showToast('Please select at least one draft to send', 'warning')
       return
     }
 
     const draftsToSend = getEligibleDrafts('linkedin')
 
     if (draftsToSend.length === 0) {
-      alert('No selected drafts have an unsent LinkedIn message to send')
+      showToast('No selected drafts have an unsent LinkedIn message to send', 'info')
       return
     }
 
@@ -392,7 +456,7 @@ export default function Drafts() {
 
   const handleDeleteSelected = async () => {
     if (selectedDrafts.size === 0) {
-      alert('Please select at least one draft to delete')
+      showToast('Please select at least one draft to delete', 'warning')
       return
     }
 
@@ -410,7 +474,7 @@ export default function Drafts() {
       setSelectedDrafts(new Set())
       await loadDrafts()
     } catch (error) {
-      alert(`Failed to delete some drafts: ${error.message}`)
+      showToast(`Failed to delete some drafts: ${error.message}`, 'error')
       await loadDrafts()
     }
   }
@@ -663,6 +727,11 @@ export default function Drafts() {
                                         lineHeight: '1.5'
                                       }}
                                     />
+                                    <div className="flex justify-end text-xs">
+                                      <span className="text-gray-400">
+                                        {(editValues.email_body || '').length} characters
+                                      </span>
+                                    </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <Button
@@ -756,6 +825,20 @@ export default function Drafts() {
                                       lineHeight: '1.5'
                                     }}
                                   />
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-400">
+                                      LinkedIn connection requests have a limit of {linkedInCharLimit} characters{linkedInAccount?.is_premium === false ? ' (free account)' : linkedInAccount?.is_premium === true ? ' (premium account)' : ''}
+                                    </span>
+                                    <span className={`font-medium ${
+                                      (editValues.linkedin_message || '').length > linkedInCharLimit 
+                                        ? 'text-red-400' 
+                                        : (editValues.linkedin_message || '').length > (linkedInCharLimit * 0.83) 
+                                        ? 'text-amber-400' 
+                                        : 'text-gray-400'
+                                    }`}>
+                                      {(editValues.linkedin_message || '').length} / {linkedInCharLimit}
+                                    </span>
+                                  </div>
                                   <div className="flex gap-2">
                                     <Button
                                       onClick={() => handleSaveEdit(draft.id)}

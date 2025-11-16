@@ -166,7 +166,10 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = resizeStartX.current - e.clientX // Inverted because sidebar is on right
-      const newWidth = Math.max(200, Math.min(800, resizeStartWidth.current + deltaX))
+      // Calculate max width to ensure at least 600px remains for main content
+      const viewportWidth = window.innerWidth
+      const maxConsoleWidth = Math.min(800, viewportWidth - 600) // Leave at least 600px for content
+      const newWidth = Math.max(200, Math.min(maxConsoleWidth, resizeStartWidth.current + deltaX))
       setWidth(newWidth)
     }
 
@@ -191,6 +194,34 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
     }
   }, [isResizing])
 
+  // Recalculate max width on window resize to ensure console doesn't overlap content
+  useEffect(() => {
+    const handleResize = () => {
+      const viewportWidth = window.innerWidth
+      const maxConsoleWidth = Math.min(800, viewportWidth - 600)
+      
+      // Auto-minimize if viewport is too small (less than 900px)
+      if (viewportWidth < 900 && !isMinimized) {
+        setIsMinimized(true)
+      }
+      
+      // Allow expansion if viewport is large enough
+      if (viewportWidth >= 900 && isMinimized && isOpen) {
+        // Don't auto-expand, let user manually expand
+      }
+      
+      if (width > maxConsoleWidth) {
+        setWidth(Math.max(280, maxConsoleWidth)) // Ensure minimum usable width
+      }
+    }
+    
+    // Run on mount
+    handleResize()
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [width, isMinimized, isOpen])
+
   // Notify parent of width changes
   useEffect(() => {
     if (isOpen) {
@@ -199,6 +230,13 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
       onWidthChange?.(0)
     }
   }, [isOpen, isMinimized, width, onWidthChange])
+
+  // Reset console width on unmount to prevent layout issues on other pages
+  useEffect(() => {
+    return () => {
+      onWidthChange?.(0)
+    }
+  }, [onWidthChange])
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -248,7 +286,7 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
                 isResizing ? 'bg-cyan-500/60' : ''
               }`}
               style={{ cursor: 'col-resize' }}
-              title="Drag to resize sidebar"
+              title={`Drag to resize (min: 200px, max: ${Math.min(800, window.innerWidth - 600)}px)`}
             >
               <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-16 rounded-full transition-opacity ${
                 isResizing ? 'bg-cyan-400/80' : 'bg-cyan-400/20'
@@ -333,7 +371,7 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
 
           {/* Logs Container */}
           {!isMinimized && (
-            <div className="relative flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {logs.length === 0 ? (
                 <div className="flex h-full items-center justify-center p-8">
                   <div className="text-center">
@@ -345,14 +383,14 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
                   </div>
                 </div>
               ) : (
-                <div className="p-3">
-                  <ChainOfThought defaultOpen className="space-y-2">
+                <div className="p-3 pb-20">
+                  <ChainOfThought defaultOpen className="space-y-0">
                     <ChainOfThoughtHeader>Assistant reasoning</ChainOfThoughtHeader>
-                    <ChainOfThoughtContent className="space-y-4">
+                    <ChainOfThoughtContent className="space-y-0">
                       {logs.map((log, index) => {
                         const message = resolveMessage(log)
+                        // Remove timestamp from meta - only show log type/level if available
                         const meta = [
-                          resolveTimestamp(log.timestamp),
                           (log.type as string | undefined) ?? (log.level as string | undefined),
                         ]
                           .filter(Boolean)
@@ -369,23 +407,20 @@ export function ActivityConsole({ logs, onClear, isActive, onToggle, onWidthChan
                             className="text-sm leading-relaxed"
                             label={
                               <div className="flex items-start gap-2">
-                                <span className="whitespace-pre-wrap text-foreground">
+                                <span className="whitespace-pre-wrap break-words text-foreground">
                                   {message}
                                 </span>
                               </div>
                             }
-                            description={meta}
+                            description={meta || undefined}
                           />
                         )
                       })}
-                      <div ref={logsEndRef} />
+                      <div ref={logsEndRef} className="h-8" />
                     </ChainOfThoughtContent>
                   </ChainOfThought>
                 </div>
               )}
-
-              {/* Gradient fade at bottom */}
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-900/98 to-transparent" />
             </div>
           )}
 

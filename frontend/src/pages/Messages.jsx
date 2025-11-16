@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { JobContextModal } from '../components/JobContextModal'
 import { apiRequest } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
+import { useToast } from '../context/toast-context'
 
 // API functions
 async function sendLinkedInInvitation(linkedinUrl, message, metadata = {}) {
@@ -42,6 +43,7 @@ async function saveDraft(draftData) {
 export default function Messages() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { showToast } = useToast()
   const [messages, setMessages] = useState([])
   const [sendingStatus, setSendingStatus] = useState({})
   const [isSending, setIsSending] = useState(false)
@@ -50,6 +52,30 @@ export default function Messages() {
   const savedDraftsRef = useRef(new Set()) // Track which messages we've already saved as drafts
   const messagesRef = useRef(messages)
   const sendingStatusRef = useRef(sendingStatus)
+  const [linkedInAccount, setLinkedInAccount] = useState(null) // Store LinkedIn account info
+  const [linkedInAccountLoading, setLinkedInAccountLoading] = useState(true)
+  
+  // Fetch LinkedIn account info to determine premium status
+  useEffect(() => {
+    const fetchLinkedInAccount = async () => {
+      try {
+        const result = await apiRequest('/api/v1/linkedin-accounts')
+        const accounts = result.accounts || []
+        if (accounts.length > 0) {
+          setLinkedInAccount(accounts[0]) // Use first account
+        }
+      } catch (err) {
+        console.error('Failed to fetch LinkedIn account:', err)
+      } finally {
+        setLinkedInAccountLoading(false)
+      }
+    }
+    fetchLinkedInAccount()
+  }, [])
+  
+  // Determine character limit based on premium status
+  // Default to 300 (premium) if unknown, 200 if free account
+  const linkedInCharLimit = linkedInAccount?.is_premium === false ? 200 : 300
 
   // Keep refs updated with latest values
   useEffect(() => {
@@ -103,7 +129,7 @@ export default function Messages() {
     const linkedinUrl = messageData.recruiter?.profile_url || messageData.mapItem?.recruiter_profile_url
     
     if (!linkedinUrl) {
-      alert('LinkedIn URL not found for this recruiter')
+      showToast('LinkedIn URL not found for this recruiter', 'error')
       return
     }
 
@@ -144,7 +170,7 @@ export default function Messages() {
         ...prev,
         [index]: { ...prev[index], linkedin: 'error', error: errorMessage }
       }))
-      alert(`Failed to send LinkedIn message: ${errorMessage}`)
+      showToast(`Failed to send LinkedIn message: ${errorMessage}`, 'error')
     } finally {
       setIsSending(false)
     }
@@ -155,7 +181,7 @@ export default function Messages() {
     const email = messageData.recruiter?.extracted_email || messageData.recruiter?.email
     
     if (!email) {
-      alert('Email address not found for this recruiter')
+      showToast('Email address not found for this recruiter', 'error')
       return
     }
 
@@ -200,7 +226,7 @@ export default function Messages() {
         ...prev,
         [index]: { ...prev[index], email: 'error', error: errorMessage }
       }))
-      alert(`Failed to send email: ${errorMessage}`)
+      showToast(`Failed to send email: ${errorMessage}`, 'error')
     } finally {
       setIsSending(false)
     }
@@ -759,6 +785,20 @@ export default function Messages() {
                     onChange={(e) => updateMessage(index, 'editedLinkedInMessage', e.target.value)}
                     placeholder="LinkedIn message will appear here..."
                   />
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">
+                      LinkedIn connection requests have a limit of {linkedInCharLimit} characters{linkedInAccount?.is_premium === false ? ' (free account)' : linkedInAccount?.is_premium === true ? ' (premium account)' : ''}
+                    </span>
+                    <span className={`font-medium ${
+                      (messageData.editedLinkedInMessage || '').length > linkedInCharLimit 
+                        ? 'text-red-400' 
+                        : (messageData.editedLinkedInMessage || '').length > (linkedInCharLimit * 0.83) 
+                        ? 'text-amber-400' 
+                        : 'text-gray-400'
+                    }`}>
+                      {(messageData.editedLinkedInMessage || '').length} / {linkedInCharLimit}
+                    </span>
+                  </div>
                   
                   <button
                     onClick={() => handleSendLinkedIn(index)}
@@ -797,6 +837,11 @@ export default function Messages() {
                       onChange={(e) => updateMessage(index, 'editedEmailBody', e.target.value)}
                       placeholder="Email body will appear here..."
                     />
+                    <div className="flex justify-end text-xs">
+                      <span className="text-gray-400">
+                        {(messageData.editedEmailBody || '').length} characters
+                      </span>
+                    </div>
                   </div>
                   
                   <button

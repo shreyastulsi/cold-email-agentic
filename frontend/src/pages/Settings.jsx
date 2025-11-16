@@ -4,11 +4,13 @@ import { useSearchParams } from 'react-router-dom'
 import Auth from '../components/Auth'
 import { Button } from '../components/ui/button'
 import { apiRequest } from '../utils/api'
+import { useToast } from '../context/toast-context'
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState('email') // 'email', 'linkedin', 'auth'
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
 
   // Read tab from URL query params on mount
   useEffect(() => {
@@ -654,7 +656,7 @@ export default function Settings() {
                                   {account.display_name ? account.display_name.charAt(0).toUpperCase() : 'L'}
                                 </span>
                               </div>
-                              <div>
+                              <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold">
                                     {account.display_name || 'LinkedIn Account'}
@@ -670,6 +672,30 @@ export default function Settings() {
                                     View Profile
                                   </a>
                                 )}
+                                <div className="mt-2 flex items-center gap-2">
+                                  <label className="text-xs text-gray-400">Account Type:</label>
+                                  <select
+                                    value={account.is_premium === false ? 'free' : 'premium'}
+                                    onChange={async (e) => {
+                                      const newValue = e.target.value === 'premium' ? true : false
+                                      const accountTypeLabel = newValue ? 'premium' : 'free'
+                                      try {
+                                        await apiRequest(`/api/v1/linkedin-accounts/${account.id}`, {
+                                          method: 'PUT',
+                                          body: JSON.stringify({ is_premium: newValue })
+                                        })
+                                        loadLinkedInAccounts() // Reload to show updated status
+                                        showToast(`LinkedIn account type updated to ${accountTypeLabel}`, 'success')
+                                      } catch (err) {
+                                        showToast(`Failed to update account type: ${err.message}`, 'error')
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                                  >
+                                    <option value="free">Free</option>
+                                    <option value="premium">Premium</option>
+                                  </select>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -691,14 +717,37 @@ export default function Settings() {
               </div>
 
               <div className="rounded-lg bg-blue-900/20 border border-blue-700/50 p-4">
-                <h3 className="font-semibold mb-2 text-blue-300">Why connect your LinkedIn account?</h3>
-                <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Send messages and connection requests from your own LinkedIn account</li>
-                  <li>• Better rate limits (100+ connection requests per month per account)</li>
-                  <li>• Improved compliance and authenticity</li>
-                  <li>• Uses Unipile's secure hosted auth wizard for easy connection</li>
-                  <li>• Unipile handles LinkedIn OAuth authentication securely</li>
-                </ul>
+                <h3 className="font-semibold mb-3 text-blue-300">Why connect your LinkedIn account?</h3>
+                <div className="text-sm text-gray-300 space-y-3">
+                  <p>
+                    Your LinkedIn account is used to send personalized connection requests and messages to recruiters 
+                    at companies you're interested in. When you generate outreach messages through our platform, 
+                    we use your connected LinkedIn account to:
+                  </p>
+                  <ul className="space-y-2 ml-4">
+                    <li className="list-disc">
+                      <strong>Send connection requests</strong> with personalized messages directly from your LinkedIn profile
+                    </li>
+                    <li className="list-disc">
+                      <strong>Comply with LinkedIn's limits</strong>: Free accounts can send messages up to 200 characters, 
+                      Premium accounts up to 300 characters per connection request
+                    </li>
+                    <li className="list-disc">
+                      <strong>Maintain authenticity</strong> by using your own LinkedIn account rather than third-party services
+                    </li>
+                    <li className="list-disc">
+                      <strong>Achieve better deliverability</strong> with higher rate limits and improved compliance compared 
+                      to automated tools
+                    </li>
+                    <li className="list-disc">
+                      <strong>Track your outreach</strong> through your LinkedIn account's connection and message history
+                    </li>
+                  </ul>
+                  <p className="text-xs text-gray-400 mt-4">
+                    We use Unipile's secure hosted authentication to safely connect your LinkedIn account. Your credentials 
+                    are never stored by our platform—we only maintain the necessary tokens to send messages on your behalf.
+                  </p>
+                </div>
           </div>
         </div>
       )}

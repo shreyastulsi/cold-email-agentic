@@ -9,7 +9,10 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { SidebarLoggerProvider } from '@/context/sidebar-logger-context'
 import { ActivityConsoleProvider, useActivityConsole } from '@/context/activity-console-context'
+import { ToastProvider, useToast } from '@/context/toast-context'
+import { ToastContainer } from '@/components/ui/toast'
 import { useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 
 const getPageTitle = (pathname) => {
   const routes = {
@@ -30,6 +33,9 @@ const getPageTitle = (pathname) => {
 }
 
 function LayoutContent({ children, pageTitle }) {
+  const { toasts, removeToast } = useToast()
+  const { consoleWidth } = useActivityConsole()
+  
   return (
     <SidebarInset 
       className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col h-screen overflow-hidden"
@@ -47,11 +53,18 @@ function LayoutContent({ children, pageTitle }) {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:p-8 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1400px]">
+      <main 
+        className="flex flex-1 flex-col gap-4 p-4 md:p-8 overflow-y-auto overflow-x-hidden transition-all duration-300"
+        style={{ 
+          marginRight: `${consoleWidth}px`,
+          minWidth: '600px'
+        }}
+      >
+        <div className="w-full max-w-[1400px]" style={{ marginLeft: 0, minWidth: '560px' }}>
           {children}
         </div>
       </main>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </SidebarInset>
   )
 }
@@ -60,17 +73,24 @@ export default function Layout({ children }) {
   const location = useLocation()
   const pageTitle = getPageTitle(location.pathname)
 
+  // Update browser tab title based on current page
+  useEffect(() => {
+    document.title = pageTitle ? `${pageTitle} - Keryx` : 'Keryx'
+  }, [pageTitle])
+
   return (
-    <SidebarLoggerProvider>
-      <ActivityConsoleProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <LayoutContent pageTitle={pageTitle}>
-            {children}
-          </LayoutContent>
-        </SidebarProvider>
-      </ActivityConsoleProvider>
-    </SidebarLoggerProvider>
+    <ToastProvider>
+      <SidebarLoggerProvider>
+        <ActivityConsoleProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <LayoutContent pageTitle={pageTitle}>
+              {children}
+            </LayoutContent>
+          </SidebarProvider>
+        </ActivityConsoleProvider>
+      </SidebarLoggerProvider>
+    </ToastProvider>
   )
 }
 

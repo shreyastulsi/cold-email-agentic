@@ -498,9 +498,27 @@ async def send_draft(
         except Exception as e:
             logger.warning(f"Failed to increment LinkedIn stats: {e}")
     
+    # Determine overall success - if any requested send failed, return success=False
+    email_needed = draft.draft_type in ['email', 'both'] and draft.email_subject and draft.email_body and draft.recipient_email
+    linkedin_needed = draft.draft_type in ['linkedin', 'both'] and draft.linkedin_message and draft.recipient_linkedin_url
+    
+    overall_success = True
+    error_messages = []
+    
+    if email_needed and results.get("email"):
+        if not results["email"].get("success"):
+            overall_success = False
+            error_messages.append(f"Email: {results['email'].get('error', 'Failed to send email')}")
+    
+    if linkedin_needed and results.get("linkedin"):
+        if not results["linkedin"].get("success"):
+            overall_success = False
+            error_messages.append(f"LinkedIn: {results['linkedin'].get('error', 'Failed to send LinkedIn message')}")
+    
     return {
-        "success": True,
+        "success": overall_success,
         "results": results,
+        "error": " | ".join(error_messages) if error_messages else None,
         "draft": {
             "id": draft.id,
             "is_sent": draft.is_sent,

@@ -153,3 +153,29 @@ html {
   color: white !important;
 }
 
+/* Custom scrollbar styling for horizontal scroll */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 12px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5);
+  border-radius: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.6), rgba(147, 51, 234, 0.6));
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
+}
+
+/* Firefox scrollbar */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.6) rgba(31, 41, 55, 0.5);
+}
+
