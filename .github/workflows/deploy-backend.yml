@@ -50,14 +50,15 @@ jobs:
 
       - name: Create/Update Alembic Migration Job (Supabase)
         run: |
-          # Check if job exists and delete it to ensure clean recreation with correct service account
-          if gcloud run jobs describe alembic-migrate --region $REGION --project $PROJECT_ID >/dev/null 2>&1; then
-            echo "Job exists, deleting to recreate with correct service account..."
-            gcloud run jobs delete alembic-migrate \
-              --region $REGION \
-              --project $PROJECT_ID \
-              --quiet
-          fi
+          # Force delete the job if it exists (ignore errors if secret references are broken)
+          echo "Attempting to delete existing job (ignoring errors)..."
+          gcloud run jobs delete alembic-migrate \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --quiet 2>/dev/null || echo "Job doesn't exist or delete failed, continuing..."
+          
+          # Wait a moment for delete to complete
+          sleep 3
           
           # Create job with correct service account
           echo "Creating job with correct service account..."
