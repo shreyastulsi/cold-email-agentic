@@ -50,39 +50,27 @@ jobs:
 
       - name: Create/Update Alembic Migration Job (Supabase)
         run: |
-          # Check if job exists
+          # Check if job exists and delete it to ensure clean recreation with correct service account
           if gcloud run jobs describe alembic-migrate --region $REGION --project $PROJECT_ID >/dev/null 2>&1; then
-            # Job exists - update it with service account
-            echo "Job exists, updating with correct service account..."
-            gcloud run jobs update alembic-migrate \
-              --image $IMAGE \
+            echo "Job exists, deleting to recreate with correct service account..."
+            gcloud run jobs delete alembic-migrate \
               --region $REGION \
               --project $PROJECT_ID \
-              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
-              --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
-              --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
-              --command "bash" \
-              --args "-lc","alembic upgrade head"
-            
-            # Execute the job
-            gcloud run jobs execute alembic-migrate \
-              --region $REGION \
-              --project $PROJECT_ID \
-              --wait
-          else
-            # Job doesn't exist - create it with service account
-            echo "Job doesn't exist, creating with correct service account..."
-            gcloud run jobs create alembic-migrate \
-              --image $IMAGE \
-              --region $REGION \
-              --project $PROJECT_ID \
-              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
-              --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
-              --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
-              --execute-now \
-              --command "bash" \
-              --args "-lc","alembic upgrade head"
+              --quiet
           fi
+          
+          # Create job with correct service account
+          echo "Creating job with correct service account..."
+          gcloud run jobs create alembic-migrate \
+            --image $IMAGE \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
+            --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
+            --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
+            --execute-now \
+            --command "bash" \
+            --args "-lc","alembic upgrade head"
 
       - name: Deploy to Cloud Run (Backend)
         env:
