@@ -50,29 +50,23 @@ jobs:
 
       - name: Create/Update Alembic Migration Job (Supabase)
         run: |
-          gcloud run jobs describe alembic-migrate --region $REGION --project $PROJECT_ID >/dev/null 2>&1 \
-            && EXISTS=true || EXISTS=false
-          if [ "$EXISTS" = false ]; then
-            gcloud run jobs create alembic-migrate \
-              --image $IMAGE \
-              --region $REGION \
-              --project $PROJECT_ID \
-              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
-              --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
-              --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
-              --execute-now \
-              --command "bash" \
-              --args "-lc","alembic upgrade head"
-          else
-            gcloud run jobs update alembic-migrate \
-              --image $IMAGE \
-              --region $REGION \
-              --project $PROJECT_ID \
-              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
-              --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
-              --set-env-vars "PYTHONDONTWRITEBYTECODE=1"
-            gcloud run jobs execute alembic-migrate --region $REGION --project $PROJECT_ID
+          # Check if job exists
+          if gcloud run jobs describe alembic-migrate --region $REGION --project $PROJECT_ID >/dev/null 2>&1; then
+            # Job exists - delete it to recreate with correct service account
+            echo "Deleting existing job to recreate with correct service account..."
+            gcloud run jobs delete alembic-migrate --region $REGION --project $PROJECT_ID --quiet || true
           fi
+          # Create job with correct service account
+          gcloud run jobs create alembic-migrate \
+            --image $IMAGE \
+            --region $REGION \
+            --project $PROJECT_ID \
+            --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
+            --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
+            --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
+            --execute-now \
+            --command "bash" \
+            --args "-lc","alembic upgrade head"
 
       - name: Deploy to Cloud Run (Backend)
         env:
