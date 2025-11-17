@@ -33,9 +33,14 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Verify Authentication
+        run: |
+          gcloud config get-value account
+          gcloud projects get-iam-policy ${{ secrets.GCP_PROJECT_ID }} --flatten="bindings[].members" --filter="bindings.members:serviceAccount:${{ secrets.GCP_SERVICE_ACCOUNT }}" --format="table(bindings.role)"
+
       - name: Configure Docker for Artifact Registry
         run: |
-          echo '${{ secrets.GCP_REGION }}-docker.pkg.dev' | docker login -u oauth2accesstoken --password-stdin $(gcloud auth print-access-token)
+          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build & Push Image
         working-directory: backend
