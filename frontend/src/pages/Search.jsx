@@ -15,11 +15,9 @@ import { useActivityConsole } from '../context/activity-console-context'
 import { useSidebarLogger } from '../context/sidebar-logger-context'
 import { useToast } from '../context/toast-context'
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus'
-import { apiRequest } from '../utils/api'
+import { apiRequest, API_BASE_URL } from '../utils/api'
 import { trackEmailSent, trackLinkedInInvite } from '../utils/dashboardStats'
 import SearchMapping from './SearchMapping'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const steps = [
   'Find Companies',

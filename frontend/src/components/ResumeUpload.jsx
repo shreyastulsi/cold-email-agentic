@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { FileUpload } from './ui/file-upload'
+import { API_BASE_URL } from '../utils/api'
 
 export default function ResumeUpload() {
   const navigate = useNavigate()
@@ -40,8 +41,6 @@ export default function ResumeUpload() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-      
       // Get auth token helper
       const getAuthToken = async () => {
         try {

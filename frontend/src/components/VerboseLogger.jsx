@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { API_BASE_URL } from '../utils/api'
 
 export default function VerboseLogger({ active = true }) {
   const [logs, setLogs] = useState([])
@@ -21,9 +22,7 @@ export default function VerboseLogger({ active = true }) {
     if (!active) return
 
     // Connect to SSE endpoint using fetch stream (supports auth headers)
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-    
-        const connectSSE = async () => {
+    const connectSSE = async () => {
       try {
         const { getSessionToken } = await import('../utils/supabase')
         const token = await getSessionToken()

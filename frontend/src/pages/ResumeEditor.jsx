@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { FileUpload } from '../components/ui/file-upload'
-import { apiRequest } from '../utils/api'
+import { apiRequest, API_BASE_URL } from '../utils/api'
 
 export default function ResumeEditor() {
   const navigate = useNavigate()
@@ -84,8 +84,6 @@ export default function ResumeEditor() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-      
       // Get auth token helper
       const getAuthToken = async () => {
         try {
