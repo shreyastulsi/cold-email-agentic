@@ -70,11 +70,59 @@ jobs:
       - name: Deploy to Cloud Run (Backend)
         env:
           CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          UNIPILE_API_KEY: ${{ secrets.UNIPILE_API_KEY }}
+          UNIPILE_ACCOUNT_ID: ${{ secrets.UNIPILE_ACCOUNT_ID }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         run: |
-          ENV_VARS="PYTHONDONTWRITEBYTECODE=1,DATABASE_URL=${{ secrets.BACKEND_DATABASE_URL }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }},SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}"
+          # Build environment variables string
+          ENV_VARS="PYTHONDONTWRITEBYTECODE=1"
+          ENV_VARS="$ENV_VARS,DATABASE_URL=${{ secrets.BACKEND_DATABASE_URL }}"
+          ENV_VARS="$ENV_VARS,SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+          ENV_VARS="$ENV_VARS,SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+          ENV_VARS="$ENV_VARS,SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}"
+          
+          # Add optional environment variables if they exist
           if [ -n "$CORS_ORIGINS" ]; then
             ENV_VARS="$ENV_VARS,CORS_ORIGINS=$CORS_ORIGINS"
           fi
+          if [ -n "$UNIPILE_API_KEY" ]; then
+            ENV_VARS="$ENV_VARS,UNIPILE_API_KEY=$UNIPILE_API_KEY"
+          fi
+          if [ -n "$UNIPILE_ACCOUNT_ID" ]; then
+            ENV_VARS="$ENV_VARS,UNIPILE_ACCOUNT_ID=$UNIPILE_ACCOUNT_ID"
+          fi
+          if [ -n "$BASE_URL" ]; then
+            ENV_VARS="$ENV_VARS,BASE_URL=$BASE_URL"
+          fi
+          if [ -n "$APOLLO_API_KEY" ]; then
+            ENV_VARS="$ENV_VARS,APOLLO_API_KEY=$APOLLO_API_KEY"
+          fi
+          if [ -n "$OPENAI_API_KEY" ]; then
+            ENV_VARS="$ENV_VARS,OPENAI_API_KEY=$OPENAI_API_KEY"
+          fi
+          if [ -n "$SMTP_SERVER" ]; then
+            ENV_VARS="$ENV_VARS,SMTP_SERVER=$SMTP_SERVER"
+          fi
+          if [ -n "$SMTP_PORT" ]; then
+            ENV_VARS="$ENV_VARS,SMTP_PORT=$SMTP_PORT"
+          fi
+          if [ -n "$SMTP_USERNAME" ]; then
+            ENV_VARS="$ENV_VARS,SMTP_USERNAME=$SMTP_USERNAME"
+          fi
+          if [ -n "$SMTP_PASSWORD" ]; then
+            ENV_VARS="$ENV_VARS,SMTP_PASSWORD=$SMTP_PASSWORD"
+          fi
+          if [ -n "$FROM_EMAIL" ]; then
+            ENV_VARS="$ENV_VARS,FROM_EMAIL=$FROM_EMAIL"
+          fi
+          
           gcloud run deploy $SERVICE_NAME \
             --image $IMAGE \
             --platform managed \
