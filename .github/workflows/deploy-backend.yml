@@ -34,7 +34,8 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+        run: |
+          echo '${{ secrets.GCP_REGION }}-docker.pkg.dev' | docker login -u oauth2accesstoken --password-stdin $(gcloud auth print-access-token)
 
       - name: Build & Push Image
         working-directory: backend
