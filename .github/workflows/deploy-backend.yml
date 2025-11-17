@@ -57,6 +57,7 @@ jobs:
               --image $IMAGE \
               --region $REGION \
               --project $PROJECT_ID \
+              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
               --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
               --set-env-vars "PYTHONDONTWRITEBYTECODE=1" \
               --execute-now \
@@ -67,6 +68,7 @@ jobs:
               --image $IMAGE \
               --region $REGION \
               --project $PROJECT_ID \
+              --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
               --set-secrets "DATABASE_URL=BACKEND_DATABASE_URL:latest" \
               --set-env-vars "PYTHONDONTWRITEBYTECODE=1"
             gcloud run jobs execute alembic-migrate --region $REGION --project $PROJECT_ID
@@ -85,6 +87,7 @@ jobs:
             --platform managed \
             --region $REGION \
             --project $PROJECT_ID \
+            --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
             --allow-unauthenticated \
             --port 8000 \
             --memory 2Gi \

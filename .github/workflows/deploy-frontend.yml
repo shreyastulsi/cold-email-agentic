@@ -62,6 +62,7 @@ jobs:
             --platform managed \
             --region $REGION \
             --project $PROJECT_ID \
+            --service-account ${{ secrets.GCP_SERVICE_ACCOUNT }} \
             --allow-unauthenticated \
             --port 8080 \
             --memory 512Mi \
