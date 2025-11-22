@@ -80,6 +80,12 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
         run: |
           # Build environment variables string
           ENV_VARS="PYTHONDONTWRITEBYTECODE=1"
@@ -121,6 +127,24 @@ jobs:
           fi
           if [ -n "$FROM_EMAIL" ]; then
             ENV_VARS="$ENV_VARS,FROM_EMAIL=$FROM_EMAIL"
+          fi
+          if [ -n "$GOOGLE_CLIENT_ID" ]; then
+            ENV_VARS="$ENV_VARS,GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+          fi
+          if [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+            ENV_VARS="$ENV_VARS,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET"
+          fi
+          if [ -n "$LINKEDIN_CLIENT_ID" ]; then
+            ENV_VARS="$ENV_VARS,LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID"
+          fi
+          if [ -n "$LINKEDIN_CLIENT_SECRET" ]; then
+            ENV_VARS="$ENV_VARS,LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET"
+          fi
+          if [ -n "$FRONTEND_URL" ]; then
+            ENV_VARS="$ENV_VARS,FRONTEND_URL=$FRONTEND_URL"
+          fi
+          if [ -n "$BACKEND_URL" ]; then
+            ENV_VARS="$ENV_VARS,BACKEND_URL=$BACKEND_URL"
           fi
           
           gcloud run deploy $SERVICE_NAME \

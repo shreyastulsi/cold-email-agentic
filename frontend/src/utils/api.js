@@ -8,6 +8,7 @@ function getApiBaseUrl() {
   // First, check if explicitly set via environment variable
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl) {
+    console.log(`[API] Using VITE_API_BASE_URL from environment: ${envUrl}`);
     return envUrl;
   }
   
@@ -16,25 +17,41 @@ function getApiBaseUrl() {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     
-    // If we're on a Cloud Run domain (e.g., frontend-xxxxx-uc.a.run.app)
-    if (hostname.includes('.a.run.app') || hostname.includes('cloudrun.app')) {
-      // Try to infer backend URL by replacing "frontend" with "backend"
-      // This works if services are named "frontend" and "backend"
-      const inferredBackend = hostname.replace(/^frontend(-|\.)/, 'backend$1');
+    // If we're on a Cloud Run domain (e.g., frontend-xxxxx-uc.a.run.app or backend-xxxxx.europe-west2.run.app)
+    if (hostname.includes('.a.run.app') || hostname.includes('cloudrun.app') || hostname.includes('.run.app')) {
+      // Pattern 1: frontend-xxxxx -> backend-xxxxx (handles both - and . separators)
+      let inferredBackend = hostname.replace(/^frontend([-\.])/, 'backend$1');
       if (inferredBackend !== hostname) {
         const inferredUrl = `${protocol}//${inferredBackend}`;
-        console.log(`[API] Inferred backend URL: ${inferredUrl}`);
+        console.log(`[API] Inferred backend URL (pattern 1): ${inferredUrl}`);
         return inferredUrl;
       }
       
-      // If that didn't work, try common patterns
-      // Pattern: frontend-xxxxx -> backend-xxxxx
-      const match = hostname.match(/^(frontend)(.*)$/);
-      if (match) {
-        const inferredUrl = `${protocol}//backend${match[2]}`;
-        console.log(`[API] Inferred backend URL (pattern match): ${inferredUrl}`);
+      // Pattern 2: frontend-xxxxx-uc -> backend-xxxxx-uc (handles region suffixes)
+      inferredBackend = hostname.replace(/^frontend(-[^-]+)(-.*)?\./, 'backend$1$2.');
+      if (inferredBackend !== hostname && inferredBackend.includes('backend')) {
+        const inferredUrl = `${protocol}//${inferredBackend}`;
+        console.log(`[API] Inferred backend URL (pattern 2): ${inferredUrl}`);
         return inferredUrl;
       }
+      
+      // Pattern 3: Any service-xxxxx -> backend-xxxxx (more generic)
+      const match = hostname.match(/^([^-]+)-([^-]+)(.*)$/);
+      if (match && match[1] !== 'backend') {
+        const inferredUrl = `${protocol}//backend-${match[2]}${match[3]}`;
+        console.log(`[API] Inferred backend URL (pattern 3): ${inferredUrl}`);
+        return inferredUrl;
+      }
+      
+      // Pattern 4: Try replacing the first part before the first number
+      const numberMatch = hostname.match(/^([a-zA-Z]+)(-\d+.*)$/);
+      if (numberMatch && numberMatch[1] !== 'backend') {
+        const inferredUrl = `${protocol}//backend${numberMatch[2]}`;
+        console.log(`[API] Inferred backend URL (pattern 4): ${inferredUrl}`);
+        return inferredUrl;
+      }
+      
+      console.warn(`[API] Could not infer backend URL from hostname: ${hostname}. Please set VITE_API_BASE_URL.`);
     }
     
     // If we're on localhost in development, use default
@@ -44,7 +61,8 @@ function getApiBaseUrl() {
   }
   
   // Default fallback
-  console.warn('[API] No VITE_API_BASE_URL set and could not infer backend URL. Using localhost:8000. This may not work in production.');
+  console.error('[API] No VITE_API_BASE_URL set and could not infer backend URL. Using localhost:8000. This will NOT work in production!');
+  console.error('[API] To fix: Set VITE_API_BASE_URL build argument when building the Docker image.');
   return 'http://localhost:8000';
 }
 
